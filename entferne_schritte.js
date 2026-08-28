@@ -15,11 +15,15 @@ const { writeAivMit } = require('./lib/aivwrite');
 const tabelle = JSON.parse(fs.readFileSync(path.join(__dirname, 'lib', 'gebaeude.json'), 'utf8')).gebaeude;
 const name = nr => (tabelle[String(nr)] || {}).name || ('Nr. ' + nr);
 
-const [quelle, ziel, auswahl] = process.argv.slice(2);
+const [quelle, ziel, auswahl, auchFlaeche] = process.argv.slice(2);
 if (!quelle || !ziel || !auswahl) {
-  console.log('Aufruf: node entferne_schritte.js <Quelle.aiv> <Ziel.aiv> <30-90 | 5,7,10-20>');
+  console.log('Aufruf: node entferne_schritte.js <Quelle.aiv> <Ziel.aiv> <30-90 | 5,7,10-20> [auch-flaeche]');
+  console.log('  auch-flaeche: streicht auch Kartenrand und Bauflaeche in diesen Schritten.');
+  console.log('  Noetig, wenn die KI wirklich bei einem Schritt aufhoeren soll - die');
+  console.log('  Bauflaeche traegt eigene Schrittnummern und haelt sonst 2009 oben.');
   process.exit(1);
 }
+const mitFlaeche = auchFlaeche === 'auch-flaeche';
 
 const weg = new Set();
 for (const teil of auswahl.split(',')) {
@@ -43,7 +47,8 @@ for (let i = 0; i < bauten.length; i++) {
 let felder = 0;
 for (let i = 0; i < bauten.length; i++) {
   const t = bauten[i];
-  if (!t || t === 1 || t === 2) continue;        // Kartenrand und Flaeche bleiben
+  if (!t) continue;
+  if (!mitFlaeche && (t === 1 || t === 2)) continue;   // Kartenrand und Flaeche bleiben
   if (!weg.has(schritte[i])) continue;
   getroffen.set(t, (getroffen.get(t) || 0) + 1);
   felder++;
