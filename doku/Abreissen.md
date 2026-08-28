@@ -36,8 +36,22 @@ eigenes Gebäude am selben Ort liegen. Der direkte Aufruf von `destroyBuilding`
 ## Mauern abreißen
 
 Mauern sind keine Gebäude — dazu steht die Begründung in `AIV-im-Speicher.md`.
-Sie sind Einträge in den Kartenschichten. Abgerissen werden sie mit
-`DestroyWallOrPitch` (`0x00484C40`), Befehlsnummer `0x4BD`:
+Sie sind Einträge in den Kartenschichten.
+
+**Im Einzelspieler ist der direkte Weg der richtige:** Liste füllen und
+`destroyWall` (`0x00500E20`) aufrufen. Das Befehlssystem ist nur dafür da, dass
+im Mehrspieler alle Rechner dasselbe tun; solange nur ein Rechner rechnet,
+bringt es nichts als Umstände. Der direkte Weg:
+
+```
+destroyWall(0x00EE19D0, spielerID, anzahl, rohstoffMenge, holzFlag)
+```
+
+und die Liste, aus der er liest, ist **`0x00EE1E9C`**
+(`receivedWallPlacementInfoArray`).
+
+Über das Befehlssystem sieht es so aus — `DestroyWallOrPitch` (`0x00484C40`)
+ist der Handler:
 
 | Parameter | Größe | Bedeutung |
 |---|---|---|
@@ -47,14 +61,26 @@ Sie sind Einträge in den Kartenschichten. Abgerissen werden sie mit
 | Param3 | 1 Byte | **3 = Mauer, 4 = Pechgrube** |
 | dann | 1200 Byte | die Kachelliste, 100 Einträge à 12 Byte |
 
+Die `0x4BD`, die in der Funktion steht, ist die **Befehlslänge** in Byte
+(4+4+4+1+1200 = 1213), nicht die Befehlsnummer. Die Nummer steht im Enum
+`GameCommandType`; der Zeiger auf diesen Handler liegt bei `0x00B38F40`, der
+auf `ClickDestroyBuilding` bei `0x00B38E84`. Welche Nummer dazugehört, habe ich
+nicht sicher bestimmen können — für den Einzelspieler braucht man sie auch
+nicht. Abgesetzt würde ein Befehl mit `queueCommand` (`0x00489100`).
+
+`DAT_GameSynchronyState` = `0x0191D768`, darin `DAT_CommandActionPlan` bei
+`+0x2D828`, `DAT_CommandSize` bei `+0x2D830`, `DAT_GameCommandParam0` bis
+`Param5` ab `+0x7A850`, `protocolInvokerPlayerID` bei `+0x109E70`.
+
 `DAT_WallAndPitchState` = `0x00EE19D0`
 
-- **`0x00EE19EC`** `wallPlacementInfoArray` — hier trägt man beim **Absetzen** ein
+- **`0x00EE19EC`** `wallPlacementInfoArray` — nur für den Weg über das
+  Befehlssystem; von hier wird beim Absetzen gesendet
 - **`0x00EE1E9C`** `receivedWallPlacementInfoArray` — hierher schreibt das Spiel
-  beim **Ausführen**; nur daraus liest `destroyWall`
+  beim Ausführen, und **nur daraus liest `destroyWall`**
 
-Die beiden nicht verwechseln. Wer in `0xEE1E9C` schreibt, ohne den Befehl
-abzusetzen, schreibt in einen Puffer, der beim nächsten Befehl überschrieben wird.
+Beim direkten Aufruf ist also `0xEE1E9C` die richtige Adresse. Nur wer den
+Befehl absetzt, muss stattdessen `0xEE19EC` füllen.
 
 Ein Eintrag (12 Byte):
 
