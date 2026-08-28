@@ -4,6 +4,14 @@ Alles aus der Ghidra-Referenz `OpenSHC-ref` abgelesen. Wie man es selbst
 nachvollzieht, steht in `AIV-im-Speicher.md` — dieselben Skripte, andere
 Adressen.
 
+## Korrektur zu einer früheren Fassung
+
+Hier stand, `0x100000` sei das Bit, an dem Mauerwerk zu erkennen ist.
+**Das war falsch** — `0x100000` ist `L_RIVER`. Die richtigen Bits stehen weiter
+unten unter „Alle Mauern eines Spielers finden". Aufgefallen ist der Fehler
+beim Nachrechnen: die Maske, die `destroyWall` verwendet, lässt `0x100000`
+unangetastet.
+
 ## Der Grundsatz: Befehle absetzen, nicht Funktionen aufrufen
 
 Beides geht über das Befehlssystem des Spiels. Das ist nicht Zierrat: der
@@ -119,14 +127,65 @@ Mauer gehört, wird gelöscht, alles andere bleibt unangetastet.
 
 ### Alle Mauern eines Spielers finden
 
-`WallOwnerLayer[tile]` sagt, wem die Mauer auf dieser Kachel gehört. Dazu die
-Probe, ob dort überhaupt Mauerwerk steht: `LogicLayer[tile] & 0x100000`.
-Dieses Bit prüft auch `HandleWallTerrainMouseDrag`, bevor es eine Kachel
-anfasst.
+`WallOwnerLayer[tile]` sagt, wem die Mauer auf dieser Kachel gehört. Ob dort
+überhaupt Mauerwerk steht, verraten die Bits im `LogicLayer`:
 
-Also: über die Karte laufen, Kacheln mit passendem Besitzer und gesetztem Bit
-einsammeln, in Hunderterpaketen in `0x00EE19EC` schreiben und den Befehl
-absetzen. Mehr als 100 Kacheln passen nicht in eine Liste.
+| Bit | Wert | Name |
+|---|---|---|
+| 8 | `0x00000100` | `L_WALL_OR_GATEHOUSE` |
+| 9 | `0x00000200` | `L_CRENEL` — Zinne |
+| 10 | `0x00000400` | `L_BUILDING` |
+| 11 | `0x00000800` | `L_STAIRS` — Treppe |
+| 14 | `0x00004000` | `L_MOAT_DUG_OR_PLANNED` |
+| 16 | `0x00010000` | `L_UNKNOWN_WALL_RELATED` |
+| 17 | `0x00020000` | `L_BOULDERS` |
+| 18 | `0x00040000` | `L_PEBBLES` |
+| 20 | `0x00100000` | `L_RIVER` |
+| 22 | `0x00400000` | `L_CRENEL_VARIATION` |
+| 28 | `0x10000000` | `L_KEEP_NON_MANOR_HOUSE` |
+| 30 | `0x40000000` | `L_MOAT` |
+
+Weiter: `0x1` Meer, `0x2` Lagerplatz, `0x4`/`0x8` Ebene mit Farm bzw. Pech,
+`0x10`/`0x20` Kartenrand, `0x80` felsig, `0x1000` Baum, `0x8000` Standardboden,
+`0x80000` Eisen, `0x200000` Furt, `0x1000000` bis `0x8000000` die vier
+Farmfelder, `0x20000000` Sumpf, `0x80000000` Öl. Ghidra führt die Liste als
+Enum `Logic1`.
+
+**Die Gegenprobe:** `destroyWall` löscht `0x00470B00` — aufgeschlüsselt genau
+`L_WALL_OR_GATEHOUSE` + `L_CRENEL` + `L_STAIRS` + `L_UNKNOWN_WALL_RELATED` +
+`L_BOULDERS` + `L_PEBBLES` + `L_CRENEL_VARIATION`. Also exakt Mauerwerk und
+Schutt, sonst nichts. Die Maske und die Bit-Namen bestätigen sich gegenseitig.
+
+Damit kann man auch gezielt vorgehen: nur Treppen (`0x800`), nur Zinnen
+(`0x200`), nur Mauern (`0x100`).
+
+**Vorsicht bei `L_WALL_OR_GATEHOUSE`:** das Bit sitzt auch unter Torhäusern,
+und die sind echte Gebäude. Sie gehören über `ClickDestroyBuilding` weg
+(Laufzeit-Nummern 45 und 46); beim Kachelweg überspringt man sie, indem man
+Kacheln auslässt, an denen `BuildingLayer` (`0x01C95BB8`, `ushort[80400]`)
+nicht 0 ist.
+
+Also: über die Karte laufen (Kachel 0 bis 80399), Kacheln mit passendem
+Besitzer und gesetztem Mauerbit einsammeln, in Hunderterpaketen eintragen und
+`destroyWall` rufen. Mehr als 100 Kacheln passen nicht in eine Liste.
+
+### Mauern haben keine Laufzeit-Nummer
+
+Das ist die Antwort auf die Frage, welche Gebäudenummer Mauern, Zinnen und
+Treppen tragen: **gar keine.** Sie sind keine Gebäude, sondern Bits auf der
+Kachel. Die Zuordnung zu den AIV-Nummern:
+
+| AIV | Bauwerk | Logik-Bit |
+|---|---|---|
+| 10, 11 | Steinmauer, Niedrige Mauer | `L_WALL_OR_GATEHOUSE` `0x100` |
+| 12, 13 | Zinnenmauer hoch/niedrig | `L_CRENEL` `0x200`, dazu `L_CRENEL_VARIATION` `0x400000` |
+| 14-19 | Treppen 1-6 | `L_STAIRS` `0x800` |
+| 20-23 | Wassergraben | `L_MOAT` `0x40000000`, geplant `0x4000` |
+
+Die zweite Schicht `Logic2Layer` (`0x01C471E8`, `byte[80400]`) ist reines
+Gelände: `0x1` Gestrüpp, `0x2` Erde und Steine, `0x3` ungegrabener Graben,
+`0x4`/`0x8` Plateau mittel und hoch, `0x10` Oasengras, `0x20` Strand,
+`0x40` Steine oder Flugsand, `0x80` dichtes Gestrüpp.
 
 ## Einen einzelnen Bauschritt abreißen
 
