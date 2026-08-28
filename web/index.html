@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Village Studio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Village<span>Studio</span></h1>
+  <div class="kopfinfo" id="kopfinfo">AIV-Editor</div>
+</header>
+
+<main>
+  <aside class="links">
+    <div class="abschnitt">
+      <h2>Dörfer</h2>
+      <input type="search" id="suche" placeholder="suchen …" autocomplete="off">
+      <ul id="liste" class="liste"></ul>
+    </div>
+  </aside>
+
+  <section class="mitte">
+    <div class="werkzeugleiste">
+      <span id="dorfname" class="dorfname">kein Dorf geladen</span>
+      <span id="geaendert" class="geaendert" hidden>• ungespeichert</span>
+      <div class="spacer"></div>
+      <button id="rueckgaengig" title="Rückgängig (Strg+Z)" disabled>↶</button>
+      <button id="zoomRaus" title="verkleinern">−</button>
+      <span id="zoomWert">100 %</span>
+      <button id="zoomRein" title="vergrößern">+</button>
+      <button id="zoomFit">einpassen</button>
+    </div>
+    <div class="buehne" id="buehne">
+      <canvas id="karte"></canvas>
+      <div class="hinweis" id="hinweis">Links ein Dorf auswählen</div>
+    </div>
+    <div class="statusleiste">
+      <span id="status">bereit</span>
+      <span class="spacer"></span>
+      <span id="fadenkreuz"></span>
+    </div>
+  </section>
+
+  <aside class="rechts">
+    <div class="abschnitt">
+      <h2>Werkzeug</h2>
+      <div class="werkzeuge">
+        <button class="wz aktiv" data-wz="zeigen" title="nur anschauen und schieben">Ansehen</button>
+        <button class="wz" data-wz="malen" title="Bau setzen">Malen</button>
+        <button class="wz" data-wz="radieren" title="Feld leeren">Radieren</button>
+        <button class="wz" data-wz="pipette" title="Nummer vom Feld übernehmen">Pipette</button>
+      </div>
+      <div class="feldzeile"><label for="baunr">Bau-Nummer</label><input type="number" id="baunr" min="0" max="65535" value="1"></div>
+      <div class="feldzeile"><label for="schrittnr">Bauschritt</label><input type="number" id="schrittnr" min="0" max="999" value="1"></div>
+      <label class="kleinlabel"><input type="checkbox" id="schrittMit" checked> Bauschritt mitschreiben</label>
+      <div class="feldzeile"><label for="pinsel">Pinsel</label><input type="range" id="pinsel" min="1" max="7" value="1"><span id="pinselWert">1</span></div>
+    </div>
+
+    <div class="abschnitt">
+      <h2>Speichern</h2>
+      <button id="speichern" class="breit" disabled>Über Original speichern</button>
+      <button id="speichernAls" class="breit" disabled>Speichern unter …</button>
+      <div class="hinweisklein" style="margin-top:10px">Direkt dorthin, wo das Spiel schaut:</div>
+      <select id="spielziel" class="breit"></select>
+      <button id="insSpiel" class="breit" disabled>Ins Spiel speichern</button>
+      <div class="hinweisklein" id="speicherinfo"></div>
+    </div>
+
+    <div class="abschnitt">
+      <h2>Ebenen</h2>
+      <label><input type="checkbox" id="ebBauten" checked> Bauten</label>
+      <label><input type="checkbox" id="ebSchritte"> Bauschritte</label>
+      <label><input type="checkbox" id="ebMauern"> Mauerkanten</label>
+      <label><input type="checkbox" id="ebGruppen"> Gebäudegruppen</label>
+      <label><input type="checkbox" id="ebSonst"> Sonstiges</label>
+      <label><input type="checkbox" id="ebRaster" checked> Raster</label>
+    </div>
+
+    <div class="abschnitt">
+      <h2>Kennzahlen</h2>
+      <dl id="kennzahlen" class="kennzahlen"><dd class="leer">–</dd></dl>
+    </div>
+
+    <div class="abschnitt">
+      <h2>Bauten im Dorf</h2>
+      <div class="hinweisklein">Anklicken übernimmt die Nummer zum Malen. Zeigen nennt Nummer und Größe.</div>
+      <ul id="legende" class="legende"></ul>
+    </div>
+
+    <div class="abschnitt">
+      <h2>Abschnitte der Datei</h2>
+      <ul id="abschnitte" class="abschnitte"></ul>
+    </div>
+  </aside>
+</main>
+
+<div id="tooltip" class="tooltip" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
