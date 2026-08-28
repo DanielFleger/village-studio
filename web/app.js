@@ -161,10 +161,14 @@ function zeigeLegende() {
     const li = document.createElement('li');
     const b = bau(id);
     const groesse = b && b.b ? ` ${b.b}×${b.h}` : '';
+    const nummern = b ? `AIV ${id}${groesse}` +
+      (b.mapper ? ` · im Speicher ${b.mapper}${b.mapperName ? ' (' + b.mapperName + ')' : ''}` : '') +
+      (b.laufzeit ? ` · zum Abreißen ${b.laufzeit}${b.laufzeitName ? ' (' + b.laufzeitName + ')' : ''}` : '')
+      : `Nr. ${id}`;
     li.innerHTML = `<i style="background:${farbeFuer(id)}"></i>` +
-      `<span title="Nr. ${id}${groesse}">${bauName(id)}</span><b>${n}</b>`;
+      `<span title="${nummern}">${bauName(id)}</span><b>${n}</b>`;
     li.style.cursor = 'pointer';
-    li.title = `Nr. ${id}${groesse} – als Malfarbe übernehmen`;
+    li.title = `${nummern} – anklicken übernimmt die Nummer zum Malen`;
     li.onclick = () => { $('#baunr').value = id; setzeWerkzeug('malen'); };
     ul.appendChild(li);
   }
@@ -334,7 +338,10 @@ cv.addEventListener('mousemove', ev => {
   const zeilen = [`Feld  ${c.x} , ${c.y}`];
   if (dorf.bauten) {
     const id = dorf.bauten[c.i];
-    zeilen.push(`Bau      ${id ? bauName(id) + ' (Nr. ' + id + ')' : '–'}`);
+    const b = id ? bau(id) : null;
+    zeilen.push(`Bau      ${id ? bauName(id) + ' (AIV ' + id + ')' : '–'}`);
+    if (b && (b.mapper || b.laufzeit))
+      zeilen.push(`         Speicher ${b.mapper ?? '–'} · Abriss ${b.laufzeit ?? '–'}`);
   }
   if (dorf.schritte) zeilen.push(`Schritt  ${dorf.schritte[c.i] || '–'}`);
   if (dorf.gruppen) zeilen.push(`Gruppe   ${dorf.gruppen[c.i] || '–'}`);

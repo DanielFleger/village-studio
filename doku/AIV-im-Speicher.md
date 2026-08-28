@@ -54,6 +54,13 @@ Adresse des Bauschritts `n` von Slot `s`:
 Einträge; der größte Bauschritt in den 148 AIV-Dateien auf diesem Rechner ist
 991 (`nocturne_rat1.aiv`), es ist also knapp.
 
+## Korrektur zu einer früheren Fassung
+
+Hier stand, die Adressrechnung des Hot-Swap-Moduls liege um 4 Byte daneben.
+**Das war falsch.** Ich war davon ausgegangen, dessen `AIV_MANAGER` sei
+`AIVState + 4`; tatsächlich ist es `AIVState` selbst. Dann gilt
+`4 + 0x34 = 0x38`, und beide Rechnungen treffen dieselbe Adresse.
+
 ## Die Falle: drei Nummernsätze
 
 `buildingType` im Speicher ist die **Mapper**-Nummer. Die AIV-Datei enthält
@@ -75,6 +82,15 @@ nichts Passendes.
 
 Umgerechnet wird beim Laden; die Funktion heißt
 `AIVState::convertAIVBuildingTypeToCommandBuildingType` (`0x4ECFE0`).
+AIV 10-24 stehen dort in einem Schalter, **alles ab AIV 30 kommt aus einer
+Datentabelle in der exe**: 79 Werte ab `0x00B46218`, indiziert mit `AIV - 30`
+(gleichbedeutend `0xB461A0 + AIV * 4`). Über AIV 109 liefert die Funktion fest
+`0x6C`. Damit lässt sich die ganze Tabelle aus der exe erzeugen statt
+abzuleiten — genau das tut `_ergaenze_nummern.js`.
+
+Alle drei Sätze stehen jetzt in `lib/gebaeude.json` je Bauwerk als `mapper`
+und `laufzeit`, und die Oberfläche zeigt sie an. Beispiel Bogenmacher:
+AIV 51, im Speicher 50 (`M_MAPPER_FLETCHER`), zum Abreißen 12 (`BT_FLETCHER`).
 
 ## Bauschritte abschalten
 
@@ -99,6 +115,43 @@ Für „keine Mauern, Treppen, Türme und Torhäuser" ist die Menge:
 
 Das verhindert **weiteres** Bauen. Bereits Gebautes verschwindet dadurch nicht.
 
+## Status 4 wirkt wie Status 0
+
+`aiPlaceAIVBuilding` prüft bei `0x4ED461` auf 0 und bei `0x4ED465` auf 4 —
+beide springen sofort zurück. Status 5 lässt bei `0x4ED476` einen Zähler in
+`wait` (+0x01) herunterlaufen. Zum Abschalten ist 0 die sauberere Wahl, 4
+wirkt genauso. (Beides im Spiel bestätigt.)
+
+## Gebäude abreißen
+
+```
+DAT_BuildingsState = 0x00F98520
+  +0x00000  structCount        int
+  +0x00008  maxBuildingsCount  int
+  +0x00014  buildings[2000]    Building, je 812 Byte
+
+Building
+  +0x08C  xPosition   byte        +0x08D  yPosition byte
+  +0x0D0  logicalState short      +0x0D2  buildingType short  (Laufzeit-Nummer)
+  +0x0D6  owner        short      +0x0D8  uid          int
+  +0x10C  currentHealth short     +0x10E  maxHealth    short
+```
+
+Adresse von Gebäude `i`: `0x00F98520 + 0x14 + i * 812`.
+
+Funktionen: `destroyBuilding` (`0x0041A7A0`),
+`destroyBuildingAndLinkedDuplicates` (`0x00421990`) für mehrteilige Bauten,
+`destroyBuildings` (`0x0041A860`).
+
+**Vorsicht mit Gruppen.** `destroyBuilding` reißt ab `0x41A80F` alles mit, was
+dieselbe Kennung bei `+0x2BC` trägt. Ghidra nennt das Feld
+`unknownAccessibilityRelatedFlag`, der Name ist also unsicher — die Wirkung
+ist es nicht: beim Abreißen nach Typ verschwand einmal der Bergfried mit.
+Wer etwas verschonen will, muss dessen Gruppenkennung vorher einsammeln und
+mitschützen.
+
+**Und erst sammeln, dann abreißen** — das Array wird beim Abreißen umgeräumt.
+
 ## Warum sich schon gebaute Mauern nicht abreißen lassen
 
 Die Laufzeit-Sprungtabelle `0x5B79A8` — die Liste, aus der `destroyBuilding`
@@ -107,6 +160,9 @@ Treppen oder Gräben. Von 1 bis 105 gibt es `gatehouse`, `tower`, `drawbridge`
 und `tunnel`, aber nichts für Mauerwerk. Mauern sind in dieser Engine keine
 Gebäude; sie hängen an `wallLocationsArrayIndex` und `locationsArray` der
 AIVSpec. Türme und Torhäuser dagegen **sind** Gebäude und lassen sich abreißen.
+Der einzige Weg zu den Mauern wäre `destroyWall` (`0x500E20`), und die will
+eine vorbereitete Kachelliste ab `0xEE1E9C` mit je 12 Byte samt
+Ersatz-Bodenwerten — die berechnet sonst die Vorschau beim Ziehen mit der Maus.
 
 ## Warum ein Mauerzug mehrere Kacheln hat
 

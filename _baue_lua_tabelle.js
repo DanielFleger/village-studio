@@ -76,12 +76,24 @@ zeilen.push(']]--');
 zeilen.push('');
 zeilen.push('local M = {}');
 zeilen.push('');
-zeilen.push('-- AIV-Typ -> { name, breite, hoehe, art }');
+zeilen.push('-- AIV-Typ -> { name, breite, hoehe, art, mapper, laufzeit }');
+zeilen.push('-- mapper   = was im Speicher in AIVBuildingStep.buildingType steht');
+zeilen.push('-- laufzeit = Platz in der Sprungtabelle 0x5B79A8, den destroyBuilding braucht');
 zeilen.push('M.AIV = {');
 for (const nr of Object.keys(tab).map(Number).sort((a, b) => a - b)) {
   const e = tab[String(nr)];
   const groesse = e.b ? `b = ${e.b}, h = ${e.h}, ` : '';
-  zeilen.push(`  [${nr}] = { name = ${JSON.stringify(e.name)}, ${groesse}art = ${JSON.stringify(e.gruppe)} },`);
+  const m = e.mapper ? `mapper = ${e.mapper}, ` : '';
+  const l = e.laufzeit ? `laufzeit = ${e.laufzeit}, ` : '';
+  zeilen.push(`  [${nr}] = { name = ${JSON.stringify(e.name)}, ${groesse}${m}${l}art = ${JSON.stringify(e.gruppe)} },`);
+}
+zeilen.push('}');
+zeilen.push('');
+zeilen.push('-- Mapper-Nummer -> AIV-Typ, fuer den Weg zurueck aus dem Speicher');
+zeilen.push('M.MAPPER_ZU_AIV = {');
+for (const nr of Object.keys(tab).map(Number).sort((a, b) => a - b)) {
+  const e = tab[String(nr)];
+  if (e.mapper) zeilen.push(`  [${e.mapper}] = ${nr},   -- ${e.name}`);
 }
 zeilen.push('}');
 zeilen.push('');
@@ -91,14 +103,15 @@ for (const nr of Object.keys(LAUFZEIT).map(Number).sort((a, b) => a - b))
   zeilen.push(`  [${nr}] = ${JSON.stringify(LAUFZEIT[nr])},`);
 zeilen.push('}');
 zeilen.push('');
-zeilen.push('-- AIV-Typ -> Laufzeit-Typ. Ueber die Bedeutung zugeordnet.');
+zeilen.push('-- AIV-Typ -> Laufzeit-Typ (fuer destroyBuilding).');
 zeilen.push('-- Was fehlt, ist offen und nicht geraten - siehe M.OFFEN.');
 zeilen.push('M.AIV_ZU_LAUFZEIT = {');
 const offen = [];
-for (const nr of Object.keys(BRUECKE).map(Number).sort((a, b) => a - b)) {
-  const k = BRUECKE[nr];
-  if (!k) { offen.push(nr); continue; }
-  zeilen.push(`  [${nr}] = ${LAUFZEIT_NR[k]},   -- ${tab[String(nr)] ? tab[String(nr)].name : '?'} = ${k}`);
+for (const nr of Object.keys(tab).map(Number).sort((a, b) => a - b)) {
+  const e = tab[String(nr)];
+  if (nr <= 2 || nr === 25) continue;
+  if (!e.laufzeit) { offen.push(nr); continue; }
+  zeilen.push(`  [${nr}] = ${e.laufzeit},   -- ${e.name} = ${e.laufzeitName}`);
 }
 zeilen.push('}');
 zeilen.push('');
