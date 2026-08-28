@@ -88,11 +88,32 @@ weiter). `setInitialAIC` (`0x004D18B0`) füllt beim Start `aics[1]` bis
 `aics[16]` über `setAICParameters_01` bis `_16`.
 
 Sechzehn Einträge, sechzehn Lords, dieselbe Reihenfolge wie oben — nur eins
-weiter, weil die AIC-Slots bei 1 beginnen. **Saladin wäre damit `aics[5]`.**
-Das ist geschlossen, aber nicht direkt belegt: die Reihenfolge der
-Namenstabelle ist gemessen, die Gleichsetzung mit den AIC-Slots ist ein Schluss.
-Im Spiel nachprüfbar, indem man `aics[i].flagType` mit den Lords im Gefecht
-vergleicht.
+weiter, weil die AIC-Slots bei 1 beginnen. **Saladin ist `aics[5]`.**
+
+### Belegt über die Flaggen
+
+Das war zuerst nur ein Schluss. Der Beleg steckt im ersten Feld, das jede
+`setAICParameters`-Funktion setzt — `flagType`:
+
+| AIC | flagType | Lord | | AIC | flagType | Lord |
+|---|---|---|---|---|---|---|
+| 1 | 12 | Rat | | 9 | 13 | Frederick |
+| 2 | 12 | Snake | | 10 | 13 | Phillip |
+| 3 | 12 | Pig | | 11 | **10** | Wazir |
+| 4 | 13 | Wolf | | 12 | **10** | Emir |
+| 5 | **10** | Saladin | | 13 | **10** | Nizar |
+| 6 | **10** | Caliph | | 14 | 13 | Sheriff |
+| 7 | **10** | Sultan | | 15 | 13 | Marshal |
+| 8 | 13 | Richard | | 16 | 13 | Abbot |
+
+`flagType 10` steht auf genau sechs Slots: 5, 6, 7, 11, 12, 13. Das Spiel hat
+genau sechs arabische Lords — Saladin, Caliph, Sultan, Wazir, Emir, Nizar —,
+und in der Reihenfolge der Namenstabelle stehen sie genau auf diesen
+Positionen. Sechzehn von sechzehn passen. Damit ist die Gleichsetzung
+`AIC-Slot = aiType + 1` belegt und nicht mehr geraten.
+
+Nebenbei fällt auf: die Slots 1 bis 3 haben `flagType 12` statt 13. Das sind
+Rat, Snake und Pig — die drei Banditenfürsten aus dem ersten Stronghold.
 
 ## Ein Bauplanwechsel der Reihe nach
 
@@ -102,5 +123,6 @@ vergleicht.
 2. `keepXOffset`, `keepYOffset`, `keepOrientation` **nicht anfassen**.
 3. `applyAIV(AIVState*, aivSlot, spielerID)` rufen.
 4. **Erst jetzt** die Schritte sperren, die nicht gebaut werden sollen.
-5. Wenn auch die Persönlichkeit wechseln soll: 676 Byte von `aics[neuerLord]`
-   nach `aics[spieler]` kopieren.
+5. Wenn auch die Persönlichkeit wechseln soll: 676 Byte von `aics[aiType + 1]`
+   nach `aics[spieler]` kopieren — für Saladin also von
+   `0x023FC8E8 + 5 * 676`.
