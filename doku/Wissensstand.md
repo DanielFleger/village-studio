@@ -138,7 +138,12 @@ PlayerData +0x46C startResources int[25]   +0x4D0 currentResources int[25]
 |---|---|---|
 | `applyAIV` (`0x004EF0D0`) **liest** keepXOffset/keepYOffset/keepOrientation, setzt sie nicht — der stehende Bergfried bleibt der Anker | **abgelesen** | im Spiel noch nicht gegengeprüft |
 | `applyAIV` setzt **alle** Bauschritte auf `unbuilt` zurück | **abgelesen** | Sperren gehören also *nach* den Bauplanwechsel |
-| `applyAIV` setzt `currentStepGoal` **nicht** zurück, nur `aivCurrentPauseIndex = 1` | **abgelesen** | **Der aussichtsreichste Verdacht für die „übersprungenen" frühen Schritte.** Messung ausstehend |
+| `applyAIV` setzt `currentStepGoal` **nicht** zurück, nur `aivCurrentPauseIndex = 1` | **abgelesen** | |
+| **Die Bauschleife beginnt in jedem Durchgang bei Schritt 1** und läuft bis `currentStepGoal`; sie bricht ab, sobald ein Schritt gebaut wurde | **abgelesen** | `aiDecideOnNewBuildings` (`0x4F15C0`): `iVar3 = 1; while (iVar3 <= currentStepGoal) { ... }`. **Damit werden frühe Schritte strukturell nicht übersprungen** |
+| `currentStepGoal` ist eine Ober-, keine Untergrenze, und wächst pro Durchgang | **abgelesen** | |
+| **Das Bautempo hängt am Gold.** Unter 5001 Gold zählt `aivPoorCounter` hoch, und solange er kleiner als `buildInterval` ist, baut die KI in diesem Durchgang gar nicht | **abgelesen** | `aiDecideOnNewBuildings`, Zeilen 35–44. Deshalb heißt das Feld `aivPoorLimit_OR_AIC_buildInterval` — es ist beides |
+| `resourceRebuildDelay` bremst zusätzlich | **abgelesen** | dieselbe Funktion, Zeilen 26–34 |
+| `applyAIV` deaktiviert Schritte, deren Mapper-Typ 0 ist (`M_MAPPER_NULL`), ebenso KEEP3 und die Teiche | **abgelesen** | Ein Bauschritt ohne Felder im Gitter bekommt Typ 0 und landet auf `disabled` |
 | `applyAIV` wählt die Datei über `aiType` und `castleID`: Index = `castleID - 0x10 + aiType * 8` | **abgelesen** | |
 | AIC-Slot = `aiType + 1`, also Saladin = `aics[5]` | **belegt** | `flagType` steht auf genau den Slots 5,6,7,11,12,13 auf 10 — das sind exakt die sechs arabischen Lords. 16 von 16 passen |
 | `buildInterval` (AIC `+0x78`) ist 1 bis 5; Rat und Nizar am schnellsten, Sultan am langsamsten | **abgelesen** | aus allen 16 `setAICParameters` gelesen |
@@ -165,7 +170,9 @@ Bits im `LogicLayer`, Enum `Logic1` — **abgelesen**:
 |---|---|---|
 | `destroyWall` löscht `0x00470B00` — das ist genau die Summe der Mauer- und Schuttbits | **belegt** | Maske und Bit-Namen bestätigen sich gegenseitig |
 | Mauerkacheln entfernt man mit `damage = 0`, `height = DefaultHeightLayer[tile]`, `logic = 0` | **vermutet** | aus `destroyWall` rückwärts erschlossen, im Spiel **nicht** geprüft |
-| Mauern sind für die KI kostenlos | **vermutet** | die Kostentabelle `BuildingCostStruct[110]` wird nach Laufzeit-Nummer indiziert, und Mauern haben keine. Aber `aiPlaceAIVBuilding` kennt sehr wohl „keine Rohstoffe" |
+| **Mauern kosten die KI nichts** — im Mauerzweig von `aiPlaceAIVBuilding` steht kein einziger Abzug | **abgelesen** | `processPlacementResourceLossForBuildingType` (`0x41BFD0`) wird nur von `placeBuilding`, `aiCreateSiegeUnits` und `ClickPlaceSiegeTent` gerufen, nicht aus dem Mauerpfad |
+| **Aber:** war ein Mauerschritt schon einmal gebaut, verlangt die KI mindestens 1 Stein im Lager, sonst fordert sie 5 Stein an und baut nicht | **abgelesen** | `aiPlaceAIVBuilding` Zeile 129: `if (currentResources[4] < 1)`. Beim **ersten** Bau greift die Prüfung nicht |
+| Nach dem Bau setzt die KI einen Wartezähler: **Mauer 20, Treppe 1, Pechgraben 200** | **abgelesen** | `wait`-Feld im Bauschritt. Ob das Ticks sind, ist die Frage, die die Messburgen klären |
 | Gold steht in `currentResources[15]` | **vermutet** | aus der Struktur geschlossen, Anzeige nicht verglichen |
 
 ## 6. Widerlegtes
@@ -181,10 +188,12 @@ Damit die Irrtümer nicht wiederkommen.
 | Abschnitte dürfen roh zurückgeschrieben werden | Kein Beleg dafür. In 129 Originaldateien ist keiner der fünf gepackten Abschnitte roh |
 | Abschnitt 2009 ist der größte Bauschritt | Er ist der größte **plus eins** |
 | Ein zweites Vorratslager ist als Keimzelle nötig | Jede KI startet mit einem |
+| Die frühen Bauschritte werden nach einem Umbau strukturell übersprungen | Die Schleife startet in jedem Durchgang bei Schritt 1. Was aussieht wie Überspringen, ist entweder ein deaktivierter Schritt, ein zu kleines `currentStepGoal` oder die Armutsbremse |
+| Bergfried und Vorratslager kann man überbauen | Beide sind eigene Gebäude und lassen sich nicht überbauen. Das Startlager steht nicht in der AIV, ist im Bauplan also unsichtbar |
 
 ## 7. Offene Fragen
 
-1. **Wird `currentStepGoal` beim Umbau zum Problem?** Messung: vor und nach `applyAIV` auslesen. Das ist der schnellste Weg zur Antwort auf die Sprungfrage.
+1. **Warum bleiben nach dem Umbau frühe Schritte ungebaut?** Die Bauschleife startet nachweislich bei 1, überspringt also nichts. Bleiben drei Erklärungen: der Schritt steht auf `disabled` (Mapper-Typ 0), `currentStepGoal` ist zu klein, oder die Armutsbremse greift. Messung: `currentStepGoal`, `aivPoorCounter` und der `buildStatus` der ersten Schritte.
 2. **Wie viele Ticks braucht ein Bauschritt?** Dafür sind `Burg_left_1` und `Burg_right_1` gebaut.
 3. **Wie viele Ticks hat eine Sekunde?** Tick-Zähler zweimal im Abstand echter Sekunden lesen, je Geschwindigkeitsstufe.
 4. **Gibt es einen Anlaufpuffer am Anfang?** Sichtbar, wenn die ersten Mauern langsamer kommen als die späteren.

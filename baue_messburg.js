@@ -25,11 +25,16 @@ const MAUER = 10;                 // AIV 10 = Steinmauer
 const G = 100;
 const KEEP = { x0: 43, y0: 43, x1: 49, y1: 49 };
 
-// Der Bergfried liegt bei 43..49. Links davon bleibt x 2..42, rechts x 50..97.
-// Mit Schrittweite 2 sind das je 15 Spalten, wenn man Rand und Bergfried meidet.
+// Sicherheitszone um den Bergfried. Nicht nur er selbst ist tabu: jede KI
+// bekommt beim Start automatisch ein Vorratslager daneben, und weder Bergfried
+// noch Lager lassen sich ueberbauen. Beide stehen nicht in der AIV, man sieht
+// sie also im Bauplan nicht - deshalb hier grosszuegig Abstand halten.
+// Neun Felder auf jeder Seite, symmetrisch um die Bergfriedmitte (46).
+const SPERRE = { x0: 35, y0: 35, x1: 57, y1: 57 };
+
 const spalten = [];
-if (seite === 'links') for (let x = 12; x <= 40; x += 2) spalten.push(x);
-else                   for (let x = 52; x <= 80; x += 2) spalten.push(x);
+if (seite === 'links') for (let x = 6; x <= 34; x += 2) spalten.push(x);
+else                   for (let x = 58; x <= 86; x += 2) spalten.push(x);
 
 const zeilen = [];
 for (let y = 20; y <= 78; y += 2) zeilen.push(y);
@@ -55,7 +60,7 @@ for (let i = 0; i < G * G; i++) {
 let schritt = 1, gesetzt = 0;
 for (const p of plaetze) {
   if (gesetzt >= ANZAHL) break;
-  if (p.x >= KEEP.x0 && p.x <= KEEP.x1 && p.y >= KEEP.y0 && p.y <= KEEP.y1) continue;
+  if (p.x >= SPERRE.x0 && p.x <= SPERRE.x1 && p.y >= SPERRE.y0 && p.y <= SPERRE.y1) continue;
   const i = p.y * G + p.x;
   // Kartenrand und Bergfried sind tabu. Die Bauflaeche (2) darf weichen - sie
   // ist nur eine Reservierung, kein Bauwerk. Sonst haetten beide Seiten
@@ -101,6 +106,8 @@ console.log(`${path.basename(vorlage)} -> ${path.basename(ziel)}   (${seite})`);
 console.log(`  Schritt 1 uebernommen: ${uebernommen} Felder (Kartenrand, Bergfried, Bauflaeche)`);
 console.log(`  Mauerstuecke: ${gesetzt}${gesetzt < ANZAHL ? '  ACHTUNG: ' + ANZAHL + ' gefordert' : ''}, Bauschritte ${nummern[0]} bis ${nummern[nummern.length - 1]}`);
 console.log(`  Raster: x ${spalten[0]}..${spalten[spalten.length - 1]} und y ${zeilen[0]}..${zeilen[zeilen.length - 1]}, Schrittweite 2`);
+console.log(`  Abstand zur Sperrzone um Bergfried und Startlager (${SPERRE.x0}..${SPERRE.x1}): ` +
+            (seite === 'links' ? SPERRE.x0 - spalten[spalten.length - 1] : spalten[0] - SPERRE.x1) + ' Felder');
 console.log(`  je Bauschritt genau ein Feld: ${mehrfach.length === 0 ? 'ja' : 'NEIN (' + mehrfach.length + ' Ausreisser)'}`);
 console.log(`  Luecken in der Schrittfolge: ${luecken}`);
 const echtePausen = (w.pausen || []).filter(v => v > 0);
