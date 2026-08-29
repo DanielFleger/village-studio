@@ -148,6 +148,9 @@ function zeigeKennzahlen() {
     ['Pausenlänge', dorf.pausenlaenge ?? '–'],
     ['Dateiversion', dorf.header.version],
   ];
+  if (dorf.umrissFehlerZahl !== undefined)
+    rows.push(['Umriss-Prüfung', dorf.umrissFehlerZahl === 0 ? 'in Ordnung'
+               : dorf.umrissFehlerZahl + ' Felder passen nicht']);
   $('#kennzahlen').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
 }
 
@@ -224,6 +227,14 @@ function malen_() {
       if (an('#ebMauern') && dorf.mauern && dorf.mauern[i]) {
         ctx.fillStyle = 'rgba(235,225,190,.75)';
         ctx.fillRect(x0 + x * z + z * .3, y0 + y * z + z * .3, z * .4, z * .4);
+      }
+      // Felder, an denen Kantenlänge oder Lage nicht zu den Bauten passen
+      if (an('#ebUmriss') && dorf.umrissFehler && dorf.umrissFehler[i]) {
+        ctx.fillStyle = 'rgba(255,60,60,.85)';
+        ctx.fillRect(x0 + x * z, y0 + y * z, z, z);
+        ctx.strokeStyle = 'rgba(255,255,255,.9)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x0 + x * z + .5, y0 + y * z + .5, z - 1, z - 1);
       }
     }
   }
@@ -344,8 +355,9 @@ cv.addEventListener('mousemove', ev => {
       zeilen.push(`         Speicher ${b.mapper ?? '–'} · Abriss ${b.laufzeit ?? '–'}`);
   }
   if (dorf.schritte) zeilen.push(`Schritt  ${dorf.schritte[c.i] || '–'}`);
-  if (dorf.gruppen) zeilen.push(`Gruppe   ${dorf.gruppen[c.i] || '–'}`);
-  if (dorf.mauern) zeilen.push(`Mauer    ${dorf.mauern[c.i] || '–'}`);
+  if (dorf.gruppen) zeilen.push(`Kantenl. ${dorf.gruppen[c.i] || '–'}`);
+  if (dorf.mauern) zeilen.push(`Lage     ${dorf.mauern[c.i] || '–'}`);
+  if (dorf.umrissFehler && dorf.umrissFehler[c.i]) zeilen.push('!! Umriss passt nicht zum Bau');
   tt.textContent = zeilen.join('\n');
   tt.hidden = false;
   tt.style.left = (ev.clientX + 16) + 'px';
@@ -420,7 +432,7 @@ $('#zoomFit').onclick = einpassen;
 $('#rueckgaengig').onclick = rueckgaengig;
 $('#pinsel').addEventListener('input', () => $('#pinselWert').textContent = $('#pinsel').value);
 for (const b of document.querySelectorAll('.wz')) b.onclick = () => setzeWerkzeug(b.dataset.wz);
-for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebRaster'])
+for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebUmriss', 'ebRaster'])
   $('#' + id).addEventListener('change', malen_);
 
 window.addEventListener('keydown', ev => {

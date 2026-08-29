@@ -76,15 +76,16 @@ for (const p of plaetze) {
 // Alles aus der Vorlage raus, was nicht zur Messung gehoert:
 //   2011 Pausen      - sonst haelt die KI mitten in der Messung an
 //   2012 Einheiten   - sonst stehen fremde Truppen auf der Karte
-//   2004 Gruppen     - beziehen sich auf die Bauten der Vorlage
-//   2005 Mauerkanten - dito
-//   2013 Sonstiges   - dito
+//   2013 Sonstiges   - bezieht sich auf die Bauten der Vorlage
+// 2004 und 2005 werden NICHT geleert: die erzeugt der Schreiber selbst aus
+// den neuen Bauten. Wer sie leert, macht genau den Fehler wieder, wegen dem
+// die Gebaeude in Einzelfelder zerfielen.
 // Pausenmuster wie in den Abbot-Dateien: erster Eintrag 0, Rest -1.
 const neu = writeAivMit(orig, {
   bauten, schritte,
   pausen: [0],
   einheiten: [],
-  leeren: [2004, 2005, 2013],
+  leeren: [2013],
 });
 fs.mkdirSync(path.dirname(path.resolve(ziel)), { recursive: true });
 fs.writeFileSync(ziel, neu);
