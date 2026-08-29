@@ -37,7 +37,7 @@ gesichert halten.
 | **Abschnitt 2004 ist die Kantenlänge des Bauwerks**, auf jedem seiner Felder — Wachturm 3, Hütte 4, Marktplatz 5, Bergfried 7, Kirche 9, Kathedrale 13 | **belegt** | 128 Dateien, für echte Gebäude ohne eine einzige Abweichung. Der bisherige Name „Gebäudegruppen" war irreführend |
 | **Abschnitt 2005 ist die Lage des Feldes im Bauwerk**, als Ziffer 1–9: 1 oben links, 2 oben rechts, 3 unten rechts, 4 unten links, 5 obere Kante, 6 rechte, 7 untere, 8 linke, 9 innen | **belegt** | dieselbe Messung; bisher „Mauerkanten" genannt |
 | Ohne passende 2004/2005 zerfällt ein Gebäude in Einzelfelder — ein 3×3-Holzfäller wird zu neun Holzfällern | **belegt** | im Editor gesehen, und nach der Korrektur im Editor gegengeprüft: Gebäude erscheinen wieder als ein Stück, die Schrittzahl bleibt über mehrfaches Öffnen und Blättern stabil |
-| Mauerwerk trägt in 2004 mal 0, mal 1 — die Regel dahinter ist unbekannt | **offen** | über 128 Dateien überwiegt die 1 (93,5 % gegen 89,3 %) |
+| Mauerwerk trägt in 2004 mal 0, mal 1 — die Regel dahinter ist unbekannt | **offen** | Zwei Hypothesen gemessen und beide widerlegt: es hängt weder an der Länge des Mauerzugs noch an der Position darin (37,7 % Treffer). Über 128 Dateien überwiegt die 1. Bedeutungslos ist der Wert nicht — `applyAIV`, `rotateAIV` und `computeAIVPlacementFit` lesen ihn. Die Umriss-Prüfung im Werkzeug lässt hier deshalb beides gelten |
 | Gräben und Baufläche folgen in 2004/2005 einer eigenen Logik | **offen** | Gräben tragen 2 oder 3 und haben einen Umriss |
 
 ## 2. Die drei Nummernsätze
