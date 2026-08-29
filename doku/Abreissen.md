@@ -213,3 +213,56 @@ Nach `destroyWall` könnte
 `rebuildTileLogicLayerForGatesAndWalls` (`0x00419AC0`) nötig sein, damit
 angrenzende Mauerstücke ihre Anschlüsse neu bestimmen. Die Funktion ruft
 `destroyWall` nicht selbst auf.
+
+## Waren und Gold eines Spielers
+
+Das Waren-Array hängt am `GameState`, nicht am `BuildingsState`:
+
+```
+DAT_GameState    = 0x0112B0B8
+  playerDataArray  +0x030D40  = 0x0115BDF8   PlayerData[9], je 0x39F4 (14836) Byte
+    startResources   +0x46C   int[25]
+    currentResources +0x4D0   int[25]
+```
+
+Adresse: `0x0115BDF8 + spieler * 0x39F4 + 0x4D0 + ware * 4`.
+Die Größe `0x39F4` bestätigt `applyAIV` selbst — dort steht
+`playerID2Unk * 0x39f4 + 0x115ee84`.
+
+`ResourceType`: 1 LOGS, 2 WOOD, 3 HOPS, 4 STONE, 5 PARTIALSTONE, 6 IRON,
+7 PITCH, 8 PARTIALPITCH, 9 WHEAT, 10 BREAD, 11 CHEESE, 12 MEAT, 13 APPLE,
+14 ALE, 15 GOLD, 16 FLOUR, 17 BOW, 18 CROSSBOW, 19 SPEAR, 20 PIKE, 21 MACE,
+22 SWORD, 23 LEATHERARMOR, 24 IRONARMOR.
+
+Gold ist also keine Sonderlocke, sondern Ware 15 im selben Array. Die Felder
+`marketGold` (`+0x54`), `currentGoldDelayed` (`+0x448`) und `lastMonthsGold`
+(`+0x2248`) sind Anzeige- und Buchhaltungswerte, nicht der Bestand.
+
+### Waren gutschreiben
+
+**`processResourceGain(BuildingsState*, playerID, resourceType, amount)` =
+`0x0041C310`** ist der richtige Weg. Sie prüft mit `getResourceSpace`, ob
+überhaupt Platz ist (und gibt sonst FALSE zurück), wählt über
+`getBuildingStorageTypeForResourceType` das passende Lager — `0xB` Waffenlager,
+`0x13` Kornspeicher, sonst Lagerplatz —, verteilt über die Gebäude des Spielers
+und zieht Warensumme, Zähler und Stapel-Grafik nach.
+
+Eine Ebene darunter liegt
+
+```
+addResourceToStockpile(BuildingsState* this, int buildingID, int buildingUID,
+                       ResourceType resourceType, int amount,
+                       int maxCapacity, int recomputeResources)   = 0x0041BB30
+```
+
+Hier ist der erste Parameter der **Gebäudeindex**, nicht der Spieler — der wird
+aus `buildings[buildingID].owner` gelesen. Die Warenzelle bei `+0x134` ist
+`resourceArray_resourceTypePlus1[resourceType]`, ein Feld *im Gebäude*.
+Zwei Fallen: `buildingUID` muss zur `uid` passen, sonst passiert nichts, und
+**`maxCapacity == 0` setzt die Zelle auf 0**, statt etwas hinzuzufügen.
+Daneben gibt es `addResourceToGranary` (`0x0041BC10`) und `addResourceToArmory`
+(`0x0041BCA0`).
+
+Gold dürfte `processResourceGain` nicht annehmen — es wird nicht gestapelt, und
+die Funktion steigt aus, wenn kein Lagertyp zuständig ist. Dafür direkt
+`currentResources[15]` schreiben. Ob das die Anzeige mitzieht, ist ungeprüft.
