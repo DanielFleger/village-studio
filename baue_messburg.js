@@ -64,7 +64,19 @@ for (const p of plaetze) {
   gesetzt++;
 }
 
-const neu = writeAivMit(orig, { bauten, schritte });
+// Alles aus der Vorlage raus, was nicht zur Messung gehoert:
+//   2011 Pausen      - sonst haelt die KI mitten in der Messung an
+//   2012 Einheiten   - sonst stehen fremde Truppen auf der Karte
+//   2004 Gruppen     - beziehen sich auf die Bauten der Vorlage
+//   2005 Mauerkanten - dito
+//   2013 Sonstiges   - dito
+// Pausenmuster wie in den Abbot-Dateien: erster Eintrag 0, Rest -1.
+const neu = writeAivMit(orig, {
+  bauten, schritte,
+  pausen: [0],
+  einheiten: [],
+  leeren: [2004, 2005, 2013],
+});
 fs.mkdirSync(path.dirname(path.resolve(ziel)), { recursive: true });
 fs.writeFileSync(ziel, neu);
 
@@ -87,5 +99,8 @@ console.log(`  Mauerstuecke: ${gesetzt}, Bauschritte ${nummern[0]} bis ${nummern
 console.log(`  Raster: x ${spalten[0]}..${spalten[spalten.length - 1]} und y ${zeilen[0]}..${zeilen[zeilen.length - 1]}, Schrittweite 2`);
 console.log(`  je Bauschritt genau ein Feld: ${mehrfach.length === 0 ? 'ja' : 'NEIN (' + mehrfach.length + ' Ausreisser)'}`);
 console.log(`  Luecken in der Schrittfolge: ${luecken}`);
+const echtePausen = (w.pausen || []).filter(v => v > 0);
+const einheitenZeilen = (w.einheiten || []).filter(r => r.some(v => v !== 0)).length;
 console.log(`  2007 ${g.packed ? 'gepackt' : 'ROH'}, lesbar ${g.ok ? 'ja' : 'NEIN'} - 2009 steht auf ${w.anzahlSchritte}`);
+console.log(`  Pausen: ${echtePausen.length ? echtePausen.join(', ') : 'keine'}   Einheiten: ${einheitenZeilen ? einheitenZeilen + ' Zeilen' : 'keine'}`);
 console.log(`  Datei ${orig.length} -> ${neu.length} Byte`);
