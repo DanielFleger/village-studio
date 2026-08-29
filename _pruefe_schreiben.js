@@ -59,7 +59,9 @@ for (const p of dateien) {
     // alle nicht angefassten Abschnitte muessen Byte fuer Byte gleich sein
     const a = readAiv(orig), b = readAiv(neu);
     for (const m of a.meta) {
-      if (m.id === 2007) continue;
+      // 2007 wurde geaendert; 2004 und 2005 werden dabei absichtlich
+      // mitgezogen, weil sie die Zusammengehoerigkeit der Felder halten.
+      if (m.id === 2007 || m.id === 2004 || m.id === 2005) continue;
       if (Buffer.compare(a.roh[m.id], b.roh[m.id]) !== 0)
         throw new Error(`Abschnitt ${m.id} wurde mit veraendert`);
       if (a.meta.find(x => x.id === m.id).packed !== b.meta.find(x => x.id === m.id).packed)
@@ -68,6 +70,14 @@ for (const p of dateien) {
     const g = b.meta.find(x => x.id === 2007);
     if (!g.packed) throw new Error('2007 wurde roh geschrieben');
     if (!g.ok) throw new Error('2007 laesst sich nicht mehr entpacken: ' + g.note);
+    // Probe 3: die Umrisse muessen zu den geschriebenen Bauten passen
+    const { baueUmrisse } = require('./lib/umrisse');
+    const soll = baueUmrisse(nach.bauten, nach.schritte, nach.gruppen, nach.mauern);
+    let uAbw = 0;
+    for (let i = 0; i < bauten.length; i++)
+      if (nach.gruppen[i] !== soll.gruppen[i] || nach.mauern[i] !== soll.umrisse[i]) uAbw++;
+    if (uAbw) throw new Error(`${uAbw} Felder mit unpassendem Umriss`);
+
     aender++;
   } catch (e) { aenderFehler.push(`${path.basename(p)}: ${e.message}`); }
 }
@@ -76,5 +86,5 @@ console.log(`Dateien geprueft: ${n}`);
 console.log(`Probe 1  unveraendert = byteidentisch: ${gleich}/${n}`);
 if (ungleich.length) console.log('  Abweichungen:\n    ' + ungleich.slice(0, 8).join('\n    '));
 if (fehler.length) console.log('  Fehler:\n    ' + fehler.slice(0, 8).join('\n    '));
-console.log(`Probe 2  Feld geaendert, Rest unberuehrt: ${aender}/${n}`);
+console.log(`Probe 2  Feld geaendert, Rest unberuehrt, Umrisse stimmig: ${aender}/${n}`);
 if (aenderFehler.length) console.log('  Fehler:\n    ' + aenderFehler.slice(0, 8).join('\n    '));
