@@ -28,6 +28,23 @@ node _pruefe_gebaeude.js      # Namenstabelle gegen die echten Dateien
 node _untersuche_nummer.js 93 # eine Bau-Nummer im Detail ansehen
 ```
 
+## Was wir wissen
+
+`doku/Wissensstand.md` ist das Woerterbuch: alle Erkenntnisse ueber das
+AIV-System an einer Stelle, jede mit Beleglage - belegt, gemessen, abgelesen,
+vermutet oder widerlegt. Wer hier etwas nachschlaegt, sieht sofort, ob er sich
+darauf verlassen kann. Die widerlegten Annahmen stehen mit drin, damit
+dieselben Irrtuemer nicht wiederkommen.
+
+Daneben:
+
+| Datei | Inhalt |
+|---|---|
+| `doku/AIV-im-Speicher.md` | Bauliste im laufenden Spiel, Adressen und Aufbau |
+| `doku/Abreissen.md` | Gebaeude, Mauern und einzelne Bauschritte abreissen |
+| `doku/AIV-tauschen.md` | einer laufenden KI einen anderen Bauplan geben |
+| `doku/ghidra/` | die Skripte, mit denen das alles herausfaellt |
+
 ## Zwei Dinge, die man wissen muss
 
 **Die Gepackt-Kennung ist nicht optional.** In allen 129 Originaldateien auf

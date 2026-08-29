@@ -57,7 +57,11 @@ for (const p of plaetze) {
   if (gesetzt >= ANZAHL) break;
   if (p.x >= KEEP.x0 && p.x <= KEEP.x1 && p.y >= KEEP.y0 && p.y <= KEEP.y1) continue;
   const i = p.y * G + p.x;
-  if (bauten[i] && schritte[i] === 1) continue;      // nichts aus Schritt 1 ueberschreiben
+  // Kartenrand und Bergfried sind tabu. Die Bauflaeche (2) darf weichen - sie
+  // ist nur eine Reservierung, kein Bauwerk. Sonst haetten beide Seiten
+  // unterschiedlich viele Plaetze und der Vergleich waere schief: rechts vom
+  // Bergfried liegen vier Rasterplaetze unter der Flaeche.
+  if (bauten[i] === 1 || bauten[i] === 38) continue;
   schritt++;
   bauten[i] = MAUER;
   schritte[i] = schritt;
@@ -95,7 +99,7 @@ const g = w.meta.find(m => m.id === 2007);
 
 console.log(`${path.basename(vorlage)} -> ${path.basename(ziel)}   (${seite})`);
 console.log(`  Schritt 1 uebernommen: ${uebernommen} Felder (Kartenrand, Bergfried, Bauflaeche)`);
-console.log(`  Mauerstuecke: ${gesetzt}, Bauschritte ${nummern[0]} bis ${nummern[nummern.length - 1]}`);
+console.log(`  Mauerstuecke: ${gesetzt}${gesetzt < ANZAHL ? '  ACHTUNG: ' + ANZAHL + ' gefordert' : ''}, Bauschritte ${nummern[0]} bis ${nummern[nummern.length - 1]}`);
 console.log(`  Raster: x ${spalten[0]}..${spalten[spalten.length - 1]} und y ${zeilen[0]}..${zeilen[zeilen.length - 1]}, Schrittweite 2`);
 console.log(`  je Bauschritt genau ein Feld: ${mehrfach.length === 0 ? 'ja' : 'NEIN (' + mehrfach.length + ' Ausreisser)'}`);
 console.log(`  Luecken in der Schrittfolge: ${luecken}`);
