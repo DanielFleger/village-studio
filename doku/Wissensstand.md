@@ -27,7 +27,7 @@ gesichert halten.
 | Packung ist PKWare-DCL-Implode, nicht zlib; 12 Byte Kopf mit Länge, Länge, CRC32 | **belegt** | Sourcehold plus eigener Ent- und Packer, Rundlauf über 152 Dateien |
 | Abschnitte 2004, 2005, 2007, 2008, 2013 sind **immer** gepackt, alle anderen roh | **gemessen** | 129 Originaldateien, davon 111 aus dem Spiel — kein Gegenbeispiel |
 | Abschnitt 2009 ist der größte benutzte Bauschritt **plus eins** | **gemessen** | 146 von 148 Dateien; die zwei Ausnahmen hatte unser eigenes Werkzeug falsch geschrieben |
-| Abschnitt 2010 ist der Schritt, den der Editor beim Öffnen zeigt; meist gleich 2009 | **gemessen** | 100 von 128 Dateien. Die Abweichler sind offenbar der Stand, bei dem der Autor zuletzt aufgehört hat. **Wer 2009 ändert, muss 2010 mitziehen** — sonst meldet der Editor eine Schrittzahl, die es in der Datei gar nicht gibt |
+| Abschnitt 2010 ist der Schritt, den der Editor beim Öffnen zeigt; meist gleich 2009 | **belegt** | 100 von 128 Dateien. Die Abweichler sind offenbar der Stand, bei dem der Autor zuletzt aufgehört hat. **Wer 2009 ändert, muss 2010 mitziehen** — sonst meldet der Editor eine Schrittzahl, die es in der Datei gar nicht gibt |
 | Lücken in der Bauschritt-Folge sind erlaubt | **belegt** | `nocturne_rat1.aiv` hat 562 Lücken, `Brandon.aiv` 86 — beides echte, benutzte Dateien |
 | Bauschritt 1 enthält Kartenrand, Bergfried und Baufläche zusammen | **gemessen** | 144 von 152 Dateien. Ausnahmen: 5-mal ohne Kartenrand, 2-mal `[1,20]`, 1-mal nur `[1]` |
 | Die Baufläche (Nr. 2) trägt eigene Bauschrittnummern, in Rotkäppchen bis 961 | **gemessen** | Wer eine KI bei Schritt N stoppen will, muss sie mitstreichen |
@@ -36,7 +36,7 @@ gesichert halten.
 | Der Bergfried steht im Gitter auf (43,43) bis (49,49) | **belegt** | 142 von 147 Dateien, und `setKeepOffsetAndOrientation` rechnet `keepX - 0x2B` = 43 |
 | **Abschnitt 2004 ist die Kantenlänge des Bauwerks**, auf jedem seiner Felder — Wachturm 3, Hütte 4, Marktplatz 5, Bergfried 7, Kirche 9, Kathedrale 13 | **belegt** | 128 Dateien, für echte Gebäude ohne eine einzige Abweichung. Der bisherige Name „Gebäudegruppen" war irreführend |
 | **Abschnitt 2005 ist die Lage des Feldes im Bauwerk**, als Ziffer 1–9: 1 oben links, 2 oben rechts, 3 unten rechts, 4 unten links, 5 obere Kante, 6 rechte, 7 untere, 8 linke, 9 innen | **belegt** | dieselbe Messung; bisher „Mauerkanten" genannt |
-| Ohne passende 2004/2005 zerfällt ein Gebäude in Einzelfelder — ein 3×3-Holzfäller wird zu neun Holzfällern | **belegt** | im Editor gesehen, und die Regel erklärt es |
+| Ohne passende 2004/2005 zerfällt ein Gebäude in Einzelfelder — ein 3×3-Holzfäller wird zu neun Holzfällern | **belegt** | im Editor gesehen, und nach der Korrektur im Editor gegengeprüft: Gebäude erscheinen wieder als ein Stück, die Schrittzahl bleibt über mehrfaches Öffnen und Blättern stabil |
 | Mauerwerk trägt in 2004 mal 0, mal 1 — die Regel dahinter ist unbekannt | **offen** | über 128 Dateien überwiegt die 1 (93,5 % gegen 89,3 %) |
 | Gräben und Baufläche folgen in 2004/2005 einer eigenen Logik | **offen** | Gräben tragen 2 oder 3 und haben einen Umriss |
 
