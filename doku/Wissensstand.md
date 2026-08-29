@@ -138,6 +138,31 @@ PlayerData +0x46C startResources int[25]   +0x4D0 currentResources int[25]
 
 `totalGameTicksUnk` = `0x0117CADC`, `dayTicks` = `0x011BC680`, danach Woche und Monat.
 
+**Die Kalenderzähler sind Restwerte des Tickzählers**, keine eigenständigen Uhren:
+
+| Einheit | Ticks | entspricht | Marke |
+|---|---|---|---|
+| Tag | 50 | — | **belegt** |
+| Woche | 200 | 4 Tage | **belegt** |
+| Monat | 800 | 4 Wochen | **belegt** |
+| Jahr | 9.600 | 12 Monate | **gemessen** (Monat belegt, 12 aus der Anzeige) |
+
+Beleg (Sitzung danie-02, 29.08.2026, laufendes Gefecht): Aus `totalGameTicksUnk` wurden Tag, Woche und Monat **vorhergesagt** und gegen `0x011BC680`/`+4`/`+8` geprüft — sechs Messpunkte, drei unabhängige Vorhersagen, keine Abweichung. `dayTicks = Tick mod 50`, `weekTicks = Tick mod 200`, `monthTicks = Tick mod 800`.
+
+Warnung aus dem eigenen Irrtum: Mit nur zwei Messpunkten ergab sich fälschlich 1600 für den Monat — der dritte Punkt hat es widerlegt. Bei Modulo-Werten braucht es mindestens drei Punkte.
+
+Das erklärt auch die 50er-Schrittweite im Bauprotokoll: **Die KI baut auf Tagesgrenzen.**
+
+### Spieltempo
+
+`gameSpeed` = `0x01FE7DD8` (Vorgabewert 0x28 = 40, gesetzt in `determineGameTicksToPerform` `0x00487A30`).
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **Ticks pro Sekunde = Tempowert** | **belegt** | Formel bei `0x487B42`: `1000 / gameSpeed` = Millisekunden je Tick. Gemessen im Spiel bei 20/50/100/200 → 20,0 / 50,0 / 99,8 / 199,8 Ticks/s |
+| Höchstens 11 Ticks je Bild | **abgelesen** | `0x487BFF`: bei mehr als 10 Tickzeiten Rückstand wird 0xB zurückgegeben. Die Bildrate ist damit die zweite Grenze — bei 60 fps rund 660 Ticks/s |
+| Der Wert ist zur Laufzeit frei schreibbar | **belegt** | `core.writeInteger(0x1FE7DD8, n)` wirkt sofort, ohne Nebenwirkungen (Sitzung danie-02) |
+
 ## 4. Verhalten
 
 | Aussage | Marke | Beleg |
@@ -181,6 +206,32 @@ Bits im `LogicLayer`, Enum `Logic1` — **abgelesen**:
 | Nach dem Bau setzt die KI einen Wartezähler: **Mauer 20, Treppe 1, Pechgraben 200** | **abgelesen** | `wait`-Feld im Bauschritt. Ob das Ticks sind, ist die Frage, die die Messburgen klären |
 | Gold steht in `currentResources[15]` | **vermutet** | aus der Struktur geschlossen, Anzeige nicht verglichen |
 
+## 5b. Im laufenden Gefecht erprobt
+
+Alles hier wurde am 28./29.08.2026 im laufenden Spiel gemacht und von Daniel im Bild bestätigt (Sitzung danie-02, Modul `villagestudio` mit nachladbarer `logik.lua`).
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Eine AIV lässt sich **mitten im Gefecht** auf eine KI legen und wirkt sofort | **belegt** | `setAIVFileForAI` + `tryPlaceAIV` (`0x4F14F0`) + `applyAIV` (`0x4EF0D0`) in einem Tick. Sichtbar: die KI baut ab dem nächsten Tick nach dem neuen Plan |
+| `tryPlaceAIV` liefert mitten im Gefecht fast immer `-2` | **belegt** | `computeAIVPlacementFit` (`0x4EF8C0`) prüft jede Kachel mit `isBuildingPlacementAllowedAtTile`; bebauter Boden zählt als Fehlschlag. Die Prüfung ist für den Gefechtsaufbau gedacht — der Rückgabewert muss **ignoriert** werden, sonst wirkt nichts |
+| Rückgabewerte kommen **vorzeichenlos** aus `core.exposeCode` | **belegt** | `-2` erschien als 4294967294. Ohne Rückrechnung wird ein Fehlschlag als Erfolg gelesen |
+| Bauschritte lassen sich zur Laufzeit gezielt abschalten | **belegt** | `buildStatus = 4` bei `0x4ED465`, geprüft mit 74 Mauer-/Turm-/Torhausschritten: die KI baut ihr Dorf, aber keine Mauer mehr |
+| `destroyBuilding` (`0x41A7A0`) reißt **immer die ganze Gruppe** bei `+0x2BC` mit ab | **belegt** | Schleife ab `0x41A80F`. Ohne Gruppenschutz fiel der Bergfried, obwohl sein Typ geschont war: 52 abgerissen, 17 „verschont", danach war er trotzdem weg |
+| Der Mauerabriss über `destroyWall` funktioniert | **belegt** | 421 Kacheln in 5 Paketen entfernt, im Bild bestätigt. Damit ist offene Frage 6 beantwortet |
+| Die Kachel-Ebenen haben **80.400** Einträge | **belegt** | Lesen bis 160.000 liefert Zufallswerte — 108 „Mauerkacheln" waren frei erfunden |
+| Das Spiel lässt sich per Speicherschreiben pausieren | **belegt** | `0x1FEA054` auf 1; `processGameTick+0x116` prüft den Wert. Der Schriftzug „Spiel pausiert" bleibt aus, der Takt steht trotzdem |
+| Ein UCP3-Modulhaken am Anfang von `processGameTick` läuft **auch während der Pause** | **belegt** | Der Haken sitzt vor der Pausenprüfung. Befehle kommen also auch im pausierten Zustand an |
+| `applyAIV` überschreibt einen Bauschritt nur, wenn dessen Mengenfeld leer ist | **vermutet** | Nach dem Nullen von Zustand, Menge, Typ und Position kamen die frühen Schritte durch. Welches der vier Felder es war, ist nicht einzeln geprüft |
+| Der Bauzeiger muss nach `applyAIV` selbst genullt werden | **belegt** | Im Log stand vor dem Reset der alte Wert (41), das Spiel setzt ihn nicht zurück |
+
+### Zwei Fallen, die uns Stunden gekostet haben
+
+**Die Bauliste hat 1000 Einträge, nicht 0x922.** Eine Nullungsschleife über 0x922 Einträge überschreibt den Kopf des Folgeslots — der betroffene Spieler verliert seinen AIV-Slot und baut nie wieder. Sichtbar nur als `kein AIV-Slot fuer Spieler N` im Log.
+
+**Die Feld-Offsets zählen ab dem Slot, nicht ab dem Eintrag.** `entryAddr(slot, nr)` liefert die Basis; Zustand, Typ und Position liegen bei `+0x38`, `+0x3A`, `+0x40`. Wer ab `+0` nullt, trifft die Spielernummer im Slotkopf.
+
+---
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
@@ -202,10 +253,10 @@ Damit die Irrtümer nicht wiederkommen.
 
 1. **Warum bleiben nach dem Umbau frühe Schritte ungebaut?** Die Bauschleife startet nachweislich bei 1, überspringt also nichts. Bleiben drei Erklärungen: der Schritt steht auf `disabled` (Mapper-Typ 0), `currentStepGoal` ist zu klein, oder die Armutsbremse greift. Messung: `currentStepGoal`, `aivPoorCounter` und der `buildStatus` der ersten Schritte.
 2. **Wie viele Ticks braucht ein Bauschritt?** Dafür sind `Burg_left_1` und `Burg_right_1` gebaut.
-3. **Wie viele Ticks hat eine Sekunde?** Tick-Zähler zweimal im Abstand echter Sekunden lesen, je Geschwindigkeitsstufe.
+3. ~~**Wie viele Ticks hat eine Sekunde?**~~ **Beantwortet** am 29.08.2026: Ticks pro Sekunde = Tempowert, siehe Abschnitt *Spieltempo*. Ein Jahr sind 9.600 Ticks.
 4. **Gibt es einen Anlaufpuffer am Anfang?** Sichtbar, wenn die ersten Mauern langsamer kommen als die späteren.
 5. **Baut das Spiel eine von Village Studio geschriebene AIV wirklich?** Der Schreiber ist an 152 Dateien geprüft, aber nie im Spiel.
-6. **Greift der Mauerabriss?** Rezept steht, im Spiel nicht erprobt.
+6. ~~**Greift der Mauerabriss?**~~ **Beantwortet** am 29.08.2026: Ja, 421 Kacheln entfernt, im Bild bestätigt. Zwei Korrekturen am Rezept: die echten Mauerbits sind `0x100|0x200|0x800|0x10000|0x400000`, und die Besitzer-Ebene zählt **ab 0** — Spieler 3 steht dort als 2.
 
 ## Wie man selbst nachsieht
 
