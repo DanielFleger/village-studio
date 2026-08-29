@@ -166,7 +166,27 @@ Messbedingungen: Tempo 100, Gold auf 50.000 gesetzt (sonst greift die Armutsbrem
 
 Daraus folgt für die Praxis: Eine Burg mit *n* Bauschritten braucht *n* Spieltage. 450 Mauern = 449 Tage = 22.450 Ticks; bei Tempo 100 sind das 224 Sekunden, im Spiel gut 28 Monate.
 
-Warum 5 Schritte ausblieben, ist **offen** — vermutlich Gelände (Fels, Baum) auf genau diesen Rasterplätzen.
+Warum 5 Schritte ausblieben, ist **offen** — vermutlich Gelände (Fels, Baum) auf
+genau diesen Rasterplätzen. Ihre Lage im Gitter, aus `Burg_left_1.aiv` nachgerechnet:
+
+| Schritt | Kachel | Rasterzeile / Spalte |
+|---|---|---|
+| 116 | 24, 34 | 7 / 9 |
+| 131 | 24, 36 | 8 / 9 |
+| 225 | 32, 48 | 14 / 13 |
+| 346 | 34, 64 | 22 / 14 |
+| 437 | 6, 78 | 29 / 0 |
+
+**116 und 131 liegen im Raster direkt untereinander** — dieselbe Spalte, zwei
+Kacheln Abstand. Bei fünf zufällig verteilten Ausfällen unter 450 Plätzen wäre
+ein benachbartes Paar unwahrscheinlich; ein Hindernis, das zwei Rasterplätze
+gleichzeitig verdeckt, erklärt es dagegen zwanglos. Die Schrittnummern selbst
+zeigen kein Muster (Abstände 15, 94, 121, 91).
+
+Für den Wiederholungslauf heißt das: Kommen dieselben fünf Kacheln wieder, ist
+es das Gelände. Zur Gegenprobe könnte man die Messburg um zwei Felder
+verschieben — dann müssten andere Schrittnummern ausfallen, aber wieder
+dieselben Kartenstellen.
 
 ### Spieltempo
 
@@ -218,7 +238,7 @@ Bits im `LogicLayer`, Enum `Logic1` — **abgelesen**:
 | Mauerkacheln entfernt man mit `damage = 0`, `height = DefaultHeightLayer[tile]`, `logic = 0` | **vermutet** | aus `destroyWall` rückwärts erschlossen, im Spiel **nicht** geprüft |
 | **Mauern kosten die KI nichts** — im Mauerzweig von `aiPlaceAIVBuilding` steht kein einziger Abzug | **abgelesen** | `processPlacementResourceLossForBuildingType` (`0x41BFD0`) wird nur von `placeBuilding`, `aiCreateSiegeUnits` und `ClickPlaceSiegeTent` gerufen, nicht aus dem Mauerpfad |
 | **Aber:** war ein Mauerschritt schon einmal gebaut, verlangt die KI mindestens 1 Stein im Lager, sonst fordert sie 5 Stein an und baut nicht | **abgelesen** | `aiPlaceAIVBuilding` Zeile 129: `if (currentResources[4] < 1)`. Beim **ersten** Bau greift die Prüfung nicht |
-| Nach dem Bau setzt die KI einen Wartezähler: **Mauer 20, Treppe 1, Pechgraben 200** | **abgelesen** | `wait`-Feld im Bauschritt. Ob das Ticks sind, ist die Frage, die die Messburgen klären |
+| Nach dem Bau setzt die KI einen Wartezähler: Mauer 20, Treppe 1, Pechgraben 200 | **abgelesen** | `wait`-Feld im Bauschritt. Das sind **keine Ticks** — siehe Abschnitt *Bautempo* |
 | Gold steht in `currentResources[15]` | **vermutet** | aus der Struktur geschlossen, Anzeige nicht verglichen |
 
 ## 5b. Im laufenden Gefecht erprobt
