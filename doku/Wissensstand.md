@@ -153,6 +153,21 @@ Warnung aus dem eigenen Irrtum: Mit nur zwei Messpunkten ergab sich fälschlich 
 
 Das erklärt auch die 50er-Schrittweite im Bauprotokoll: **Die KI baut auf Tagesgrenzen.**
 
+### Bautempo
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **Ein Bauschritt dauert genau 50 Ticks — also einen Spieltag** | **belegt** | Messburg `Burg_left_1` (450 Einzelmauern), 445 gebaute Schritte, Formel `Tick = 2153 + (Schritt-2)*50` trifft **alle 445 ohne eine einzige Abweichung** |
+| Ein Schritt, der nicht gebaut werden kann, verbraucht seinen Tag trotzdem | **belegt** | 5 Schritte blieben aus (116, 131, 225, 346, 437), die Formel gilt danach unverändert weiter — die Uhr läuft also mit |
+| `wait = 20` bei Mauern bedeutet **nicht** 20 Ticks | **belegt** | Mauern entstanden im Abstand von 50 Ticks, nicht 20. Der Zähler sinkt je Baudurchgang, nicht je Tick |
+| Es gibt **keinen** Anlaufpuffer am Anfang | **belegt** | Der erste Abstand ist wie alle anderen 50 Ticks (offene Frage 4 damit beantwortet) |
+
+Messbedingungen: Tempo 100, Gold auf 50.000 gesetzt (sonst greift die Armutsbremse — Spieler 3 hatte vorher nur 1.358), Mauern als Messfühler, weil sie beim ersten Bau nichts kosten.
+
+Daraus folgt für die Praxis: Eine Burg mit *n* Bauschritten braucht *n* Spieltage. 450 Mauern = 449 Tage = 22.450 Ticks; bei Tempo 100 sind das 224 Sekunden, im Spiel gut 28 Monate.
+
+Warum 5 Schritte ausblieben, ist **offen** — vermutlich Gelände (Fels, Baum) auf genau diesen Rasterplätzen.
+
 ### Spieltempo
 
 `gameSpeed` = `0x01FE7DD8` (Vorgabewert 0x28 = 40, gesetzt in `determineGameTicksToPerform` `0x00487A30`).
@@ -252,10 +267,10 @@ Damit die Irrtümer nicht wiederkommen.
 ## 7. Offene Fragen
 
 1. **Warum bleiben nach dem Umbau frühe Schritte ungebaut?** Die Bauschleife startet nachweislich bei 1, überspringt also nichts. Bleiben drei Erklärungen: der Schritt steht auf `disabled` (Mapper-Typ 0), `currentStepGoal` ist zu klein, oder die Armutsbremse greift. Messung: `currentStepGoal`, `aivPoorCounter` und der `buildStatus` der ersten Schritte.
-2. **Wie viele Ticks braucht ein Bauschritt?** Dafür sind `Burg_left_1` und `Burg_right_1` gebaut.
+2. ~~**Wie viele Ticks braucht ein Bauschritt?**~~ **Beantwortet** am 29.08.2026: genau 50 Ticks, also ein Spieltag. Siehe Abschnitt *Bautempo*.
 3. ~~**Wie viele Ticks hat eine Sekunde?**~~ **Beantwortet** am 29.08.2026: Ticks pro Sekunde = Tempowert, siehe Abschnitt *Spieltempo*. Ein Jahr sind 9.600 Ticks.
-4. **Gibt es einen Anlaufpuffer am Anfang?** Sichtbar, wenn die ersten Mauern langsamer kommen als die späteren.
-5. **Baut das Spiel eine von Village Studio geschriebene AIV wirklich?** Der Schreiber ist an 152 Dateien geprüft, aber nie im Spiel.
+4. ~~**Gibt es einen Anlaufpuffer am Anfang?**~~ **Beantwortet** am 29.08.2026: nein. Der erste Abstand ist wie alle anderen 50 Ticks.
+5. ~~**Baut das Spiel eine von Village Studio geschriebene AIV wirklich?**~~ **Beantwortet** am 29.08.2026: ja. `Burg_left_1` wurde im laufenden Gefecht aufgelegt und zu 445 von 450 Schritten gebaut. Der Schreiber ist damit im Spiel bestätigt.
 6. ~~**Greift der Mauerabriss?**~~ **Beantwortet** am 29.08.2026: Ja, 421 Kacheln entfernt, im Bild bestätigt. Zwei Korrekturen am Rezept: die echten Mauerbits sind `0x100|0x200|0x800|0x10000|0x400000`, und die Besitzer-Ebene zählt **ab 0** — Spieler 3 steht dort als 2.
 
 ## Wie man selbst nachsieht
