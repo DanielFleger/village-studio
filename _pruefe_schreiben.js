@@ -62,6 +62,7 @@ for (const p of dateien) {
       // 2007 wurde geaendert; 2004 und 2005 werden dabei absichtlich
       // mitgezogen, weil sie die Zusammengehoerigkeit der Felder halten.
       if (m.id === 2007 || m.id === 2004 || m.id === 2005) continue;
+      if (m.id === 2008 || m.id === 2009 || m.id === 2010) continue;
       if (Buffer.compare(a.roh[m.id], b.roh[m.id]) !== 0)
         throw new Error(`Abschnitt ${m.id} wurde mit veraendert`);
       if (a.meta.find(x => x.id === m.id).packed !== b.meta.find(x => x.id === m.id).packed)
