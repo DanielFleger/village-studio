@@ -15,9 +15,13 @@ const path = require('path');
 const { decode } = require('./lib/aiv');
 const { writeAivMit } = require('./lib/aivwrite');
 
-const [vorlage, ziel, seite, anzahlArg] = process.argv.slice(2);
+const [vorlage, ziel, seite, anzahlArg, reihenfolge = 'vorwaerts'] = process.argv.slice(2);
 if (!vorlage || !ziel || !['links', 'rechts'].includes(seite)) {
-  console.log('Aufruf: node baue_messburg.js <Vorlage.aiv> <Ziel.aiv> <links|rechts> [Anzahl]');
+  console.log('Aufruf: node baue_messburg.js <Vorlage.aiv> <Ziel.aiv> <links|rechts> [Anzahl] [vorwaerts|rueckwaerts]');
+  console.log('  rueckwaerts: dieselben Kacheln, umgekehrte Bauschritt-Reihenfolge.');
+  console.log('  Damit trennt man Gelaende von Schrittnummer: faellt dieselbe KACHEL');
+  console.log('  wieder aus, liegt es am Gelaende; faellt dieselbe NUMMER wieder aus,');
+  console.log('  an der Schrittnummer.');
   process.exit(1);
 }
 const ANZAHL = Number(anzahlArg || 300);
@@ -43,6 +47,7 @@ for (let y = 20; y <= 78; y += 2) zeilen.push(y);
 // So waechst die Burg sichtbar von oben nach unten und ist gut abzuzaehlen.
 const plaetze = [];
 for (const y of zeilen) for (const x of spalten) plaetze.push({ x, y });
+if (reihenfolge === 'rueckwaerts') plaetze.reverse();
 if (plaetze.length < ANZAHL)
   throw new Error(`nur ${plaetze.length} Plaetze im Raster, ${ANZAHL} gefordert`);
 
@@ -103,7 +108,7 @@ const mehrfach = [...proSchritt.entries()].filter(([, n]) => n !== 1);
 const luecken = nummern.length ? nummern[nummern.length - 1] - nummern[0] + 1 - nummern.length : 0;
 const g = w.meta.find(m => m.id === 2007);
 
-console.log(`${path.basename(vorlage)} -> ${path.basename(ziel)}   (${seite})`);
+console.log(`${path.basename(vorlage)} -> ${path.basename(ziel)}   (${seite}, ${reihenfolge})`);
 console.log(`  Schritt 1 uebernommen: ${uebernommen} Felder (Kartenrand, Bergfried, Bauflaeche)`);
 console.log(`  Mauerstuecke: ${gesetzt}${gesetzt < ANZAHL ? '  ACHTUNG: ' + ANZAHL + ' gefordert' : ''}, Bauschritte ${nummern[0]} bis ${nummern[nummern.length - 1]}`);
 console.log(`  Raster: x ${spalten[0]}..${spalten[spalten.length - 1]} und y ${zeilen[0]}..${zeilen[zeilen.length - 1]}, Schrittweite 2`);

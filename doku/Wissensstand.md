@@ -183,10 +183,21 @@ ein benachbartes Paar unwahrscheinlich; ein Hindernis, das zwei Rasterplätze
 gleichzeitig verdeckt, erklärt es dagegen zwanglos. Die Schrittnummern selbst
 zeigen kein Muster (Abstände 15, 94, 121, 91).
 
-Für den Wiederholungslauf heißt das: Kommen dieselben fünf Kacheln wieder, ist
-es das Gelände. Zur Gegenprobe könnte man die Messburg um zwei Felder
-verschieben — dann müssten andere Schrittnummern ausfallen, aber wieder
-dieselben Kartenstellen.
+### Die Gegenprobe: `Burg_left_2`
+
+Ein identischer Wiederholungslauf hält Gelände *und* Schrittnummer konstant und
+kann beides deshalb nicht trennen. `Burg_left_2.aiv` löst das: **exakt dieselben
+450 Kacheln, aber die Bauschritte in umgekehrter Reihenfolge vergeben.**
+
+Damit schließen sich die beiden Erklärungen gegenseitig aus:
+
+| Ursache | Ausfälle bei Schritt | an Kachel |
+|---|---|---|
+| **Gelände** | 337, 322, 228, 107, 16 | denselben wie vorher |
+| **Schrittnummer** | 116, 131, 225, 346, 437 | 16/64, 16/62, 8/50, 6/34, 34/20 |
+
+Kommt etwas Drittes heraus, war keine der beiden Erklärungen richtig — dann
+wäre es tatsächlich Zufall, und der wäre damit auch belegt.
 
 ### Spieltempo
 
