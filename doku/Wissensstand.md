@@ -229,6 +229,57 @@ Die vollständige Tabelle mit Namen und Einzeladressen liegt in `lib/kosten.json
 erzeugt von `_baue_kostentabelle.js`. 80 Einträge, davon 60 mit Namen; die
 übrigen sind Laufzeit-Nummern, die in keiner AIV vorkommen.
 
+### Einheiten
+
+```
+DAT_UnitsState = 0x01387F38
+  +0x000  maxUnitCount           uint
+  +0x004  DAT_UnitCount          uint      <- wie viele Einheiten es gibt
+  +0x00C  DAT_LastSelectedUnitID
+  +0x020  totalUnitsInSelection
+  +0x024  unitCountOfSelection   int[9]    je Spieler
+  +0x074  DAT_SelectedUnitsBitFlags byte[400]
+  +0x614  units[2500]            Unit, je 1168 Byte   = 0x0138854C
+
+Unit  +0x010 calculatedOwnerPlayerIndex int
+      +0x038 healthbar        short      Anzeige
+      +0x044 animationSpeed   int
+      +0x08C logicalState     short
+      +0x08E unitType         short      <- der Typ
+      +0x096 owner            short      <- der Spieler
+      +0x098 uid              int
+      +0x0A0 targetUID        int
+      +0x0B6/0x0B8 microXPosition / microYPosition  short
+      +0x0C8/0x0CA destinationXPosition / Y         short
+      +0x0D4 tile             int        <- Kachel, passt zu den Kartenschichten
+      +0x0D8 destinationTilePosition int
+      +0x0FA currentIndexInPathPlan   short
+      +0x0FC totalSizeOfPathPlan      short
+      +0x0FE pathPlanStart    byte[400]  <- der Wegplan
+      +0x2D4 healthPercentage short
+      +0x33E attackedUnitID   short
+      +0x3AE attackedBy       short
+      +0x3C8 health           int        <- Lebenspunkte
+      +0x3CC maxHealth        int
+      +0x3E8/0x3EA attackAtTileX / Y     short
+      +0x3F0 killedFlagUnk    short
+```
+
+Adresse von Einheit `i`: `0x0138854C + i * 1168`.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Aufbau und Adressen | **abgelesen** | im Spiel noch nicht gegengeprüft |
+| Damit sind Leben, Typ, Besitzer und Ziel je Einheit direkt schreibbar | **vermutet** | dieselbe Bauart wie beim Gebäude-Array, das im Spiel funktioniert hat |
+
+`UnitType`: 1 Bauer, 2 brennender Mann, 3 Holzfäller, 4 Bogenmacher, 5 Tunnelgräber,
+6 Jäger, 7 Steinmetz, 8 Steinbrucharbeiter, 9 Steinochse, 10 Pechmann,
+11–14 die vier Bauernhoftypen — die Kampfeinheiten folgen weiter hinten.
+
+**Was das aufschließt:** Einheiten befehligen (Ziel und Wegplan), Leben und
+Werte steuern, Einheiten verwandeln (`unitType` überschreiben), Positionen
+tauschen (`tile` tauschen). Für das Ausweichen fehlt noch die Geschossverwaltung.
+
 ### Einheitenkosten
 
 ```
