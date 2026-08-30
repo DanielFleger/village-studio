@@ -376,6 +376,21 @@ Alles hier wurde am 28./29.08.2026 im laufenden Spiel gemacht und von Daniel im 
 
 ---
 
+## 5c. Auslöser und Live-Eingriffe (30.08.2026)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Geld lässt sich zwischen Spielern verschieben, laufend und regelbasiert | **belegt** | Regel „ab 200 Gold an Verbündeten", sieben Buchungen ohne Zutun, im Spiel an der Rangliste bestätigt (4802 beim Empfänger) |
+| Die Baukosten-Tabelle bei `0x01124CF4` ist im Spiel les- und schreibbar | **belegt** | Hütte (Laufzeit-Typ 1) liest 5 Holz. Adresse von Sitzung danie-2a, im Spiel gegengeprüft |
+| **Die Kostentabelle ist vor dem Gefecht leer** | **belegt** | Beim Programmstart liest sie überall 0; `initBuildingCosts` füllt sie erst beim Kartenstart. Wer vorher liest, misst Nullen und hält die Adresse für falsch |
+| **Die Schadens-Ebene `0x1DBC2A8` führt KEINE Mauer-Gesundheit** | **belegt** | Bei sichtbar zerschossenen Mauern steht dort für alle fünf Spieler 0. `destroyWall` beschreibt sie, aber sie trägt etwas anderes |
+| Mauerverlust ist über die **Anzahl** der Mauerkacheln erkennbar | **belegt** | Zählung je Besitzerwert liefert stabile Werte (510 / 486 / 511 / 509); fällt die Zahl, ist Mauerwerk weg |
+| Die Besitzer-Ebene zählt ab 0 | **belegt** | Spieler 3 steht dort als Wert 2 |
+
+**Offen:** Wo Teilschaden an Mauern steht. Bekannt ist nur, wo er *nicht* steht.
+
+---
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
