@@ -48,9 +48,12 @@ const u1 = 0x0138854C + 1168 + 0x8C;
 if (u1 !== 0x01388A68) fehler.push(`Einheiten-Gegenprobe: 0x${u1.toString(16).toUpperCase()} statt 0x1388A68`);
 else console.log('Einheiten-Gegenprobe: units[1].logicalState = 0x1388A68 wie im Code (LEA EAX,[EBX+0xb30])');
 // Die Schleife darf NICHT ueber unitType belegt pruefen - das war der Fehler
-if (/if\s+M\.einheitTyp\(i\)\s*~=\s*0|local typ = M\.einheitTyp\(i\)\s*
-\s*if typ ~= 0/.test(lua))
+if (lua.includes('local typ = M.einheitTyp(i)') && lua.includes('if typ ~= 0 then'))
   fehler.push('jedeEinheit prueft noch ueber unitType statt ueber logicalState (+0x8C)');
+if (!lua.includes('M.einheitZustand(i) ~= 0'))
+  fehler.push('jedeEinheit prueft nicht ueber logicalState (+0x8C)');
+if (!lua.includes('for i = 1, n - 1'))
+  fehler.push('jedeEinheit startet nicht bei 1 - Slot 0 wird nie vergeben');
 if (!/UNIT_MAX/.test(lua)) fehler.push('A.UNIT_MAX fehlt - die Schleife nimmt die falsche Grenze');
 
 // Mauerbits gegen den belegten Wert
