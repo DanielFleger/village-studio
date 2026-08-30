@@ -433,6 +433,57 @@ Alles hier wurde am 28./29.08.2026 im laufenden Spiel gemacht und von Daniel im 
 
 ---
 
+## 5d. Mauerschaden und die Höhen-Ebene (30.08.2026)
+
+**Der wichtigste Fund des Tages.** Er widerlegt drei Annahmen auf einmal, mit
+denen wir stundenlang gearbeitet haben.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **Beschuss ändert die Logikbits einer Mauerkachel NICHT** | **belegt** | Gemessen im Treffer-Moment: `Logik 0x100 -> 0x100`, weg 0x0, dazu 0x0 |
+| **Die HÖHE ist die Gesundheit einer Mauerkachel** | **belegt** | Derselbe Treffer: `Hoehe 98 -> 77`. Gesunde Steinmauer hat 98 |
+| Der Schadenswert steigt beim Treffer | **belegt** | `Schaden 0 -> 1` im selben Moment |
+| Die Logikbits verschwinden erst, wenn die Kachel **ganz** fällt | **belegt** | Zählung über die Bits sinkt nur bei vollständiger Zerstörung |
+| Eine Mauerkachel lässt sich durch Zurückschreiben der Höhe im **selben Tick** heilen | **belegt** | Über 8.700 Heilungen in einem Gefecht, Mauer blieb unter Dauerbeschuss intakt |
+| Das funktioniert auch, **während feindliche Einheiten davorstehen** | **belegt** | Im Bild bestätigt — die Sperre der KI („baut nicht bei Feinden in der Nähe") gilt nur für den Bauschritt-Weg |
+| Die Höhe darf **nicht** über den Ursprungswert der Kachel gehoben werden | **belegt** | Wer allen Kacheln mit Mauerbit die maximale Mauerhöhe gibt, hebt auch den Lagerplatz an — der trägt dasselbe Bit `0x100` |
+
+### Warum alle früheren Versuche scheitern mussten
+
+Drei unabhängige Gründe, jeder allein hätte gereicht:
+
+1. **Falsches Merkmal.** Wir haben auf verschwundene Mauerbits geprüft. Die
+   verschwinden beim Beschuss nicht.
+2. **Zu grobe Zeitauflösung.** Eine Prüfung alle 25 Ticks kann einen Treffer
+   nicht im selben Tick beantworten.
+3. **Der Umweg über die Bauliste.** Selbst ein sofort geöffneter Bauschritt
+   wird erst im nächsten Baudurchgang abgearbeitet — das sind 50 Ticks, ein
+   Spieltag. Ein Nachbau „im nächsten Tick" ist über die Bauliste
+   **prinzipiell unmöglich**.
+
+Der Weg, der funktioniert, geht an der KI vorbei: Kachelhöhe direkt schreiben.
+
+### Das Rezept
+
+```lua
+-- Beim Scharfstellen: alle Mauerkacheln merken, je Mauerart die groesste
+-- Hoehe als "gesund" nehmen. Untergrenze = halbe gesunde Hoehe.
+local gesund = hoechstJeArt[logik & MAUERBIT]
+local grenze = math.floor(gesund / 2)
+if grenze > ursprungsHoehe then grenze = ursprungsHoehe end   -- nie anheben
+
+-- In jedem Tick: faellt die Hoehe unter die Grenze, zurueckschreiben.
+if core.readByte(HOEHE + k) < grenze then
+  core.writeByte(HOEHE + k, grenze)
+end
+```
+
+Mit der Untergrenze bei der Hälfte bröckelt die Mauer sichtbar, hält aber —
+das ist der beste Sichtbeweis, weil man Schaden **und** Wirkung gleichzeitig
+sieht.
+
+---
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
