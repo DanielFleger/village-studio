@@ -506,7 +506,22 @@ sieht.
 | **Gebaeude-Leben liegt bei +0x120, Maximum bei +0x122** (Basis `0xF98520 + i*0x32C`) | **belegt** | Die Ghidra-Referenz zaehlt ab Gebaeude+0x14; ohne diesen Versatz liest man falsche Bytes und die Wacht sieht nie Schaden. Beleg: `Leben 180/350 -> 1` |
 | Ein Gebaeude auf 1 Leben stirbt am naechsten Treffer | **belegt** | Extremwert-Test von Daniel. Erst das Zuruecknehmen von Zustand 3 haelt es am Leben |
 | Angreifer merken die Auferstehung nicht | **belegt** | Sie hoeren die Zerstoerung, ziehen zum naechsten Ziel und kommen zurueck - Endlosschleife |
-| **Das Einheiten-Array bei `0x0138854C`, Schrittweite 1168, ist im Spiel WIDERLEGT** | **widerlegt** | Totschlagtest: jeder besetzte Spieler muss genau einen Lord (Typ 55) haben. Gemessen: 258 Einheiten ohne Lord. Sieben Versaetze und drei Lord-Typen durchprobiert, keiner erfuellt die Bedingung. Grundadresse oder Schrittweite stimmt nicht |
+| ~~Das Einheiten-Array bei `0x0138854C` ist widerlegt~~ **Diese Schlussfolgerung war falsch** | **korrigiert 30.08. abends** | Der Lord-Test war richtig und zeigte richtig an, dass die Kette falsch ist (258 Einheiten ohne Lord). Mein Schluss daraus - "also stimmt die Grundadresse" - war jedoch **geraten**. Basis und Schrittweite sind aus dem Maschinencode von `spawnUnit` belegt; krank waren drei andere Glieder: der Belegt-Test (`logicalState` bei +0x8C statt `unitType`), der Startindex (ab 1, nicht 0) und das Zaehlfeld. Siehe Abschnitt 3 |
+
+### Die teuerste Lehre des Tages
+
+**Ein Totschlagtest widerlegt die KETTE, nicht das einzelne GLIED.**
+
+Der Lord-Test war richtig und schlug richtig an. Der Fehler kam danach: aus
+"die Kette ist falsch" wurde ohne Pruefung "also ist die Grundadresse falsch".
+Tatsaechlich waren Basis und Schrittweite gesund, und drei andere Glieder
+krank. Ergebnis: sieben Versatz-Varianten durchprobiert, die alle scheitern
+mussten, und eine richtige Adresse faelschlich als widerlegt gemeldet.
+
+Nach einem roten Test gehoert **jedes Glied einzeln geprueft** - sonst wirft
+man das gesunde weg und behaelt das kranke. Der erste Einzeltest muss dabei so
+klein sein, dass er nur EIN Glied prueft: "Slot 0 hat logicalState 0" haengt
+weder von Typnummern noch von Lord-Regeln noch von Schleifenlogik ab.
 
 ### Methodik, die sich bewaehrt hat
 
