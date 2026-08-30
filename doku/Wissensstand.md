@@ -275,7 +275,9 @@ Adresse von Einheit `i`: `0x0138854C + i * 1168`.
 | Slot 0 wird nie belegt, Vergabe beginnt bei 1 | **belegt (Code)** | `unitID = 1` und `&DAT_UnitsState.units[1]` am Schleifenkopf |
 | `units[2500]`, nicht 3000 | **belegt (Code)** | `CMP EDI,0x9c4` = 2500, und die Struktur sagt `Unit[2500]` bei `+0x614` |
 | Die Aussage vom 30.08., die Basis oder Schrittweite sei falsch | **zurückgenommen** | Beide waren richtig. Die drei Fehler steckten alle in der Schleife: Belegt-Test über `unitType`, Start bei 0, falsches Zählfeld |
-| **Im Spiel bestätigt** | **gemessen** | Der Beleg lag schon vor. Messung vom 30.08. um 21:36 (`ucp3.log`): Besitzer 0 → 258 Einheiten, **0 Lords**; Spieler 1 → 41 Einheiten, **1 Lord**; Spieler 2 → 210 Einheiten, **1 Lord**. Zwei Spieler mit exakt einem Lord — bei falscher Basis praktisch ausgeschlossen |
+| **Im Spiel bestätigt — alle fünf Tests grün** | **gemessen** | 30.08. um 23:35, Gefechtspfad-Mission 0: `maxUnitCount` 48, **48 belegte Plätze**, **null** Ausreißer bei Typ und Besitzer, Spieler 2 mit genau **einem** Lord (Typ 55) und einem Narren (57). Der Testlauf wurde ohne Menü und ohne Maus gefahren |
+| Platz 0 **wird** belegt — die Schleife läuft ab 0 | **gemessen** | `logicalState[0] = 2` bei `maxUnitCount` 48 und 47 Plätzen ab Index 1: 47 + 1 = 48. `spawnUnit` sucht zwar ab 1, aber Platz 0 wird auf anderem Weg belegt. Der Satz „Platz 0 ist nie belegt" war eine Aussage über `spawnUnit`, nicht über das Array |
+| (frühere Messung vom selben Abend) | **gemessen** | Der Beleg lag schon vor. Messung vom 30.08. um 21:36 (`ucp3.log`): Besitzer 0 → 258 Einheiten, **0 Lords**; Spieler 1 → 41 Einheiten, **1 Lord**; Spieler 2 → 210 Einheiten, **1 Lord**. Zwei Spieler mit exakt einem Lord — bei falscher Basis praktisch ausgeschlossen |
 | Der Test galt als „fehlgeschlagen", weil **Besitzer 0 mitgeprüft** wurde | **Fehler im Testsatz** | Besitzer 0 ist die neutrale Seite: Tiere und herrenlose Bauern. Die hat nie einen Lord. Der Satz hätte „jeder Spieler **ab 1**" heißen müssen |
 
 **Die schärfste Lehre des Tages:** Ein Totschlagtest ist nur so gut wie sein
