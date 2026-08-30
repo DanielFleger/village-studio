@@ -157,3 +157,84 @@ Daraus folgt: **Während eines laufenden Tests nicht nachladen.**
 
 Punkt 5 ist der wichtigste. Er kostet fünf Sekunden und hat schon zweimal eine
 Stunde gerettet — beziehungsweise gekostet, weil er vergessen wurde.
+
+---
+
+## Testen — die Lehren vom 30.08.2026
+
+An einem Tag haben drei verschiedene Fehler überlebt, obwohl jeder einen
+grünen Prüflauf hatte. Alle drei fielen erst durch einen Test, der **von außen**
+kam. Daraus vier Handgriffe, die vor jeder Messung stehen.
+
+### 1. Den Totschlagtest vorher aufschreiben
+
+Ein Satz, der falsch sein **muss**, wenn die Annahme stimmt. Vor der Messung,
+nicht danach.
+
+Beispiel, der das Einheiten-Array erledigt hat: *„Jeder ernsthaft besetzte
+Spieler hat genau einen Lord."* Gemessen: Besitzer 0 hatte 258 Einheiten und
+keinen einzigen Lord. Ende der Diskussion.
+
+Ohne diesen Satz vorher hätte man die Zahlen angesehen und eine Erklärung
+gefunden — es findet sich immer eine.
+
+### 2. Extremwerte, keine mittleren
+
+Gebäude auf **1** Lebenspunkt, nicht auf 50. Kosten auf **0**, nicht auf 10.
+Tempo auf **1**, nicht auf 20.
+
+Bei 50 Leben hätte die Todesüberwachung „funktioniert" gemeldet, obwohl sie den
+Fall gar nicht erwischt. Ein mittlerer Wert bestätigt fast jede Annahme; ein
+Extremwert bricht die falschen.
+
+### 3. Der eigene Prüfer beweist nichts
+
+`_pruefe_schreiben.js` meldete **152 von 152 grün**, während die Dateien falsch
+waren — Prüfer und Schreiber teilten dieselbe Annahme über die Abschnitte 2004
+und 2005. Gefunden hat es Daniel, indem er die Datei im Village-Editor öffnete.
+
+**Regel:** Ein selbstgebautes Prüfwerkzeug prüft die Umsetzung, nie die
+Annahme. Für die Annahme braucht es ein fremdes Werkzeug oder das laufende
+Spiel.
+
+### 4. Abgeleitet ist nicht gemessen
+
+Eine Adresse aus einer Ghidra-Struktur ist eine **Behauptung** über die Basis.
+Eine Adresse, bei der man nachsieht, wohin das Programm tatsächlich schreibt,
+ist eine **Tatsache**. Beim Weitergeben immer dazusagen, welches von beidem.
+
+Genau hier ist das Einheiten-Array gestorben: abgeleitet, als „abgelesen"
+weitergegeben, im Spiel widerlegt.
+
+---
+
+## Zu zweit testen — Arbeitsteilung
+
+Ab 31.08.2026 laufen zwei Sitzungen gleichzeitig an einem Spiel. Das geht nur
+mit klarer Trennung, sonst überschreiben wir uns gegenseitig.
+
+**Die harte Grenze:** `ucp-config.yml` hat **einen** Schreiber. Wer sie anfasst,
+sagt es vorher an. Vor jedem Testlauf prüfen, ob `villagestudio aktiv` im
+`ucp3.log` steht — sonst läuft das eigene Modul gar nicht und man misst den
+alten Stand.
+
+**Wer macht was:**
+
+| | Village Studio (diese Sitzung) | Lua-Sitzung |
+|---|---|---|
+| **Arbeitet an** | AIV-Dateien, Ghidra, Tabellen | laufendes Spiel, Speicherzugriff |
+| **Schreibt** | `lib/`, `doku/`, Werkzeuge | `logik.lua`, Modul |
+| **Beantwortet** | „Wo steht das in der exe?" | „Was passiert wirklich?" |
+| **Fasst nicht an** | `logik.lua` | `lib/*.json` |
+
+**Der Kreislauf, der heute funktioniert hat:** Village Studio liefert Adresse
+plus Totschlagtest → die Lua-Sitzung misst im Spiel → das Ergebnis geht mit
+Marke zurück in `Wissensstand.md`. Beide Richtungen sind gleich wichtig; die
+drei besten Funde am 30.08. kamen aus dem Spiel, nicht aus der Analyse.
+
+**Vor jedem Testlauf ansagen**, welche AIV geladen ist und welcher Spieler-Slot
+beschrieben wird. Zwei Sitzungen, die gleichzeitig Slot 3 beschreiben, messen
+Unsinn.
+
+**Nach jedem Fund sofort pushen.** Die andere Sitzung sieht nur, was im Repo
+steht — nicht, was in unserem Verlauf steht.
