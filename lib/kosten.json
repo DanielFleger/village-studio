@@ -1,0 +1,735 @@
+{
+ "_quelle": "Aus der exe gelesen ab 0x005C21D0 (BuildingDefinedData +0xA85C), int[110][5]. Index ist die Laufzeit-Gebaeudenummer. Im laufenden Spiel steht dieselbe Tabelle bei BuildingsState +0x18C7D4 = 0x01124CF4 und ist dort schreibbar.",
+ "_reihenfolge": [
+  "holz",
+  "stein",
+  "eisen",
+  "pech",
+  "gold"
+ ],
+ "_adresse_exe": "0x005C21D0",
+ "_adresse_laufzeit": "0x01124CF4",
+ "_eintragsgroesse": 20,
+ "kosten": {
+  "1": {
+   "name": "Huette",
+   "aiv": 80,
+   "holz": 6,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "2": {
+   "name": null,
+   "aiv": null,
+   "holz": 6,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "3": {
+   "name": "Holzfaellerhuette",
+   "aiv": 61,
+   "holz": 3,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "4": {
+   "name": "Ochsenkarren",
+   "aiv": 63,
+   "holz": 5,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "5": {
+   "name": "Eisenmine",
+   "aiv": 64,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "6": {
+   "name": "Pechgraeber",
+   "aiv": 65,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "7": {
+   "name": "Jaegerhuette",
+   "aiv": 74,
+   "holz": 5,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "8": {
+   "name": "Soeldnerposten",
+   "aiv": 39,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "9": {
+   "name": "Kaserne",
+   "aiv": 55,
+   "holz": 0,
+   "stein": 15,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "11": {
+   "name": "Waffenlager",
+   "aiv": 56,
+   "holz": 5,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "12": {
+   "name": "Bogenmacher",
+   "aiv": 51,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "13": {
+   "name": "Schmiede",
+   "aiv": 52,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 200
+  },
+  "14": {
+   "name": "Stangendreher",
+   "aiv": 50,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "15": {
+   "name": "Ruestungsschmied",
+   "aiv": 54,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "16": {
+   "name": "Gerberei",
+   "aiv": 53,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "17": {
+   "name": "Baeckerei",
+   "aiv": 77,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "18": {
+   "name": "Brauerei",
+   "aiv": 78,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "19": {
+   "name": "Kornspeicher",
+   "aiv": 70,
+   "holz": 5,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "20": {
+   "name": "Steinbruch",
+   "aiv": 62,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "22": {
+   "name": "Wirtshaus",
+   "aiv": 79,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "23": {
+   "name": "Apotheke",
+   "aiv": 84,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 150
+  },
+  "24": {
+   "name": "Ingenieursgilde",
+   "aiv": 57,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "25": {
+   "name": "Tunnelgraebergilde",
+   "aiv": 58,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "26": {
+   "name": "Marktplatz",
+   "aiv": 66,
+   "holz": 5,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "27": {
+   "name": "Brunnen",
+   "aiv": 85,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 30
+  },
+  "28": {
+   "name": "Oelbrennerei",
+   "aiv": 35,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 10,
+   "pech": 0,
+   "gold": 100
+  },
+  "29": {
+   "name": null,
+   "aiv": null,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "30": {
+   "name": "Getreidefarm",
+   "aiv": 73,
+   "holz": 15,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "31": {
+   "name": "Hopfenfarm",
+   "aiv": 75,
+   "holz": 15,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "32": {
+   "name": "Apfelplantage",
+   "aiv": 71,
+   "holz": 5,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "33": {
+   "name": "Milchviehhof",
+   "aiv": 72,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "34": {
+   "name": "Muehle",
+   "aiv": 76,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "35": {
+   "name": "Stall",
+   "aiv": 59,
+   "holz": 20,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 400
+  },
+  "36": {
+   "name": "Kapelle",
+   "aiv": 81,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 250
+  },
+  "37": {
+   "name": "Kirche",
+   "aiv": 82,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 500
+  },
+  "38": {
+   "name": "Kathedrale",
+   "aiv": 83,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 1000
+  },
+  "45": {
+   "name": "Grosses Torhaus (N-S)",
+   "aiv": 43,
+   "holz": 0,
+   "stein": 20,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "46": {
+   "name": "Kleines Torhaus (N-S)",
+   "aiv": 41,
+   "holz": 0,
+   "stein": 10,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "47": {
+   "name": null,
+   "aiv": null,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "49": {
+   "name": "Zugbruecke",
+   "aiv": 44,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "54": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 150
+  },
+  "62": {
+   "name": "Galgen",
+   "aiv": 100,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 50
+  },
+  "63": {
+   "name": "Pranger",
+   "aiv": 102,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 45
+  },
+  "64": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 40
+  },
+  "65": {
+   "name": "Maibaum",
+   "aiv": 90,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 25
+  },
+  "66": {
+   "name": "Garten",
+   "aiv": 95,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 30
+  },
+  "67": {
+   "name": "Fallgrube",
+   "aiv": 37,
+   "holz": 6,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "68": {
+   "name": "Pechgraben",
+   "aiv": 24,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 1,
+   "gold": 0
+  },
+  "70": {
+   "name": "Wasserfass",
+   "aiv": 86,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 60
+  },
+  "74": {
+   "name": "Wachturm",
+   "aiv": 30,
+   "holz": 0,
+   "stein": 10,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "75": {
+   "name": "Verteidigungsturm",
+   "aiv": 31,
+   "holz": 0,
+   "stein": 10,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "76": {
+   "name": "Geschuetzturm",
+   "aiv": 32,
+   "holz": 0,
+   "stein": 15,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "77": {
+   "name": "Eckiger Turm",
+   "aiv": 33,
+   "holz": 0,
+   "stein": 35,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "78": {
+   "name": "Runder Turm",
+   "aiv": 34,
+   "holz": 0,
+   "stein": 40,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "80": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 150
+  },
+  "81": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 150
+  },
+  "82": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 150
+  },
+  "83": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 150
+  },
+  "84": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 5
+  },
+  "86": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 50
+  },
+  "87": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 50
+  },
+  "91": {
+   "name": "Jauchegrube",
+   "aiv": 101,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 40
+  },
+  "92": {
+   "name": "Scheiterhaufen",
+   "aiv": 103,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 45
+  },
+  "93": {
+   "name": "Haengekaefig",
+   "aiv": 106,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 50
+  },
+  "94": {
+   "name": "Verlies",
+   "aiv": 104,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 40
+  },
+  "95": {
+   "name": "Streckbank",
+   "aiv": 105,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 45
+  },
+  "96": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 50
+  },
+  "97": {
+   "name": "Richtblock",
+   "aiv": 107,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 45
+  },
+  "98": {
+   "name": "Tauchstuhl",
+   "aiv": 108,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 40
+  },
+  "99": {
+   "name": "Hundezwinger",
+   "aiv": 36,
+   "holz": 10,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 100
+  },
+  "100": {
+   "name": "Statue",
+   "aiv": 92,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 30
+  },
+  "101": {
+   "name": "Schrein",
+   "aiv": 93,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 30
+  },
+  "102": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 30
+  },
+  "103": {
+   "name": "Tanzbaer",
+   "aiv": 91,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 20
+  },
+  "105": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 30
+  },
+  "110": {
+   "name": null,
+   "aiv": null,
+   "holz": 5892144,
+   "stein": 2000,
+   "eisen": 2000,
+   "pech": 10000,
+   "gold": 1819047246
+  },
+  "111": {
+   "name": null,
+   "aiv": null,
+   "holz": 1986098990,
+   "stein": 0,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "112": {
+   "name": null,
+   "aiv": null,
+   "holz": 0,
+   "stein": 0,
+   "eisen": 1935762768,
+   "pech": 1601465953,
+   "gold": 1701601613
+  },
+  "113": {
+   "name": null,
+   "aiv": null,
+   "holz": 1635200561,
+   "stein": 118,
+   "eisen": 0,
+   "pech": 0,
+   "gold": 0
+  },
+  "114": {
+   "name": null,
+   "aiv": null,
+   "holz": 1935762768,
+   "stein": 1601465953,
+   "eisen": 1701601613,
+   "pech": 1635200562,
+   "gold": 118
+  }
+ }
+}

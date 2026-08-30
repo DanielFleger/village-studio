@@ -209,6 +209,26 @@ wäre es tatsächlich Zufall, und der wäre damit auch belegt.
 | Höchstens 11 Ticks je Bild | **abgelesen** | `0x487BFF`: bei mehr als 10 Tickzeiten Rückstand wird 0xB zurückgegeben. Die Bildrate ist damit die zweite Grenze — bei 60 fps rund 660 Ticks/s |
 | Der Wert ist zur Laufzeit frei schreibbar | **belegt** | `core.writeInteger(0x1FE7DD8, n)` wirkt sofort, ohne Nebenwirkungen (Sitzung danie-02) |
 
+### Baukosten
+
+```
+in der exe        0x005C21D0   int[110][5]   (BuildingDefinedData +0xA85C)
+im laufenden Spiel 0x01124CF4  dieselbe Tabelle (BuildingsState +0x18C7D4)
+je Eintrag 20 Byte: Holz, Stein, Eisen, Pech, Gold
+Index = Laufzeit-Gebaeudenummer
+```
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Die Tabelle ist nach **Laufzeit**-Nummer indiziert | **belegt** | Die gelesenen Werte decken sich mit den bekannten Spielkosten: Hütte 6 Holz, Holzfäller 3 Holz, Brunnen 30 Gold, Stall 400, Kapelle 250, Kirche 500, Kathedrale 1000 — sieben unabhängige Treffer |
+| `initBuildingCosts` (`0x00419780`) kopiert sie beim Start aus der exe in den Speicher | **abgelesen** | Wer im laufenden Spiel ändern will, muss die Kopie bei `0x01124CF4` beschreiben, nicht die exe |
+| Adresse eines Gebäudes: `0x01124CF4 + laufzeitNr * 20` | **belegt** | aus der Struktur; die fertige Liste steht in `lib/kosten.json` |
+| `getBuildingCost` (`0x0040C5F0`) nimmt dagegen die **Mapper**-Nummer | **abgelesen** | Signatur `(BuildingsState*, MappersEnum, int* pStone, int* pGold)` — rechnet intern um |
+
+Die vollständige Tabelle mit Namen und Einzeladressen liegt in `lib/kosten.json`,
+erzeugt von `_baue_kostentabelle.js`. 80 Einträge, davon 60 mit Namen; die
+übrigen sind Laufzeit-Nummern, die in keiner AIV vorkommen.
+
 ## 4. Verhalten
 
 | Aussage | Marke | Beleg |
