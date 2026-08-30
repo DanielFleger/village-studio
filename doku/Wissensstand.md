@@ -269,7 +269,8 @@ Adresse von Einheit `i`: `0x0138854C + i * 1168`.
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| Aufbau und Adressen | **abgelesen** | im Spiel noch nicht gegengeprüft |
+| **Grundadresse `0x0138854C` und Schrittweite 1168** | **widerlegt** | Am 30.08. im Spiel geprüft: Besitzer 0 hatte 258 Einheiten und **keinen** Lord, obwohl jeder besetzte Spieler genau einen haben muss. Sieben Versatz-Varianten und drei Lord-Typkandidaten durchprobiert, keine erfüllt die Bedingung. Die Feld-Offsets dürften stimmen, die Basis oder die Schrittweite nicht |
+| Nächster Anlauf: nachsehen, wohin `spawnUnit` (`0x53E440`) schreibt | — | liefert Basis und Schrittweite als Tatsache statt als Ableitung aus der Struktur |
 | Damit sind Leben, Typ, Besitzer und Ziel je Einheit direkt schreibbar | **vermutet** | dieselbe Bauart wie beim Gebäude-Array, das im Spiel funktioniert hat |
 
 `UnitType`: 1 Bauer, 2 brennender Mann, 3 Holzfäller, 4 Bogenmacher, 5 Tunnelgräber,

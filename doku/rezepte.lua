@@ -122,6 +122,9 @@ end
 -- Gebaeude  (belegt)
 --==========================================================================
 
+-- ACHTUNG bei der Basis: das Array beginnt erst bei BUILDINGS + 0x14.
+-- Wer stattdessen mit BUILDINGS + i * 812 rechnet, liegt bei JEDEM Feld um
+-- 0x14 daneben - das Leben steht dann bei +0x120 statt +0x10C.
 function M.gebaeude(i)        return A.BUILDINGS + 0x14 + i * 812 end
 function M.gebaeudeTyp(i)     return core.readSmallInteger(M.gebaeude(i) + 0xD2) end
 function M.gebaeudeOwner(i)   return core.readSmallInteger(M.gebaeude(i) + 0xD6) end
@@ -163,7 +166,15 @@ function M.sammleGebaeude(spieler, typen, schuetzen)
 end
 
 --==========================================================================
--- Einheiten  (abgelesen, im Spiel ungeprueft)
+-- Einheiten  (WIDERLEGT - Grundadresse oder Schrittweite stimmen nicht!)
+--
+-- Am 30.08.2026 im Spiel widerlegt: Besitzer 0 hatte 258 Einheiten und keinen
+-- einzigen Lord, obwohl jeder besetzte Spieler genau einen haben muss. Sieben
+-- Versatz-Varianten und drei Lord-Typkandidaten durchprobiert, keine erfuellt
+-- die Bedingung. Die Feld-Offsets duerften stimmen, aber UNITS oder die
+-- Schrittweite 1168 nicht. NICHT BENUTZEN, bis die Adresse neu bestimmt ist -
+-- am besten ueber spawnUnit (0x53E440), also nachsehen, wohin das Spiel eine
+-- neue Einheit tatsaechlich schreibt.
 --==========================================================================
 
 M.UNIT = { LORD=55, E_ARCHER=22, E_SPEAR=24, E_PIKE=25, E_MACE=26,
@@ -249,6 +260,12 @@ end
 
 M.MAUERBITS = 0x100 + 0x200 + 0x800 + 0x10000 + 0x400000
 
+-- ACHTUNG: ein gesetztes Mauerbit heisst NICHT, dass dort eine Mauer steht.
+-- Dasselbe Bit 0x100 sitzt auch unter Lagerplaetzen, Torhaeusern und geplanten
+-- Bauten. Wer deren flache Kachel auf Mauerhoehe hebt, erzeugt Erhebungen, die
+-- keine Einheit mehr ueberquert - zwei Spielstaende sind daran gestorben.
+-- Regel: nie ueber die Ursprungshoehe einer Kachel hinaus schreiben, und nie
+-- Logikbits schreiben.
 function M.istMauer(kachel)
   return (core.readInteger(A.LOGIC + kachel * 4) & M.MAUERBITS) ~= 0
 end
