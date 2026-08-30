@@ -275,7 +275,14 @@ Adresse von Einheit `i`: `0x0138854C + i * 1168`.
 | Slot 0 wird nie belegt, Vergabe beginnt bei 1 | **belegt (Code)** | `unitID = 1` und `&DAT_UnitsState.units[1]` am Schleifenkopf |
 | `units[2500]`, nicht 3000 | **belegt (Code)** | `CMP EDI,0x9c4` = 2500, und die Struktur sagt `Unit[2500]` bei `+0x614` |
 | Die Aussage vom 30.08., die Basis oder Schrittweite sei falsch | **zurückgenommen** | Beide waren richtig. Die drei Fehler steckten alle in der Schleife: Belegt-Test über `unitType`, Start bei 0, falsches Zählfeld |
-| Im Spiel bestätigt | **offen** | `doku/test_einheiten.lua` liegt bereit — fünf Tests, Widerlegungskriterien vorher festgelegt |
+| **Im Spiel bestätigt** | **gemessen** | Der Beleg lag schon vor. Messung vom 30.08. um 21:36 (`ucp3.log`): Besitzer 0 → 258 Einheiten, **0 Lords**; Spieler 1 → 41 Einheiten, **1 Lord**; Spieler 2 → 210 Einheiten, **1 Lord**. Zwei Spieler mit exakt einem Lord — bei falscher Basis praktisch ausgeschlossen |
+| Der Test galt als „fehlgeschlagen", weil **Besitzer 0 mitgeprüft** wurde | **Fehler im Testsatz** | Besitzer 0 ist die neutrale Seite: Tiere und herrenlose Bauern. Die hat nie einen Lord. Der Satz hätte „jeder Spieler **ab 1**" heißen müssen |
+
+**Die schärfste Lehre des Tages:** Ein Totschlagtest ist nur so gut wie sein
+Satz. Dieser hier war hart formuliert, sah aus wie ein Beweis — und hat einen
+Tag lang die richtige Adresse verworfen, weil ein einziges Wort zu weit
+gefasst war. Vor der Messung gehört deshalb nicht nur der Widerlegungssatz
+aufgeschrieben, sondern auch **wofür er gilt und wofür nicht**.
 
 **Was daraus zu lernen ist:** Der Lord-Test hat richtig angezeigt, dass die Kette
 falsch ist. Die Zuweisung *„also stimmt die Basis nicht"* war danach aber

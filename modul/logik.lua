@@ -236,102 +236,159 @@ local function gebaeudewachtTick()
 end
 
 --============================================================================
--- 4b. Einheiten - Adressen aus Ghidra, im Spiel noch UNGEPRUEFT.
+-- 4b. Einheiten - Basis am 30.08.2026 aus dem Maschinencode von spawnUnit
+--     (0x53E440) BELEGT, nicht aus einer Struktur abgeleitet:
 --
--- Totschlagtest (vorher festgelegt): Jeder lebende Spieler hat GENAU EINEN
--- Lord (Typ 55). Nicht null, nicht mehrere. Zufallsdaten erfuellen das
--- praktisch nie - stimmt es, ist die Struktur belegt; stimmt es nicht, sind
--- die Adressen falsch. Kein Schreibzugriff, reine Messung.
+--       0053e443  MOV ECX,0x1              Vergabe beginnt bei 1
+--       0053e44b  LEA EAX,[EBX + 0xb30]    units[1].logicalState = 0x01388A68
+--       0053e451  CMP word ptr [EAX],0x0   belegt-Test: logicalState gegen 0
+--       0053e465  ADD EAX,0x490            Schrittweite 1168
+--       0053e472  CMP EDI,dword ptr [EBX]  Grenze = UnitsState+0x00
+--       0053e46a  CMP EDI,0x9c4            2500 Plaetze
+--
+--     UnitsState = 0x01387F38, units[] bei +0x614 -> units[0] = 0x0138854C
+--     Gegenprobe: 0x0138854C + 1168 + 0x8C = 0x01388A68  geht auf
+--
+-- WARUM DER ERSTE ANLAUF SCHEITERTE - vier Fehler, KEINER in der Adresse:
+--   1. Belegt-Test ueber Leben bzw. Typ. Ein freier Platz behaelt beides von
+--      der gestorbenen Einheit. Das Spiel prueft logicalState (+0x8C).
+--   2. Schleife ab 0. Platz 0 wird nie vergeben.
+--   3. Grenze 0x01387F3C (DAT_UnitCount) statt 0x01387F38 (maxUnitCount).
+--   4. DER EIGENTLICHE FEHLER: Besitzer 0 wurde als Spieler mitgeprueft.
+--      Besitzer 0 ist die neutrale Seite - Tiere und herrenlose Bauern.
+--      Die hat nie einen Lord. Der Messwert vom 30.08. um 21:36 war in
+--      Wahrheit ein Treffer:  Spieler 1 -> 1 Lord,  Spieler 2 -> 1 Lord.
 --============================================================================
 
-local EINHEITEN   = 0x0138854C
+local EINHEITEN   = 0x0138854C          -- units[0]
 local E_SCHRITT   = 1168
-local E_ANZAHL    = 0x01387F38 + 4
+local E_MAX       = 0x01387F38          -- maxUnitCount (UnitsState+0x00)
+local E_ZUSTAND   = 0x08C               -- logicalState, 0 = ULS_INVISIBLE = frei
 local E_TYP       = 0x08E
 local E_BESITZER  = 0x096
+local E_UID       = 0x098
 local E_LEBEN     = 0x3C8
 local UT_LORD     = 55
 
+-- Belegt heisst logicalState ~= 0. NICHT ueber Typ oder Leben pruefen.
+local function eBelegt(i)
+  return (core.readSmallInteger(EINHEITEN + i * E_SCHRITT + E_ZUSTAND) or 0) ~= 0
+end
+
+--============================================================================
+-- Totschlagtest - die Widerlegungskriterien stehen VOR der Messung fest.
+--
+--  1  Platz 0 ist frei.        spawnUnit vergibt ihn nie. Prueft die BASIS
+--                              allein, ohne Typnummern und ohne Lord-Regel.
+--  2  maxUnitCount in 1..2500. Sonst falsches Feld gelesen.
+--  3  Kein belegter Platz mit unsinnigem Typ (1..78) oder Besitzer (0..8).
+--                              Prueft die SCHRITTWEITE: bei falschem Abstand
+--                              wandert der Lesepunkt mit jedem Index weiter.
+--  4  Jeder Spieler AB 1 mit Einheiten hat genau einen Lord.
+--                              Besitzer 0 ist neutral und ausgenommen.
+--  5  Hoechstens 9 Lords insgesamt.
+--============================================================================
 local function einheitenBericht()
-  local anzahl = core.readInteger(E_ANZAHL)
-  if anzahl == nil or anzahl < 0 or anzahl > 2500 then
-    log(WARNING, string.format("EINHEITEN: Anzahl unplausibel (%s) - Adresse falsch.", tostring(anzahl)))
-    return true
+  local rot = 0
+  local function pruefe(nr, was, ok, gemessen)
+    if not ok then rot = rot + 1 end
+    log(INFO, string.format("  %d %s  %s   (%s)", nr, ok and "GRUEN" or "ROT  ", was, gemessen))
   end
-  local jeBesitzer, jeTyp, lords, lebend = {}, {}, {}, 0
-  for i = 0, anzahl - 1 do
-    local b = EINHEITEN + i * E_SCHRITT
-    local leben = core.readInteger(b + E_LEBEN)
-    if leben ~= nil and leben > 0 then
-      local o = core.readSmallInteger(b + E_BESITZER)
-      local t = core.readSmallInteger(b + E_TYP)
-      lebend = lebend + 1
+  log(INFO, "=== TOTSCHLAGTEST Einheiten-Array ===")
+
+  -- 1) Extremwert-Test: Platz 0 muss frei sein
+  local z0 = core.readSmallInteger(EINHEITEN + E_ZUSTAND)
+  pruefe(1, "Platz 0 ist frei (prueft die Basis)", z0 == 0,
+         "logicalState[0] = " .. tostring(z0))
+
+  -- 2) Grenze plausibel
+  local n = core.readInteger(E_MAX)
+  local nOk = n ~= nil and n >= 1 and n <= 2500
+  pruefe(2, "maxUnitCount in 1..2500", nOk, "maxUnitCount = " .. tostring(n))
+  if not nOk then n = 2500 end
+
+  -- 3) und 4) in einem Durchlauf
+  local jeBesitzer, jeTyp, lords = {}, {}, {}
+  local belegt, schlechtTyp, schlechtOwner, letzter = 0, 0, 0, -1
+  for i = 1, n - 1 do
+    if eBelegt(i) then
+      local b = EINHEITEN + i * E_SCHRITT
+      local t = core.readSmallInteger(b + E_TYP) or -1
+      local o = core.readSmallInteger(b + E_BESITZER) or -1
+      belegt = belegt + 1
       jeBesitzer[o] = (jeBesitzer[o] or 0) + 1
       jeTyp[t] = (jeTyp[t] or 0) + 1
       if t == UT_LORD then lords[o] = (lords[o] or 0) + 1 end
+      if t < 1 or t > 78 then schlechtTyp = schlechtTyp + 1; letzter = i end
+      if o < 0 or o > 8 then schlechtOwner = schlechtOwner + 1; letzter = i end
     end
   end
-  log(INFO, string.format("EINHEITEN: Zaehler %d, davon %d lebend.", anzahl, lebend))
+  pruefe(3, "kein belegter Platz mit unsinnigem Typ/Besitzer (prueft die Schrittweite)",
+         schlechtTyp == 0 and schlechtOwner == 0,
+         string.format("%d belegt, %d Typ-, %d Besitzer-Ausreisser, zuletzt bei %d",
+                       belegt, schlechtTyp, schlechtOwner, letzter))
+
+  -- 4) Lord-Test - Besitzer 0 (neutral) ausgenommen
+  local fehler, txt, geprueft = 0, {}, 0
+  for o = 1, 8 do
+    if jeBesitzer[o] and jeBesitzer[o] > 5 then
+      geprueft = geprueft + 1
+      local k = lords[o] or 0
+      txt[#txt+1] = string.format("S%d:%d", o, k)
+      if k ~= 1 then fehler = fehler + 1 end
+    end
+  end
+  pruefe(4, "jeder Spieler ab 1 hat genau einen Lord (Besitzer 0 = neutral, ausgenommen)",
+         fehler == 0 and geprueft > 0,
+         string.format("%d Spieler geprueft, Lords %s", geprueft,
+                       #txt > 0 and table.concat(txt, " ") or "keine"))
+
+  -- 5) Lords gesamt
+  local ges = 0
+  for _, k in pairs(lords) do ges = ges + k end
+  pruefe(5, "hoechstens 9 Lords insgesamt", ges <= 9, "Lords gesamt = " .. ges)
+
+  -- Zahlen zum Mitlesen
+  log(INFO, "--- belegte Einheiten je Besitzer ---")
   for o = 0, 8 do
     if jeBesitzer[o] then
-      log(INFO, string.format("   Besitzer %d : %4d Einheiten, Lords: %d",
-        o, jeBesitzer[o], lords[o] or 0))
+      log(INFO, string.format("   Besitzer %d : %4d Einheiten, Lords: %d%s",
+        o, jeBesitzer[o], lords[o] or 0, o == 0 and "   (neutral)" or ""))
     end
   end
-  -- Der Totschlagtest
-  local bestanden, spieler = true, 0
-  for o, n in pairs(jeBesitzer) do
-    if n > 5 then                      -- nur ernsthaft besetzte Spieler pruefen
-      spieler = spieler + 1
-      if (lords[o] or 0) ~= 1 then bestanden = false end
-    end
+  local liste = {}
+  for t, k in pairs(jeTyp) do liste[#liste+1] = {t, k} end
+  table.sort(liste, function(a, b) return a[2] > b[2] end)
+  log(INFO, "--- haeufigste Typen ---")
+  for i = 1, math.min(8, #liste) do
+    log(INFO, string.format("   Typ %3d : %d", liste[i][1], liste[i][2]))
   end
-  log(INFO, string.format("TOTSCHLAGTEST Lord: %s (%d Spieler geprueft, jeder muss genau 1 Lord haben)",
-    bestanden and "BESTANDEN - Struktur belegt" or "FEHLGESCHLAGEN - Adressen falsch", spieler))
+
+  log(INFO, rot == 0
+    and "=== ALLE GRUEN - Einheiten-Array im Spiel BESTAETIGT ==="
+    or string.format("=== %d ROT - Array bleibt unbestaetigt ===", rot))
   return true
 end
 
-
--- Sucht den richtigen Versatz fuer das Einheiten-Feld. Bedingung: jeder
--- ernsthaft besetzte Spieler hat GENAU EINEN Lord. Nur lesen, kein Schreiben.
-local function einheitenSuche()
-  local anzahl = core.readInteger(E_ANZAHL)
-  if anzahl == nil or anzahl < 1 or anzahl > 2500 then
-    log(WARNING, "SUCHE: Anzahl unplausibel.")
-    return true
-  end
-  local treffer = 0
-  for _, versatz in ipairs({ 0, 0x14, -0x14, 0x08, 0x10, 0x20, 0x614 }) do
-    for _, lordTyp in ipairs({ 55, 20, 30 }) do
-      local jeBes, lords = {}, {}
-      for i = 0, anzahl - 1 do
-        local b = EINHEITEN + i * E_SCHRITT + versatz
-        local leben = core.readInteger(b + E_LEBEN)
-        if leben ~= nil and leben > 0 and leben < 10000 then
-          local o = core.readSmallInteger(b + E_BESITZER)
-          local t = core.readSmallInteger(b + E_TYP)
-          if o ~= nil and o >= 0 and o <= 8 then
-            jeBes[o] = (jeBes[o] or 0) + 1
-            if t == lordTyp then lords[o] = (lords[o] or 0) + 1 end
-          end
-        end
-      end
-      local spieler, ok = 0, true
-      for o, n in pairs(jeBes) do
-        if n > 5 then
-          spieler = spieler + 1
-          if (lords[o] or 0) ~= 1 then ok = false end
-        end
-      end
-      if ok and spieler >= 2 then
-        treffer = treffer + 1
-        log(INFO, string.format("SUCHE TREFFER: Versatz 0x%X, Lordtyp %d, %d Spieler mit je genau 1 Lord.",
-          versatz, lordTyp, spieler))
-      end
+-- Zeigt die ersten belegten Plaetze roh. Zum Nachsehen, wenn ein Test rot ist.
+local function einheitenRoh(wieviele)
+  wieviele = wieviele or 12
+  local n = core.readInteger(E_MAX) or 2500
+  log(INFO, string.format("ROH: maxUnitCount = %s, Platz 0 logicalState = %s",
+    tostring(n), tostring(core.readSmallInteger(EINHEITEN + E_ZUSTAND))))
+  local gezeigt = 0
+  for i = 1, math.min(n - 1, 2499) do
+    if eBelegt(i) then
+      local b = EINHEITEN + i * E_SCHRITT
+      log(INFO, string.format("   [%4d] zustand=%s typ=%s owner=%s uid=%s leben=%s", i,
+        tostring(core.readSmallInteger(b + E_ZUSTAND)),
+        tostring(core.readSmallInteger(b + E_TYP)),
+        tostring(core.readSmallInteger(b + E_BESITZER)),
+        tostring(core.readInteger(b + E_UID)),
+        tostring(core.readInteger(b + E_LEBEN))))
+      gezeigt = gezeigt + 1
+      if gezeigt >= wieviele then break end
     end
-  end
-  if treffer == 0 then
-    log(INFO, "SUCHE: kein Versatz erfuellt die Lord-Bedingung - Grundadresse oder Schrittweite stimmt nicht.")
   end
   return true
 end
@@ -470,7 +527,9 @@ local function einzelbefehl(cmd)
 
   if cmd.bestand == true then return gebaeudeBericht(spieler) end
   if cmd.einheiten == true then return einheitenBericht() end
-  if cmd.einheitensuche == true then return einheitenSuche() end
+  if cmd.einheitenroh ~= nil then
+    return einheitenRoh(type(cmd.einheitenroh) == "number" and cmd.einheitenroh or nil)
+  end
 
   if cmd.mauerwacht ~= nil then
     if cmd.mauerwacht == false then
