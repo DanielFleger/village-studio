@@ -53,7 +53,7 @@
 
 local COMMAND_FILE   = "ucp/villagestudio/befehl.json"
 local LOGIC_FILE     = "ucp/villagestudio/logik.lua"  -- wird im Spiel nachgeladen
-local PLAN_FOLDER    = "ucp/villagestudio/aiv/"   -- hier liegen eigene Baupläne
+local PLAN_FOLDER    = "ucp/villagestudio/aiv/"   -- hier liegen eigene BauplÃ¤ne
 -- Auf 1 gesetzt: Befehlsdatei und Logik werden in JEDEM Spiel-Takt geprueft.
 -- Eine Aenderung wirkt damit im naechstmoeglichen Tick, unabhaengig vom
 -- Spieltempo. Ueber VS.setPollEvery(n) zur Laufzeit aenderbar, falls das
@@ -83,9 +83,9 @@ local addrTryPlace = scan("53 55 56 8b f1 57 8d 86 58 45 0b 00 50 6a", "tryPlace
 -- stdcall MenuView_MainMenu_DoEveryFrame() - laeuft im HAUPTMENUE jeden
 -- Bildaufbau. Der Gefechtsstart braucht diesen Haken, weil processGameTick
 -- im Menue gar nicht tickt.
--- renderBltAndFlip: schaltet das fertige Bild um, laeuft in JEDEM Durchlauf.
--- MenuView_MainMenu_DoEveryFrame (0x424DA0) tut das nicht - dort sass der
--- Haken sauber und hat im Hauptmenue trotzdem nie gefeuert.
+-- renderBltAndFlip: schaltet das fertige Bild um und laeuft damit in JEDEM
+-- Durchlauf. Die anderen Kandidaten scheiden aus: 0x424DA0 feuerte auch bei
+-- sauberer Einzelinstanz nicht, 0x440430 nur bei Zustandswechsel.
 local addrMenuFrame = scan("81 ec f4 07 00 00 a1 20 42 b9 00 33 c4 89 84 24 f0 07", "renderBltAndFlip")
 -- cdecl SetupSkirmishMode(missionNr) - setzt die Lobby auf, fuellt die
 -- KI-Gegner aus der vorgegebenen Gefechtspfad-Mission und startet.
@@ -334,9 +334,9 @@ local function readCommandFile()
   return raw
 end
 
--- Eigene Baupläne liegen in ucp/villagestudio/aiv/. Wer dort eine Datei ablegt,
+-- Eigene BauplÃ¤ne liegen in ucp/villagestudio/aiv/. Wer dort eine Datei ablegt,
 -- schreibt im Befehl nur den Namen: "file": "meineburg.aiv".
--- Ein Pfad mit Schrägstrich wird unveraendert durchgereicht (z.B. "aiv/Sultan1.aiv").
+-- Ein Pfad mit SchrÃ¤gstrich wird unveraendert durchgereicht (z.B. "aiv/Sultan1.aiv").
 local function resolveFile(file)
   if file == nil or file == "" then return file end
   if file:find("/") or file:find("\\") then return file end
@@ -508,7 +508,7 @@ local tickCounter = 0
 
 local function onTick()
   -- JEDER Tick: die nachgeladene Logik darf hier arbeiten. Damit greifen
-  -- Daueraufträge ab dem ersten Takt eines Gefechts, nicht erst Sekunden
+  -- DauerauftrÃ¤ge ab dem ersten Takt eines Gefechts, nicht erst Sekunden
   -- spaeter - unabhaengig vom Spieltempo.
   if custom ~= nil and type(custom.everyTick) == "function" then
     local ok, err = pcall(custom.everyTick)
@@ -562,8 +562,8 @@ local menuCounter = 0
 local function onMenuFrame()
   -- nicht bei jedem Bild in die Datei schauen, das kostet nur
   menuCounter = menuCounter + 1
-  if menuCounter == 1 then
-    log(INFO, "BILD-Haken feuert - der Kanal ausserhalb des Gefechts steht.")
+  if menuCounter == 1 or menuCounter % 200 == 0 then
+    log(INFO, "BILD-Haken feuert - Aufruf Nr. " .. menuCounter)
   end
   if menuCounter % 20 ~= 0 then return end
 
@@ -572,10 +572,15 @@ local function onMenuFrame()
   local ok, cmd = pcall(json.decode, json, raw)
   if not ok or type(cmd) ~= "table" then return end
   if type(cmd.gefecht) ~= "number" then return end
-  -- Nur aus dem Menue heraus starten. Laeuft schon ein Gefecht, gibt es
-  -- Einheiten - dann waere ein Neustart mitten im Spiel nur schaedlich.
-  if (core.readInteger(0x01387F38) or 0) > 1 then
-    log(WARNING, "MENUE: es laeuft bereits ein Gefecht - Startbefehl ignoriert.")
+  -- Laeuft schon ein Gefecht? Der Einheitenzaehler taugt dafuer NICHT - er
+  -- behaelt im Hauptmenue den Restwert des vorigen Gefechts. Die Spielzeit
+  -- laeuft dagegen nur im Gefecht. Mit "trotzdem": true laesst sich die
+  -- Pruefung uebergehen.
+  local ticks = core.readInteger(0x0117CADC) or 0
+  if ticks > 0 and cmd.trotzdem ~= true then
+    log(WARNING, string.format(
+      "MENUE: es laeuft bereits ein Gefecht (Tick %d) - Startbefehl ignoriert. " ..
+      "Mit \"trotzdem\": true erzwingen.", ticks))
     lastRaw = raw
     return
   end
@@ -661,3 +666,4 @@ return {
   razeVillage = function(self, player, protect) return razeVillage(player, protect) end,
   reportBuildings = function(self, player) return reportBuildings(player) end,
 }
+

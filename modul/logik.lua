@@ -296,10 +296,12 @@ local function einheitenBericht()
   end
   log(INFO, "=== TOTSCHLAGTEST Einheiten-Array ===")
 
-  -- 1) Extremwert-Test: Platz 0 muss frei sein
-  local z0 = core.readSmallInteger(EINHEITEN + E_ZUSTAND)
-  pruefe(1, "Platz 0 ist frei (prueft die Basis)", z0 == 0,
-         "logicalState[0] = " .. tostring(z0))
+  -- 1) Basis-Test ueber die Zahlen: die belegten Plaetze muessen zu
+  --    maxUnitCount passen. Belegte Plaetze liegen dicht ab 0; klafft eine
+  --    Luecke oder zaehlt es weit darueber hinaus, zeigt die Basis falsch.
+  --    (Der fruehere Satz "Platz 0 ist nie belegt" war falsch: spawnUnit
+  --    sucht ab 1, aber Platz 0 wird anderweitig belegt - gemessen
+  --    logicalState[0] = 2 bei maxUnitCount 48 und 47 Plaetzen ab 1.)
 
   -- 2) Grenze plausibel
   local n = core.readInteger(E_MAX)
@@ -310,7 +312,7 @@ local function einheitenBericht()
   -- 3) und 4) in einem Durchlauf
   local jeBesitzer, jeTyp, lords = {}, {}, {}
   local belegt, schlechtTyp, schlechtOwner, letzter = 0, 0, 0, -1
-  for i = 1, n - 1 do
+  for i = 0, n - 1 do
     if eBelegt(i) then
       local b = EINHEITEN + i * E_SCHRITT
       local t = core.readSmallInteger(b + E_TYP) or -1
@@ -323,6 +325,9 @@ local function einheitenBericht()
       if o < 0 or o > 8 then schlechtOwner = schlechtOwner + 1; letzter = i end
     end
   end
+  pruefe(1, "belegte Plaetze passen zu maxUnitCount (prueft die Basis)",
+         belegt > 0 and belegt <= n and (n - belegt) <= 2,
+         string.format("%d belegt, maxUnitCount %d", belegt, n))
   pruefe(3, "kein belegter Platz mit unsinnigem Typ/Besitzer (prueft die Schrittweite)",
          schlechtTyp == 0 and schlechtOwner == 0,
          string.format("%d belegt, %d Typ-, %d Besitzer-Ausreisser, zuletzt bei %d",

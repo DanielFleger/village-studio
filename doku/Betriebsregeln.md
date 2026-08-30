@@ -238,3 +238,65 @@ Unsinn.
 
 **Nach jedem Fund sofort pushen.** Die andere Sitzung sieht nur, was im Repo
 steht — nicht, was in unserem Verlauf steht.
+
+---
+
+## Testen ohne Menü und ohne Maus (ab 30.08.2026)
+
+Daniel startet nichts, klickt nichts und soll während eines Testlaufs
+weiterarbeiten können. Der ganze Kreislauf läuft deshalb über Dateien.
+
+### Der Kanal
+
+| Richtung | Weg |
+|---|---|
+| **Befehl hinein** | `ucp/villagestudio/befehl.json` schreiben |
+| **Logik ändern** | `ucp/villagestudio/logik.lua` überschreiben — wird im Lauf neu geladen, kein Neustart |
+| **Ergebnis heraus** | `ucp3.log` lesen |
+
+Fertige Helfer liegen in `werkzeug/`: `gefecht.py` (Gefecht starten),
+`test.py` (beliebigen Befehl absetzen und Antwort lesen), `befehl.py`.
+
+### Gefecht starten, ohne das Menü zu bedienen
+
+```json
+{ "id": 23010, "gefecht": 0 }
+```
+
+`SetupSkirmishMode(n)` bei `0x4C68D0` macht alles allein. Damit der Befehl
+außerhalb eines Gefechts überhaupt gelesen wird, hängt ein zweiter Haken an
+**`renderBltAndFlip` (`0x470040`)** — `hookCode(f, a, 2, 1, 6)`, thiscall mit
+einem Argument, 6 gestohlene Bytes.
+
+**Warum ausgerechnet der:** Der normale Befehls-Poll hängt an
+`processGameTick`, und der tickt nur **im** Gefecht. Zwei andere Kandidaten
+sind gemessen und ausgeschieden — `MenuView_MainMenu_DoEveryFrame`
+(`0x424DA0`) feuert im Hauptmenü nie, `SetCursorDependingOnProgramState`
+(`0x440430`) nur bei Zustandswechsel.
+
+### Zwei Fallen, die einen Abend gekostet haben
+
+**1. PowerShell schreibt ein BOM.** `Set-Content -Encoding UTF8` setzt in
+PowerShell 5.1 drei Bytes (`EF BB BF`) an den Dateianfang. Lua bricht ab mit
+*„unexpected symbol near '<239>'"*. **Lua- und JSON-Dateien hier immer mit
+Python schreiben**, nie mit `Set-Content` oder `Out-File`.
+
+**2. Mehrfachinstanzen verfälschen jede Messung.** Startet man das Spiel,
+während schon eines läuft, lädt die neue Instanz UCP **vollständig**
+(schreibt also Logzeilen, setzt Haken) und bleibt dann im Dialog *„Stronghold
+Crusader is already running"* stehen — sie kommt nie ins Menü. Das Log zeigt
+dann „Haken gesetzt", der Haken feuert aber nie, und man sucht den Fehler an
+der falschen Stelle.
+
+**Vor jedem Testlauf:**
+```
+Get-Process | Where-Object { $_.ProcessName -match "Crusader" } | ForEach-Object { $_.Kill() }
+```
+und danach prüfen, dass **genau eine** Instanz läuft und ihr Fenstertitel
+`Crusader` heißt (nicht `FATAL`, nicht `Stronghold Crusader Error`).
+
+### Start von Hand
+
+Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":
+`Stronghold Crusader.exe --ucp-no-security`. Ohne den Schalter verweigert der
+sichere Modus das Modul, weil es als Ordner statt als ZIP vorliegt.
