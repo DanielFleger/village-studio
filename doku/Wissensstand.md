@@ -484,6 +484,36 @@ sieht.
 
 ---
 
+## 5e. Kacheln, Gebaeude, Einheiten (30.08.2026 abends)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **Ein Mauerbit auf einer Kachel heisst NICHT, dass dort eine Mauer steht** | **belegt** | Dasselbe Bit sitzt unter Lagerplaetzen, Torhaeusern und geplanten Bauten. Wer deren flache Kachel auf Mauerhoehe hebt, erzeugt Erhebungen, ueber die niemand laeuft - Softlock. Zweimal am selben Tag passiert |
+| Eine Kachel darf **nie ueber ihre Ursprungshoehe** angehoben werden | **belegt** | Einzig verlaessliche Sicherung. Aufnahme nur, wenn die eigene Hoehe ueber dem Ziel liegt |
+| Wer Logikbits schreibt, **erzeugt** Mauern statt sie zu erhalten | **belegt** | Phantommauern ueber die halbe Karte. Eine Wacht, die nur Hoehe und Schaden schreibt, kann das prinzipiell nicht |
+| Der Schadenswert muss mitzurueckgesetzt werden | **belegt** | Sonst laeuft er hoch und das Spiel zerstoert die Kachel trotz gehaltener Hoehe - Einheiten kamen nach einer Weile durch |
+| **Gebaeude-Leben liegt bei +0x120, Maximum bei +0x122** (Basis `0xF98520 + i*0x32C`) | **belegt** | Die Ghidra-Referenz zaehlt ab Gebaeude+0x14; ohne diesen Versatz liest man falsche Bytes und die Wacht sieht nie Schaden. Beleg: `Leben 180/350 -> 1` |
+| Ein Gebaeude auf 1 Leben stirbt am naechsten Treffer | **belegt** | Extremwert-Test von Daniel. Erst das Zuruecknehmen von Zustand 3 haelt es am Leben |
+| Angreifer merken die Auferstehung nicht | **belegt** | Sie hoeren die Zerstoerung, ziehen zum naechsten Ziel und kommen zurueck - Endlosschleife |
+| **Das Einheiten-Array bei `0x0138854C`, Schrittweite 1168, ist im Spiel WIDERLEGT** | **widerlegt** | Totschlagtest: jeder besetzte Spieler muss genau einen Lord (Typ 55) haben. Gemessen: 258 Einheiten ohne Lord. Sieben Versaetze und drei Lord-Typen durchprobiert, keiner erfuellt die Bedingung. Grundadresse oder Schrittweite stimmt nicht |
+
+### Methodik, die sich bewaehrt hat
+
+**Extremwerte statt mittlerer Werte.** Daniel setzte die Gebaeude auf **1**
+Lebenspunkt - dadurch kam sofort heraus, dass die Wacht den Todesfall gar
+nicht erwischt. Bei 50 Leben haette das Gebaeude ueberlebt und der Test waere
+faelschlich als bestanden gewertet worden.
+
+**Totschlagtest vorher festlegen.** Beim Einheiten-Array war die Bedingung
+"genau ein Lord je Spieler" vor der Messung aufgeschrieben. Zufallsdaten
+erfuellen so etwas praktisch nie - der Test hat die These sauber gekippt,
+statt sie zu bestaetigen.
+
+**Falsifikation statt Bestaetigung.** Wer zeigen will, dass etwas immer gilt,
+sucht das eine Gegenbeispiel statt weiterer Belege.
+
+---
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
