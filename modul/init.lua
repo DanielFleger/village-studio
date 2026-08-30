@@ -80,6 +80,17 @@ end
 local addrApplyAIV = scan("83 ec 24 8b 44 24 28 69 c0 98 6d 00 00 53", "applyAIV")
 -- thiscall tryPlaceAIVAndReturnFitPercentage(this, slotIndex, castleIndex0based)
 local addrTryPlace = scan("53 55 56 8b f1 57 8d 86 58 45 0b 00 50 6a", "tryPlaceAIV")
+-- stdcall MenuView_MainMenu_DoEveryFrame() - laeuft im HAUPTMENUE jeden
+-- Bildaufbau. Der Gefechtsstart braucht diesen Haken, weil processGameTick
+-- im Menue gar nicht tickt.
+-- renderBltAndFlip: schaltet das fertige Bild um, laeuft in JEDEM Durchlauf.
+-- MenuView_MainMenu_DoEveryFrame (0x424DA0) tut das nicht - dort sass der
+-- Haken sauber und hat im Hauptmenue trotzdem nie gefeuert.
+local addrMenuFrame = scan("81 ec f4 07 00 00 a1 20 42 b9 00 33 c4 89 84 24 f0 07", "renderBltAndFlip")
+-- cdecl SetupSkirmishMode(missionNr) - setzt die Lobby auf, fuellt die
+-- KI-Gegner aus der vorgegebenen Gefechtspfad-Mission und startet.
+local addrSetupSkirmish = scan("8b 44 24 04 8b 0d ac 9c fe 01 8d 04 c0 c1 e0 04", "setupSkirmishMode")
+
 -- thiscall processGameTick(this)
 local addrGameTick = scan("83 3d 24 e4 91 01 00 56 8b f1 c7 05 5c 29", "processGameTick")
 
@@ -117,6 +128,8 @@ local PROTECTED = {
 local applyAIV = core.exposeCode(addrApplyAIV, 3, 1)
 local tryPlace = core.exposeCode(addrTryPlace, 3, 1)
 local destroyBuilding = core.exposeCode(addrDestroy, 2, 1)
+-- cdecl, ein Argument, kein this
+local setupSkirmish = core.exposeCode(addrSetupSkirmish, 1, 0)
 
 --[[ Slot-Suche ]]--
 
@@ -532,9 +545,54 @@ local function onTick()
   handleCommand(cmd)
 end
 
+--[[ Menue-Haken: Gefecht starten, ohne dass jemand klicken muss ]]--
+--
+-- Im Hauptmenue laeuft kein Spieltakt, also auch kein Befehls-Poll. Dieser
+-- Haken schliesst die Luecke: er liest dieselbe befehl.json und fuehrt dort
+-- NUR den Gefechtsstart aus. Alles andere braucht ein laufendes Gefecht und
+-- wird hier bewusst ignoriert, damit im Menue nichts in leere Strukturen
+-- schreibt.
+--
+-- Die Gegner sind nicht frei waehlbar: SetupSkirmishMode nimmt sie aus der
+-- vorgegebenen Gefechtspfad-Mission. Welche Liste gilt, entscheidet
+-- currentTrailType (0x01FE9CAC): 0 = Original, 1 = Warchest, 2 = Extreme.
+
+local menuCounter = 0
+
+local function onMenuFrame()
+  -- nicht bei jedem Bild in die Datei schauen, das kostet nur
+  menuCounter = menuCounter + 1
+  if menuCounter == 1 then
+    log(INFO, "BILD-Haken feuert - der Kanal ausserhalb des Gefechts steht.")
+  end
+  if menuCounter % 20 ~= 0 then return end
+
+  local raw = readCommandFile()
+  if raw == nil or raw == lastRaw then return end
+  local ok, cmd = pcall(json.decode, json, raw)
+  if not ok or type(cmd) ~= "table" then return end
+  if type(cmd.gefecht) ~= "number" then return end
+  -- Nur aus dem Menue heraus starten. Laeuft schon ein Gefecht, gibt es
+  -- Einheiten - dann waere ein Neustart mitten im Spiel nur schaedlich.
+  if (core.readInteger(0x01387F38) or 0) > 1 then
+    log(WARNING, "MENUE: es laeuft bereits ein Gefecht - Startbefehl ignoriert.")
+    lastRaw = raw
+    return
+  end
+
+  lastRaw = raw
+  log(INFO, string.format("MENUE: starte Gefechtspfad-Mission %d (Pfadart %s).",
+    cmd.gefecht, tostring(core.readInteger(0x01FE9CAC))))
+  local ok2, err = pcall(setupSkirmish, cmd.gefecht)
+  if not ok2 then
+    log(WARNING, "MENUE: Gefechtsstart fehlgeschlagen: " .. tostring(err))
+  end
+end
+
 --[[ Modul ]]--
 
 local originalGameTick = nil
+local originalMenuFrame = nil
 
 return {
   enable = function(self, config)
@@ -549,6 +607,26 @@ return {
       if not ok then log(WARNING, "villagestudio: " .. tostring(err)) end
       return r
     end, addrGameTick, 1, 1, 7)
+
+    -- MenuView_MainMenu_DoEveryFrame beginnt mit 8 Bytes an sauberer
+    -- Anweisungsgrenze: "sub esp,0x68" (3) + "mov eax,[0xB94220]" (5).
+    -- stdcall ohne Argumente -> hookCode(f, a, 0, 0, 8)
+    local okHook, resHook = pcall(function()
+      return core.hookCode(function(this, a1)
+        local r
+        if originalMenuFrame ~= nil then r = originalMenuFrame(this, a1) end
+        local ok, err = pcall(onMenuFrame)
+        if not ok then log(WARNING, "villagestudio Menue: " .. tostring(err)) end
+        return r
+      end, addrMenuFrame, 2, 1, 6)
+    end)
+    if okHook then
+      originalMenuFrame = resHook
+      log(INFO, string.format("Bild-Haken gesetzt auf 0x%X (Gefechtsstart per Datei moeglich).",
+        addrMenuFrame))
+    else
+      log(WARNING, "Menue-Haken konnte NICHT gesetzt werden: " .. tostring(resHook))
+    end
 
     -- Logik und Befehlsdatei EINMAL sofort einlesen, noch bevor ein Gefecht
     -- laeuft. Nur so ist ein Dauerauftrag schon beim allerersten Takt scharf.

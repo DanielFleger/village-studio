@@ -220,3 +220,65 @@ Die Gegenprobe zu den Nummernsätzen kommt aus zwei unabhängigen Quellen:
 
 Und die Probe aufs Exempel ohne jedes Werkzeug: `node _pruefe_gebaeude.js`
 misst die Grundflächen aller AIV-Dateien und hält sie gegen die Namensliste.
+
+---
+
+## Ein Gefecht ohne Menü starten (Stand 30.08.2026)
+
+Ziel: Testläufe, ohne dass jemand klickt — und ohne dass ein Fenster den
+Fokus nimmt.
+
+### Was belegt ist
+
+`SetupSkirmishMode(missionNr)` bei **0x4C68D0**, `__cdecl`, **ein einziges
+Argument**. Die Funktion macht alles allein:
+
+- ruft `setupSkirmishLobby`, setzt `isHost`, Spielmodus
+  `GM_SKIRMISH_SINGLE_PLAYER` (99)
+- füllt die KI-Gegner aus der vorgegebenen Gefechtspfad-Mission
+- setzt die Spielerpositionen
+- ruft am Ende selbst `LaunchSkirmishGame`
+
+`currentTrailType` bei **0x01FE9CAC** entscheidet, welche Missionsliste gilt:
+0 = Original, 1 = Warchest, 2 = Extreme. Die Missionsliste selbst liegt ab
+`0xB3EC48` (`SkirmishTrailMissions`), je Eintrag 0x90 Byte.
+
+**Die Gegner sind damit nicht frei wählbar** — sie stehen in der Mission. Wer
+eine eigene Zusammenstellung will, muss vorher die Lobby-Struktur
+`SEC_SkirmishLobbySetupStructure` bei **0x00DF4118** füllen:
+
+```
++0x008  mapName              char[80]
++0x058  roundTableOrderArray byte[9]
++0x061  playerGroupArray     byte[9]
++0x06A  slot1..8Position     byte
++0x074  currentPlayerSlotID  int
++0x084  currentAIArray       int[9]     <- welche KI auf welchem Platz
++0x0A8  aiVariationArray     int[9]
++0x0CC  playerLordTypeArray  int[9]
++0x0F4  selectedLordType     dword
++0x0F8  popularity           dword
+```
+
+### Was noch fehlt: ein Haken außerhalb des Gefechts
+
+`LaunchSkirmishGame` aufzurufen ist einfach. Das Problem sitzt woanders:
+
+**Der Befehlskanal hängt an `processGameTick` — und der tickt nur IM
+Gefecht.** Aus dem Hauptmenü heraus wird `befehl.json` also nie gelesen.
+
+Zwei Haken gemessen, beide **feuern nicht** im Hauptmenü:
+
+| Funktion | Adresse | Ergebnis |
+|---|---|---|
+| `MenuView_MainMenu_DoEveryFrame` | `0x424DA0` | Haken saß sauber (Logzeile), feuerte nie |
+| `renderBltAndFlip` | `0x470040` | dito |
+
+**Vermutung** (noch nicht geprüft): Der `graphicsApiReplacer` ersetzt
+DirectDraw und leitet die Renderkette um — die originalen Zeichenfunktionen
+laufen dann gar nicht mehr. Der nächste Kandidat ist deshalb eine Funktion
+**außerhalb** der Grafik, etwa `SetCursorDependingOnProgramState` (`0x440430`)
+oder die Nachrichtenschleife in `WinMain` (`0x57BE10`).
+
+**Gegenprobe, die den Verdacht entscheidet:** denselben Haken einmal ohne
+`graphicsApiReplacer` laufen lassen. Feuert er dann, ist die Ursache belegt.
