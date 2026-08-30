@@ -280,6 +280,48 @@ Adresse von Einheit `i`: `0x0138854C + i * 1168`.
 Werte steuern, Einheiten verwandeln (`unitType` überschreiben), Positionen
 tauschen (`tile` tauschen). Für das Ausweichen fehlt noch die Geschossverwaltung.
 
+### Geschosse und andere Objekte
+
+```
+DAT_EntityState = 0x02350300
+  +0x000000  totalEntityCount
+  +0x000004  maxEntityCount
+  +0x000010  fireCount
+  +0x000014  entityArray[3000]   je 232 Byte   = 0x02350314
+
+Entity  +0x02A entityType  short   <- 1 Pfeil, 7 Armbrustbolzen, 9 Feuer,
+        +0x02C owner       short      34/36 Feuerwerfer, 37 Feuerballiste
+        +0x030 uid         int
+        +0x03E targetX  +0x040 targetY  +0x042 targetZ   short
+        +0x044 xPosition +0x046 yPosition                short
+        +0x04C tile        int
+        +0x078 speedUnk    int
+        +0x0D4 unitUID     int     <- welche Einheit es abgeschossen hat
+```
+
+Geschoss `i`: `0x02350314 + i * 232`.
+
+**Für das Ausweichen** ist damit alles da, was man braucht: über die Objekte
+laufen, die mit `entityType` 1 oder 7 als Geschoss erkennen, aus `xPosition`,
+`yPosition` und `targetX`/`targetY` die Flugbahn lesen — und die eigene Einheit
+aus dem Zielfeld herausbewegen. Ob die Zeit dafür reicht, ist die offene Frage:
+Ein Tick ist bei Tempo 40 gerade 25 Millisekunden, aber das Spieltempo ist
+schreibbar.
+
+**Marke: abgelesen.** Im Spiel nicht ausprobiert.
+
+### Der Lord
+
+`UT_LORD = 55` im `UnitType`. Damit ist die Todeserkennung einfacher als über
+einen Haken in `checkSkirmishGameDefeat`: über das Einheiten-Array laufen und
+prüfen, ob es noch eine Einheit mit `unitType == 55`, `owner == spieler` und
+`health > 0` gibt. Verschwindet sie oder fällt `health` auf 0, ist der Lord tot.
+
+Kampfeinheiten im selben Enum: 22 europäischer Bogenschütze, 24 Speerträger,
+25 Pikenier, 26 Keulenträger, 27 Schwertkämpfer, 28 Ritter; 70 arabischer
+Bogenschütze, 71 Sklave, 73 Assassine, 74 berittener Bogenschütze,
+75 arabischer Schwertkämpfer.
+
 ### Einheitenkosten
 
 ```
