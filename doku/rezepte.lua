@@ -34,7 +34,8 @@ M.ADR = {
   BUILDING_LAYER = 0x01C95BB8,   -- ushort
   -- abgelesen, im Spiel ungeprueft
   UNITS          = 0x0138854C,   -- units[2500], je 1168
-  UNIT_COUNT     = 0x01387F3C,
+  UNIT_MAX       = 0x01387F38,   -- maxUnitCount, UnitsState+0x00 (Suchgrenze von spawnUnit)
+  UNIT_COUNT     = 0x01387F3C,   -- DAT_UnitCount, UnitsState+0x04 - NICHT die Suchgrenze!
   ENTITIES       = 0x02350314,   -- entityArray[3000], je 232
   ENTITY_COUNT   = 0x02350300,
 }
@@ -166,47 +167,74 @@ function M.sammleGebaeude(spieler, typen, schuetzen)
 end
 
 --==========================================================================
--- Einheiten  (WIDERLEGT - Grundadresse oder Schrittweite stimmen nicht!)
+-- Einheiten
 --
--- Am 30.08.2026 im Spiel widerlegt: Besitzer 0 hatte 258 Einheiten und keinen
--- einzigen Lord, obwohl jeder besetzte Spieler genau einen haben muss. Sieben
--- Versatz-Varianten und drei Lord-Typkandidaten durchprobiert, keine erfuellt
--- die Bedingung. Die Feld-Offsets duerften stimmen, aber UNITS oder die
--- Schrittweite 1168 nicht. NICHT BENUTZEN, bis die Adresse neu bestimmt ist -
--- am besten ueber spawnUnit (0x53E440), also nachsehen, wohin das Spiel eine
--- neue Einheit tatsaechlich schreibt.
+-- Basis und Schrittweite sind am 30.08.2026 aus dem Maschinencode von
+-- spawnUnit (0x53E440) BELEGT, nicht aus einer Struktur abgeleitet:
+--
+--   0053e44b  LEA EAX,[EBX + 0xb30]   -> units[1].logicalState = 0x01388A68
+--   0053e465  ADD EAX,0x490           -> Schrittweite 1168
+--   0053e482  IMUL EDX,EDX,0x490      -> dieselbe Schrittweite
+--   0053e472  CMP EDI,dword ptr [EBX] -> Grenze = UnitsState+0x00 = maxUnitCount
+--
+--   UnitsState = 0x01387F38,  units[] bei +0x614  =>  units[0] = 0x0138854C
+--   Gegenprobe: 0x0138854C + 1*1168 + 0x8C (logicalState) = 0x01388A68  ok
+--
+-- Warum der erste Anlauf scheiterte - drei Fehler, alle in der Schleife,
+-- keiner in der Adresse:
+--   1. Belegt-Test war "unitType ~= 0". Falsch: ein freier Slot behaelt den
+--      Typ der gestorbenen Einheit. spawnUnit selbst prueft logicalState
+--      (+0x8C) gegen ULS_INVISIBLE = 0. Das ist der einzige gueltige Test.
+--   2. Schleife lief ab 0. spawnUnit vergibt ab 1 - Slot 0 ist nie belegt.
+--   3. Grenze war 0x01387F3C (DAT_UnitCount). Die Suchgrenze ist
+--      0x01387F38 (maxUnitCount).
+--
+-- Lehre daraus: Der Lord-Test hat richtig gezeigt, dass die Kette falsch ist.
+-- Die Zuweisung "also stimmt die Basis nicht" war dann aber geraten. Ein
+-- Totschlagtest widerlegt die Kette, nicht das einzelne Glied.
 --==========================================================================
 
-M.UNIT = { LORD=55, E_ARCHER=22, E_SPEAR=24, E_PIKE=25, E_MACE=26,
-           E_SWORD=27, E_KNIGHT=28, A_ARCHER=70, A_SLAVE=71,
-           A_ASSASSIN=73, A_HARCHER=74, A_SWORDSMAN=75 }
+M.ULS = { INVISIBLE=0, NORMAL=2, REMOVE=3, TRANSITIONING=4 }
+
+M.UNIT = { LORD=55, LADY=56, JESTER=57, GHOST=54,
+           E_ARCHER=22, E_XBOW=23, E_SPEAR=24, E_PIKE=25, E_MACE=26,
+           E_SWORD=27, E_KNIGHT=28, E_LADDER=29, E_ENGINEER=30,
+           A_ARCHER=70, A_SLAVE=71, A_SLINGER=72, A_ASSASSIN=73,
+           A_HARCHER=74, A_SWORDSMAN=75, A_FIRETHROWER=76 }
 
 function M.einheit(i)          return A.UNITS + i * 1168 end
+function M.einheitZustand(i)   return core.readSmallInteger(M.einheit(i) + 0x8C) end
 function M.einheitTyp(i)       return core.readSmallInteger(M.einheit(i) + 0x8E) end
 function M.einheitOwner(i)     return core.readSmallInteger(M.einheit(i) + 0x96) end
+function M.einheitUid(i)       return core.readInteger(M.einheit(i) + 0x98) end
 function M.einheitLeben(i)     return core.readInteger(M.einheit(i) + 0x3C8) end
 function M.einheitMaxLeben(i)  return core.readInteger(M.einheit(i) + 0x3CC) end
 function M.einheitKachel(i)    return core.readInteger(M.einheit(i) + 0xD4) end
+function M.einheitX(i)         return core.readSmallInteger(M.einheit(i) + 0xC4) end
+function M.einheitY(i)         return core.readSmallInteger(M.einheit(i) + 0xC6) end
+
+-- Belegt heisst logicalState ~= ULS_INVISIBLE. NICHT ueber unitType pruefen -
+-- der bleibt bei einer gestorbenen Einheit stehen.
+function M.einheitBelegt(i)    return M.einheitZustand(i) ~= 0 end
 
 function M.einheitLebenSetzen(i, wert) core.writeInteger(M.einheit(i) + 0x3C8, wert) end
 function M.einheitTypSetzen(i, typ)    core.writeSmallInteger(M.einheit(i) + 0x8E, typ) end
 
--- Bewegungsziel setzen. Ob das allein reicht oder ob der Wegplan
--- (+0xFE, byte[400]) neu berechnet werden muss, ist ungeprueft.
-function M.einheitZielSetzen(i, x, y)
-  core.writeSmallInteger(M.einheit(i) + 0xC8, x)
-  core.writeSmallInteger(M.einheit(i) + 0xCA, y)
-end
+-- Bewegungsziel: UNGEPRUEFT. Die Felder heissen in Ghidra
+-- destinationTilePosition (+0xD8) und previousTilePosition (+0xDC), beide int
+-- und Kachelnummern, keine x/y. Vor dem Benutzen messen, sonst laeuft die
+-- Einheit ins Nichts. Der saubere Weg ist ohnehin der Spielbefehl
+-- GCT_UNITS_MOVE (17).
+function M.einheitZielKachel(i)          return core.readInteger(M.einheit(i) + 0xD8) end
 
--- Ueber alle Einheiten laufen. fn(index, typ, owner, leben) - gibt fn
--- true zurueck, wird abgebrochen.
+-- Ueber alle belegten Einheiten laufen. fn(index, typ, owner, leben) - gibt fn
+-- true zurueck, wird abgebrochen und der Index geliefert.
 function M.jedeEinheit(fn)
-  local n = core.readInteger(A.UNIT_COUNT)
-  if n == nil or n < 0 or n > 2500 then n = 2500 end
-  for i = 0, n - 1 do
-    local typ = M.einheitTyp(i)
-    if typ ~= 0 then
-      if fn(i, typ, M.einheitOwner(i), M.einheitLeben(i)) then return i end
+  local n = core.readInteger(A.UNIT_MAX)
+  if n == nil or n < 1 or n > 2500 then n = 2500 end
+  for i = 1, n - 1 do                       -- ab 1: Slot 0 wird nie belegt
+    if M.einheitZustand(i) ~= 0 then        -- 0 = ULS_INVISIBLE = frei
+      if fn(i, M.einheitTyp(i), M.einheitOwner(i), M.einheitLeben(i)) then return i end
     end
   end
 end

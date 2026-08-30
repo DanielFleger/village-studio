@@ -269,9 +269,19 @@ Adresse von Einheit `i`: `0x0138854C + i * 1168`.
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| **Grundadresse `0x0138854C` und Schrittweite 1168** | **widerlegt** | Am 30.08. im Spiel geprüft: Besitzer 0 hatte 258 Einheiten und **keinen** Lord, obwohl jeder besetzte Spieler genau einen haben muss. Sieben Versatz-Varianten und drei Lord-Typkandidaten durchprobiert, keine erfüllt die Bedingung. Die Feld-Offsets dürften stimmen, die Basis oder die Schrittweite nicht |
-| Nächster Anlauf: nachsehen, wohin `spawnUnit` (`0x53E440`) schreibt | — | liefert Basis und Schrittweite als Tatsache statt als Ableitung aus der Struktur |
-| Damit sind Leben, Typ, Besitzer und Ziel je Einheit direkt schreibbar | **vermutet** | dieselbe Bauart wie beim Gebäude-Array, das im Spiel funktioniert hat |
+| **Grundadresse `0x0138854C`, Schrittweite 1168** | **belegt (Code)** | Am 30.08. aus dem Maschinencode von `spawnUnit` gelesen, nicht aus der Struktur abgeleitet: `0053e44b LEA EAX,[EBX+0xb30]` → `units[1].logicalState` = `0x01388A68`; `0053e465 ADD EAX,0x490` und `0053e482 IMUL EDX,EDX,0x490` → Schrittweite 1168. Gegenprobe: `0x0138854C + 1168 + 0x8C` = `0x01388A68` ✓ |
+| Suchgrenze ist `maxUnitCount` = `0x01387F38` (`UnitsState+0x00`) | **belegt (Code)** | `0053e472 CMP EDI,dword ptr [EBX]` mit EBX = UnitsState-Basis. **Nicht** `0x01387F3C` — das ist `DAT_UnitCount` und etwas anderes |
+| **Belegt heißt `logicalState` (+0x8C) ≠ 0**, nicht `unitType` ≠ 0 | **belegt (Code)** | `spawnUnit` sucht den freien Platz mit `if (*pUVar3 == ULS_INVISIBLE) break;` auf genau diesem Feld. Ein freier Slot behält den Typ der gestorbenen Einheit |
+| Slot 0 wird nie belegt, Vergabe beginnt bei 1 | **belegt (Code)** | `unitID = 1` und `&DAT_UnitsState.units[1]` am Schleifenkopf |
+| `units[2500]`, nicht 3000 | **belegt (Code)** | `CMP EDI,0x9c4` = 2500, und die Struktur sagt `Unit[2500]` bei `+0x614` |
+| Die Aussage vom 30.08., die Basis oder Schrittweite sei falsch | **zurückgenommen** | Beide waren richtig. Die drei Fehler steckten alle in der Schleife: Belegt-Test über `unitType`, Start bei 0, falsches Zählfeld |
+| Im Spiel bestätigt | **offen** | `doku/test_einheiten.lua` liegt bereit — fünf Tests, Widerlegungskriterien vorher festgelegt |
+
+**Was daraus zu lernen ist:** Der Lord-Test hat richtig angezeigt, dass die Kette
+falsch ist. Die Zuweisung *„also stimmt die Basis nicht"* war danach aber
+geraten — und hat einen Tag gekostet. **Ein Totschlagtest widerlegt die Kette,
+nicht das einzelne Glied.** Nach einem roten Test muss jedes Glied einzeln
+gemessen werden, sonst wird das gesunde weggeworfen und das kranke behalten.
 
 `UnitType`: 1 Bauer, 2 brennender Mann, 3 Holzfäller, 4 Bogenmacher, 5 Tunnelgräber,
 6 Jäger, 7 Steinmetz, 8 Steinbrucharbeiter, 9 Steinochse, 10 Pechmann,

@@ -11,7 +11,7 @@ const soll = {
   PLAYERDATA: 0x0115BDF8, GAME_SPEED: 0x01FE7DD8, TICKS: 0x0117CADC,
   LOGIC: 0x01BF8368, HEIGHT: 0x01D32C38, DEFAULT_HEIGHT: 0x01D46648,
   WALL_OWNER: 0x01D5A058, DAMAGE: 0x01DBC2A8, BUILDING_LAYER: 0x01C95BB8,
-  UNITS: 0x0138854C, UNIT_COUNT: 0x01387F3C,
+  UNITS: 0x0138854C, UNIT_MAX: 0x01387F38, UNIT_COUNT: 0x01387F3C,
   ENTITIES: 0x02350314, ENTITY_COUNT: 0x02350300,
 };
 
@@ -40,6 +40,18 @@ console.log(`Adressen: ${ok}/${Object.keys(soll).length} stimmen mit dem Wissens
 if (fehler.length) console.log('  ' + fehler.join('\n  '));
 console.log(`Schrittweiten: ${proben.length - fehlend.length}/${proben.length} vorhanden`);
 if (fehlend.length) console.log('  fehlt: ' + fehlend.join(', '));
+
+// Gegenprobe zur Einheiten-Basis: units[1].logicalState muss auf die
+// Adresse fallen, die im Maschinencode von spawnUnit steht (0x01388A68).
+// Das prueft Basis, Schrittweite und den logicalState-Versatz in einem Zug.
+const u1 = 0x0138854C + 1168 + 0x8C;
+if (u1 !== 0x01388A68) fehler.push(`Einheiten-Gegenprobe: 0x${u1.toString(16).toUpperCase()} statt 0x1388A68`);
+else console.log('Einheiten-Gegenprobe: units[1].logicalState = 0x1388A68 wie im Code (LEA EAX,[EBX+0xb30])');
+// Die Schleife darf NICHT ueber unitType belegt pruefen - das war der Fehler
+if (/if\s+M\.einheitTyp\(i\)\s*~=\s*0|local typ = M\.einheitTyp\(i\)\s*
+\s*if typ ~= 0/.test(lua))
+  fehler.push('jedeEinheit prueft noch ueber unitType statt ueber logicalState (+0x8C)');
+if (!/UNIT_MAX/.test(lua)) fehler.push('A.UNIT_MAX fehlt - die Schleife nimmt die falsche Grenze');
 
 // Mauerbits gegen den belegten Wert
 const mb = 0x100 + 0x200 + 0x800 + 0x10000 + 0x400000;
