@@ -229,6 +229,33 @@ Die vollständige Tabelle mit Namen und Einzeladressen liegt in `lib/kosten.json
 erzeugt von `_baue_kostentabelle.js`. 80 Einträge, davon 60 mit Namen; die
 übrigen sind Laufzeit-Nummern, die in keiner AIV vorkommen.
 
+### Einheitenkosten
+
+```
+DAT_BarracksUnitCost   0x00AB9114   uint[7]   Gold, europaeische Kaserne
+DAT_NonEuroUnitCost    0x00AB913C   int[11]   Gold, arabischer Soeldnerposten
+DAT_EuroUnitResourceCosts 0x00B55260 int[7][4] Waffen und Ruestung je Euro-Einheit
+```
+
+Gelesene Goldpreise, europäisch: 12, 20, 8, 20, 20, 40, 40.
+Arabisch: 75, 5, 12, 60, 80, 80, 100, 50, 75, 75, 0.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Das sind die Goldpreise der Einheiten | **belegt** | Die europäischen Werte decken sich mit den Spielpreisen: Bogenschütze 12, Speerträger 8, Armbrustschütze 20, Pikenier 20, Keulenträger 20, Schwertkämpfer 40, Ritter 40 |
+| **Welcher Index welche arabische Einheit ist, ist offen** | **vermutet** | Die Zahlen stimmen mit bekannten Preisen überein, aber die Reihenfolge ist geraten. Wer sie braucht, muss einen Preis im Spiel ändern und schauen, wer teurer wird |
+| Ob die Tabellen im laufenden Spiel wirken | **offen** | Im Gegensatz zu den Baukosten ist hier **keine** Kopie in einen Zustandsblock bekannt — diese Adressen liegen in der exe selbst |
+
+### Handelspreise
+
+```
+MapAndTimeState +0x848  buyAndSalesPriceArray  BuySellPair[25]  (Kauf, Verkauf je Ware)
+MapAndTimeState +0x780  copyOfBuyAndSalesPrice BuySellPair[25]
+```
+
+Für „alle Ressourcen verkaufen" der richtige Anlaufpunkt, zusammen mit dem
+Befehl `GCT_BUY_OR_SELL` (38).
+
 ## 4. Verhalten
 
 | Aussage | Marke | Beleg |
