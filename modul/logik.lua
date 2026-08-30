@@ -32,15 +32,19 @@ local KACHELGRENZE = 80400
 local MAUERBIT = 0x100 | 0x200 | 0x800 | 0x10000 | 0x400000
 
 -- Gebaeudetabelle. Ein Eintrag ist 0x32C Bytes, Anzahl steht bei +0x08.
+--
+-- ACHTUNG, der haeufigste Fehler: Das Array beginnt erst bei GEBAEUDE+0x14.
+-- Unsere Basis laesst das weg, deshalb sind in ALLEN Offsets hier 0x14
+-- eingerechnet - nicht nur beim Leben. Wer Werte aus der Ghidra-Referenz
+-- uebernimmt, muss ueberall 0x14 addieren:
+--   Referenz +0xD0 Zustand -> hier 0xE4      Referenz +0xD2 Typ -> hier 0xE6
+--   Referenz +0xD6 Besitzer -> hier 0xEA     Referenz +0x10C Leben -> hier 0x120
 local GEBAEUDE     = 0xF98520
 local G_SCHRITT    = 0x32C
 local G_ZUSTAND    = 0xE4    -- word: 0 = kein Gebaeude, 3 = abgerissen
 local G_TYP        = 0xE6    -- word
 local G_BESITZER   = 0xEA    -- word: Spielernummer (NICHT ab 0)
--- ACHTUNG Versatz: Die Ghidra-Referenz zaehlt ab Gebaeude+0x14, unsere Basis
--- nicht. Bei Zustand/Typ/Besitzer ist der Versatz eingerechnet, beim Leben
--- fehlte er (30.08.: Gebaeude starben trotz laufender Wacht).
--- Referenz +0x10C/+0x10E  ->  bei uns +0x120/+0x122.
+-- 30.08.: Hier fehlte der 0x14-Versatz - Gebaeude starben trotz Wacht.
 local G_LEBEN      = 0x120   -- word
 local G_MAXLEBEN   = 0x122   -- word
 
