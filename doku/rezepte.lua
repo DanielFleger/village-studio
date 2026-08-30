@@ -119,6 +119,50 @@ function M.allesKostenlos()
 end
 
 --==========================================================================
+-- Gebaeude  (belegt)
+--==========================================================================
+
+function M.gebaeude(i)        return A.BUILDINGS + 0x14 + i * 812 end
+function M.gebaeudeTyp(i)     return core.readSmallInteger(M.gebaeude(i) + 0xD2) end
+function M.gebaeudeOwner(i)   return core.readSmallInteger(M.gebaeude(i) + 0xD6) end
+function M.gebaeudeUid(i)     return core.readInteger(M.gebaeude(i) + 0xD8) end
+function M.gebaeudeLeben(i)   return core.readSmallInteger(M.gebaeude(i) + 0x10C) end
+function M.gebaeudeX(i)       return core.readByte(M.gebaeude(i) + 0x8C) end
+function M.gebaeudeY(i)       return core.readByte(M.gebaeude(i) + 0x8D) end
+function M.gebaeudeGruppe(i)  return core.readSmallInteger(M.gebaeude(i) + 0x2BC) end
+
+-- Ueber alle Gebaeude laufen. fn(index, typ, owner)
+function M.jedesGebaeude(fn)
+  local n = core.readInteger(A.BUILDINGS + 8)
+  if n == nil or n < 2 or n > 2000 then n = 2000 end
+  for i = 1, n - 1 do
+    local t = M.gebaeudeTyp(i)
+    if t ~= 0 then
+      if fn(i, t, M.gebaeudeOwner(i)) then return i end
+    end
+  end
+end
+
+-- Gebaeude eines Spielers einsammeln, deren Typ in `typen` steht.
+-- ERST sammeln, DANN abreissen - das Array wird beim Abreissen umgeraeumt.
+-- Und: destroyBuilding reisst alles mit derselben Gruppenkennung (+0x2BC) mit,
+-- deshalb vorher die Gruppen der zu schuetzenden Gebaeude einsammeln.
+function M.sammleGebaeude(spieler, typen, schuetzen)
+  local geschuetzteGruppen, treffer = {}, {}
+  if schuetzen then
+    M.jedesGebaeude(function(i, t, o)
+      if o == spieler and schuetzen[t] then geschuetzteGruppen[M.gebaeudeGruppe(i)] = true end
+    end)
+  end
+  M.jedesGebaeude(function(i, t, o)
+    if o == spieler and typen[t] and not geschuetzteGruppen[M.gebaeudeGruppe(i)] then
+      treffer[#treffer + 1] = { index = i, uid = M.gebaeudeUid(i), typ = t }
+    end
+  end)
+  return treffer
+end
+
+--==========================================================================
 -- Einheiten  (abgelesen, im Spiel ungeprueft)
 --==========================================================================
 
