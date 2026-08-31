@@ -329,6 +329,65 @@ sie von selbst frei, auch bei jedem Abbruch.
 Das ersetzt keine Absprache, es fängt nur den Fall ab, dass eine vergessen
 wurde.
 
+### Das Spielfenster ist von aussen NICHT bedienbar (31.08.2026)
+
+Der Prozess laeuft erhoeht, die Claude-Sitzung nicht. Windows (UIPI) sperrt
+deshalb **jede** Eingabe von aussen an dieses Fenster:
+
+| Weg | Ergebnis | Marke |
+|---|---|---|
+| `PostMessage(hwnd, WM_KEYDOWN, VK_Q, ...)` | `false`, `GetLastError` = **5** | **gemessen** |
+| Maussteuerung ueber den Rechner (computer-use) | dieselbe Sperre — der Werkzeugkasten sagt es selbst an | **abgelesen** |
+| `OpenProcess` / `ReadProcessMemory` | Fehler 5 | **belegt** (schon vorher bekannt) |
+| `taskkill` auf den Prozess | „Zugriff verweigert" | **gemessen** |
+
+`IsWindow` liefert dabei `true` — das Fenster existiert also, nur darf man
+nicht hineinreden.
+
+**Folgen fuer die Arbeitsweise:**
+
+- Der spieleigene Screenshot per Taste Q ist von hier aus **prinzipiell**
+  unerreichbar. Nicht „noch nicht ausprobiert" — unerreichbar.
+- Auch das Beenden des Spiels geht nicht von hier. Ein Neustart braucht Daniel.
+  Wer eine Sackgasse baut, sitzt darin fest.
+- Der **einzige** Weg ins Spiel ist das Lua-Modul, das im Spielprozess selbst
+  laeuft und dessen Rechte hat. Alles, was gebraucht wird, muss dort hinein.
+
+---
+
+### Lua: Vorwaertsdeklaration nicht vergessen (31.08.2026)
+
+In `logik.lua` wurde `bauwachtStart` in Zeile 716 gerufen, aber erst in Zeile
+822 als `local function` definiert. Lua sucht den Namen dann im globalen Raum,
+findet nichts und bricht mit *„attempt to call a nil value"* ab.
+
+**Der Bauwacht-Befehl war dadurch seit jeher wirkungslos** — und genau er ist
+der Messfuehler fuer den `Burg_left_2`-Lauf. Ein Messlauf haette schweigend
+nichts geliefert, und man haette den Fehler beim Bauen der KI gesucht.
+
+Der Fehler faellt nicht auf, weil `einzelbefehl` in `pcall` laeuft: die Warnung
+landet als eine Zeile im Log und der Rest arbeitet weiter.
+
+**Regel:** Wer in `logik.lua` eine Funktion aus `einzelbefehl` ruft, die weiter
+unten steht, schreibt oben `local name` hin und unten `name = function(...)`.
+Pruefen laesst sich das ohne Spiel:
+
+```bash
+python - <<'EOF'
+import io, re
+s = io.open('logik.lua', encoding='utf-8').read().splitlines()
+defs = {re.match(r'local function (\w+)', z).group(1): i
+        for i, z in enumerate(s, 1) if re.match(r'local function \w+', z)}
+start = next(i for i, z in enumerate(s, 1) if z.startswith('local function einzelbefehl'))
+for name, zeile in defs.items():
+    if zeile > start and any(re.search(r'(?<![.:])%s\s*\(' % name, z)
+                             for z in s[start-1:zeile]):
+        print('zu spaet definiert:', name, zeile)
+EOF
+```
+
+---
+
 ### Start von Hand
 
 Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":

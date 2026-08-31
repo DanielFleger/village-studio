@@ -483,6 +483,104 @@ end
 -- 6. Befehle
 --============================================================================
 
+local function bildSchreiben(wunsch)
+    local W = 0x00F98338
+    local resX = core.readInteger(W + 0x38) or 0
+    local resY = core.readInteger(W + 0x3C) or 0
+    local welche = (wunsch.bild == "karte") and "karte" or "menue"
+    local ptr = core.readInteger(W + (welche == "karte" and 0xD8 or 0xD4)) or 0
+    local ziel = type(wunsch.datei) == "string" and wunsch.datei
+      or ("ucp/villagestudio/vs_" .. welche .. ".bmp")
+    -- Der UCP-Sandkasten laesst io.open nur INNERHALB des Spielordners zu.
+    -- Ein absoluter Pfad in die Dokumente scheitert mit "Invalid path"
+    -- (gemessen 31.08. 23:18).
+
+    log(INFO, string.format("BILD %s: Aufloesung %d x %d, Flaeche 0x%08X, Byteszahl %s -> %s",
+      welche, resX, resY, ptr, tostring(core.readInteger(W + 0x4C)), ziel))
+
+    if resX < 1 or resX > 4096 or resY < 1 or resY > 4096
+       or ptr < 0x10000 or ptr > 0x7FFFFFFF then
+      log(WARNING, "BILD: Aufloesung oder Flaechenzeiger unplausibel - nichts geschrieben.")
+      return false
+    end
+
+    -- Die Menueflaeche traegt NICHT von selbst das Kartenbild. Genau deshalb
+    -- ruft takeScreenshot zuerst bltMapGameSurfaceToScreenMenuSurfaceComplete
+    -- (0x00470610, thiscall, nur "this") - der kopiert die Karte hinein.
+    -- Aus dem ZEICHENHAKEN ist dieser Aufruf ein Wiedereintritt und toetet den
+    -- Prozess; hier laufen wir im Spieltick, also ausserhalb der Zeichenkette.
+    -- Mit { "blt": true } anfordern.
+    if wunsch.blt == true then
+      local okB, blt = pcall(core.exposeCode, 0x00470610, 1, 1)
+      if not okB then
+        log(WARNING, "BILD: Blt nicht erreichbar: " .. tostring(blt))
+      else
+        local okB2, errB = pcall(blt, W)
+        log(okB2 and INFO or WARNING, okB2
+          and "BILD: Karte in die Menueflaeche kopiert."
+          or ("BILD: Blt fehlgeschlagen: " .. tostring(errB)))
+      end
+    end
+
+    local probe = {}
+    for i = 0, 7 do
+      probe[#probe + 1] = string.format("%04X", (core.readSmallInteger(ptr + i * 2) or 0) & 0xFFFF)
+    end
+    log(INFO, "BILD: erste acht Pixel " .. table.concat(probe, " "))
+
+    local f = io.open(ziel, "wb")
+    if not f then
+      log(WARNING, "BILD: Datei nicht schreibbar: " .. ziel)
+      return false
+    end
+
+    local function le32(n)
+      return string.char(n & 0xFF, (n >> 8) & 0xFF, (n >> 16) & 0xFF, (n >> 24) & 0xFF)
+    end
+    local function le16(n) return string.char(n & 0xFF, (n >> 8) & 0xFF) end
+
+    local zeilenBytes = resX * 3
+    local rand = (4 - zeilenBytes % 4) % 4     -- BMP-Zeilen liegen auf 4 Byte
+    local fuell = string.rep("\0", rand)
+    local daten = (zeilenBytes + rand) * resY
+
+    f:write("BM", le32(54 + daten), le16(0), le16(0), le32(54))
+    f:write(le32(40), le32(resX), le32(resY), le16(1), le16(24), le32(0),
+            le32(daten), le32(0), le32(0), le32(0), le32(0))
+
+    -- GEMESSEN 31.08.: die Flaeche ist RGB555, NICHT RGB565. Das Dekompilat
+    -- von takeScreenshot rechnet zwar 565 - unter graphicsApiReplacer 1.3.0
+    -- kommt aber 555 aus dem Speicher. Mit 565 gelesen wird das ganze Bild
+    -- rotstichig, mit 555 ist es einwandfrei. Messung schlaegt Ableitung.
+    -- Mit { "format": 565 } laesst sich die alte Deutung erzwingen.
+    local f555 = tonumber(wunsch.format) ~= 565
+    local char, concat, lies = string.char, table.concat, core.readSmallInteger
+    for y = resY - 1, 0, -1 do              -- BMP steht auf dem Kopf
+      local basis = ptr + y * resX * 2
+      local zeile = {}
+      for x = 0, resX - 1 do
+        local v = lies(basis + x * 2) or 0
+        if v < 0 then v = v + 65536 end
+        if f555 then
+          zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x1F) << 3, ((v >> 10) & 0x1F) << 3)
+        else
+          zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x3F) << 2, ((v >> 11) & 0x1F) << 3)
+        end
+      end
+      f:write(concat(zeile))
+      if rand > 0 then f:write(fuell) end
+    end
+    f:close()
+    log(INFO, string.format("BILD %s: fertig, %d Byte -> %s", welche, 54 + daten, ziel))
+    return true
+end
+
+-- Vorwaertsdeklaration. Beide Funktionen werden aus einzelbefehl gerufen,
+-- stehen aber weiter unten. Ohne diese Zeile sucht Lua sie im globalen Raum,
+-- findet nichts und bricht mit "attempt to call a nil value" ab - der
+-- Bauwacht-Befehl war deshalb seit jeher wirkungslos (gefunden 31.08.2026).
+local bauwachtStart, autobildStart
+
 local function einzelbefehl(cmd)
   if type(cmd) ~= "table" then return false end
   local spieler = cmd.player
@@ -529,97 +627,8 @@ local function einzelbefehl(cmd)
   -- Befehl: { "bild": "menue" } oder { "bild": "karte" }, dazu optional
   -- { "datei": "C:/.../name.bmp" }.
   --==========================================================================
-  if cmd.bild ~= nil then
-    local W = 0x00F98338
-    local resX = core.readInteger(W + 0x38) or 0
-    local resY = core.readInteger(W + 0x3C) or 0
-    local welche = (cmd.bild == "karte") and "karte" or "menue"
-    local ptr = core.readInteger(W + (welche == "karte" and 0xD8 or 0xD4)) or 0
-    local ziel = type(cmd.datei) == "string" and cmd.datei
-      or ("ucp/villagestudio/vs_" .. welche .. ".bmp")
-    -- Der UCP-Sandkasten laesst io.open nur INNERHALB des Spielordners zu.
-    -- Ein absoluter Pfad in die Dokumente scheitert mit "Invalid path"
-    -- (gemessen 31.08. 23:18).
-
-    log(INFO, string.format("BILD %s: Aufloesung %d x %d, Flaeche 0x%08X, Byteszahl %s -> %s",
-      welche, resX, resY, ptr, tostring(core.readInteger(W + 0x4C)), ziel))
-
-    if resX < 1 or resX > 4096 or resY < 1 or resY > 4096
-       or ptr < 0x10000 or ptr > 0x7FFFFFFF then
-      log(WARNING, "BILD: Aufloesung oder Flaechenzeiger unplausibel - nichts geschrieben.")
-      return false
-    end
-
-    -- Die Menueflaeche traegt NICHT von selbst das Kartenbild. Genau deshalb
-    -- ruft takeScreenshot zuerst bltMapGameSurfaceToScreenMenuSurfaceComplete
-    -- (0x00470610, thiscall, nur "this") - der kopiert die Karte hinein.
-    -- Aus dem ZEICHENHAKEN ist dieser Aufruf ein Wiedereintritt und toetet den
-    -- Prozess; hier laufen wir im Spieltick, also ausserhalb der Zeichenkette.
-    -- Mit { "blt": true } anfordern.
-    if cmd.blt == true then
-      local okB, blt = pcall(core.exposeCode, 0x00470610, 1, 1)
-      if not okB then
-        log(WARNING, "BILD: Blt nicht erreichbar: " .. tostring(blt))
-      else
-        local okB2, errB = pcall(blt, W)
-        log(okB2 and INFO or WARNING, okB2
-          and "BILD: Karte in die Menueflaeche kopiert."
-          or ("BILD: Blt fehlgeschlagen: " .. tostring(errB)))
-      end
-    end
-
-    local probe = {}
-    for i = 0, 7 do
-      probe[#probe + 1] = string.format("%04X", (core.readSmallInteger(ptr + i * 2) or 0) & 0xFFFF)
-    end
-    log(INFO, "BILD: erste acht Pixel " .. table.concat(probe, " "))
-
-    local f = io.open(ziel, "wb")
-    if not f then
-      log(WARNING, "BILD: Datei nicht schreibbar: " .. ziel)
-      return false
-    end
-
-    local function le32(n)
-      return string.char(n & 0xFF, (n >> 8) & 0xFF, (n >> 16) & 0xFF, (n >> 24) & 0xFF)
-    end
-    local function le16(n) return string.char(n & 0xFF, (n >> 8) & 0xFF) end
-
-    local zeilenBytes = resX * 3
-    local rand = (4 - zeilenBytes % 4) % 4     -- BMP-Zeilen liegen auf 4 Byte
-    local fuell = string.rep("\0", rand)
-    local daten = (zeilenBytes + rand) * resY
-
-    f:write("BM", le32(54 + daten), le16(0), le16(0), le32(54))
-    f:write(le32(40), le32(resX), le32(resY), le16(1), le16(24), le32(0),
-            le32(daten), le32(0), le32(0), le32(0), le32(0))
-
-    -- GEMESSEN 31.08.: die Flaeche ist RGB555, NICHT RGB565. Das Dekompilat
-    -- von takeScreenshot rechnet zwar 565 - unter graphicsApiReplacer 1.3.0
-    -- kommt aber 555 aus dem Speicher. Mit 565 gelesen wird das ganze Bild
-    -- rotstichig, mit 555 ist es einwandfrei. Messung schlaegt Ableitung.
-    -- Mit { "format": 565 } laesst sich die alte Deutung erzwingen.
-    local f555 = tonumber(cmd.format) ~= 565
-    local char, concat, lies = string.char, table.concat, core.readSmallInteger
-    for y = resY - 1, 0, -1 do              -- BMP steht auf dem Kopf
-      local basis = ptr + y * resX * 2
-      local zeile = {}
-      for x = 0, resX - 1 do
-        local v = lies(basis + x * 2) or 0
-        if v < 0 then v = v + 65536 end
-        if f555 then
-          zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x1F) << 3, ((v >> 10) & 0x1F) << 3)
-        else
-          zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x3F) << 2, ((v >> 11) & 0x1F) << 3)
-        end
-      end
-      f:write(concat(zeile))
-      if rand > 0 then f:write(fuell) end
-    end
-    f:close()
-    log(INFO, string.format("BILD %s: fertig, %d Byte -> %s", welche, 54 + daten, ziel))
-    return true
-  end
+  if cmd.autobild ~= nil then return autobildStart(cmd) end
+  if cmd.bild ~= nil then return bildSchreiben(cmd) end
 
   -- Menueansicht wechseln: { "menue": 41 }  (41 = Hauptmenue, 16 = Spiel)
   --
@@ -816,7 +825,7 @@ local function mauernZaehlen(besitzerWert)
   return n
 end
 
-local function bauwachtStart(spieler, abstand)
+bauwachtStart = function(spieler, abstand)
   if spieler == nil then
     bauwacht = nil
     log(INFO, "BAUWACHT: aus.")
@@ -857,6 +866,64 @@ local function bauwachtTick()
 end
 
 --============================================================================
+-- 6c. Selbstausloeser fuer ein Bild aus dem laufenden Gefecht (31.08.2026)
+--
+-- Das Problem: Zwischen Gefechtsstart und dem Moment, in dem ein Befehl aus
+-- der Datei ankommt, vergehen Sekunden - und bei hohem Spieltempo ist das
+-- Gefecht dann schon entschieden (gemessen: nach rund 4000 Ticks steht der
+-- Auswertungsbildschirm). Im Menue laeuft der Tick-Poll gar nicht, ein
+-- vorbereitender Tempobefehl kommt also nie durch.
+--
+-- Deshalb wird der Auftrag VORHER scharf gestellt und wartet im Spieltakt:
+-- Sobald ein frisches Gefecht anlaeuft (Tick klein), wird zuerst das Tempo
+-- gedrosselt und danach beim Zieltick das Bild geschrieben.
+--
+--   { "autobild": true, "tempo2": 10, "beiTick": 150 }
+--   { "autobild": false }   schaltet ab
+--============================================================================
+
+local autobild = nil
+
+autobildStart = function(cmd)
+  if cmd.autobild == false then
+    autobild = nil
+    log(INFO, "AUTOBILD: aus.")
+    return true
+  end
+  autobild = {
+    tempo    = tonumber(cmd.tempo2) or 10,
+    beiTick  = tonumber(cmd.beiTick) or 150,
+    datei    = type(cmd.datei) == "string" and cmd.datei or "ucp/villagestudio/vs_auto.bmp",
+    gedrosselt = false,
+  }
+  log(INFO, string.format(
+    "AUTOBILD: scharf. Sobald ein frisches Gefecht laeuft: Tempo %d, Bild bei Tick %d -> %s",
+    autobild.tempo, autobild.beiTick, autobild.datei))
+  return true
+end
+
+local function autobildTick()
+  if autobild == nil then return end
+  local t = tick()
+  if t == nil or t <= 0 then return end
+  -- Ein altes, schon entschiedenes Gefecht hat einen hohen Tickstand. Nur ein
+  -- frisch gestartetes soll den Auftrag ausloesen.
+  if not autobild.gedrosselt then
+    if t > 600 then return end
+    core.writeInteger(TEMPO, autobild.tempo)
+    autobild.gedrosselt = true
+    log(INFO, string.format("AUTOBILD: frisches Gefecht bei Tick %d - Tempo auf %d gedrosselt.",
+      t, core.readInteger(TEMPO)))
+    return
+  end
+  if t < autobild.beiTick then return end
+  local ziel = autobild.datei
+  autobild = nil                        -- nur einmal ausloesen
+  log(INFO, string.format("AUTOBILD: Tick %d erreicht - Bild wird geschrieben.", t))
+  bildSchreiben({ bild = "menue", blt = true, datei = ziel })
+end
+
+--============================================================================
 -- 7. Taktgeber
 --============================================================================
 
@@ -864,6 +931,7 @@ local function everyTick()
   pcall(mauerwachtTick)
   pcall(gebaeudewachtTick)
   pcall(bauwachtTick)
+  pcall(autobildTick)
 end
 
 log(INFO, "logik.lua (31.08.2026): + Bauwacht, + Durchreichen an init.lua.")
