@@ -550,6 +550,24 @@ local function einzelbefehl(cmd)
       return false
     end
 
+    -- Die Menueflaeche traegt NICHT von selbst das Kartenbild. Genau deshalb
+    -- ruft takeScreenshot zuerst bltMapGameSurfaceToScreenMenuSurfaceComplete
+    -- (0x00470610, thiscall, nur "this") - der kopiert die Karte hinein.
+    -- Aus dem ZEICHENHAKEN ist dieser Aufruf ein Wiedereintritt und toetet den
+    -- Prozess; hier laufen wir im Spieltick, also ausserhalb der Zeichenkette.
+    -- Mit { "blt": true } anfordern.
+    if cmd.blt == true then
+      local okB, blt = pcall(core.exposeCode, 0x00470610, 1, 1)
+      if not okB then
+        log(WARNING, "BILD: Blt nicht erreichbar: " .. tostring(blt))
+      else
+        local okB2, errB = pcall(blt, W)
+        log(okB2 and INFO or WARNING, okB2
+          and "BILD: Karte in die Menueflaeche kopiert."
+          or ("BILD: Blt fehlgeschlagen: " .. tostring(errB)))
+      end
+    end
+
     local probe = {}
     for i = 0, 7 do
       probe[#probe + 1] = string.format("%04X", (core.readSmallInteger(ptr + i * 2) or 0) & 0xFFFF)
@@ -576,6 +594,12 @@ local function einzelbefehl(cmd)
     f:write(le32(40), le32(resX), le32(resY), le16(1), le16(24), le32(0),
             le32(daten), le32(0), le32(0), le32(0), le32(0))
 
+    -- GEMESSEN 31.08.: die Flaeche ist RGB555, NICHT RGB565. Das Dekompilat
+    -- von takeScreenshot rechnet zwar 565 - unter graphicsApiReplacer 1.3.0
+    -- kommt aber 555 aus dem Speicher. Mit 565 gelesen wird das ganze Bild
+    -- rotstichig, mit 555 ist es einwandfrei. Messung schlaegt Ableitung.
+    -- Mit { "format": 565 } laesst sich die alte Deutung erzwingen.
+    local f555 = tonumber(cmd.format) ~= 565
     local char, concat, lies = string.char, table.concat, core.readSmallInteger
     for y = resY - 1, 0, -1 do              -- BMP steht auf dem Kopf
       local basis = ptr + y * resX * 2
@@ -583,13 +607,45 @@ local function einzelbefehl(cmd)
       for x = 0, resX - 1 do
         local v = lies(basis + x * 2) or 0
         if v < 0 then v = v + 65536 end
-        zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x3F) << 2, ((v >> 11) & 0x1F) << 3)
+        if f555 then
+          zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x1F) << 3, ((v >> 10) & 0x1F) << 3)
+        else
+          zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x3F) << 2, ((v >> 11) & 0x1F) << 3)
+        end
       end
       f:write(concat(zeile))
       if rand > 0 then f:write(fuell) end
     end
     f:close()
     log(INFO, string.format("BILD %s: fertig, %d Byte -> %s", welche, 54 + daten, ziel))
+    return true
+  end
+
+  -- Menueansicht wechseln: { "menue": 41 }  (41 = Hauptmenue, 16 = Spiel)
+  --
+  -- GameCore liegt bei 0x01FE7D10 (Ghidra-Symbol DAT_GameCore):
+  --   +0x04 menuSwitchDelay   +0x0C currentMenuViewType   +0x18 menuViewToSwitchTo
+  -- switchToMenuView (0x0046B340, thiscall, this + 2 Argumente) setzt Ziel und
+  -- Verzoegerung; processMenuViewSwitch uebernimmt es im naechsten Bild.
+  -- Nummern: 12 Landschaftseditor, 14 Baumenue, 16 Gebaeude-/Statusleiste,
+  --          30 "Spiel verloren", 41 Hauptmenue, 58 Rangliste.
+  if cmd.menue ~= nil then
+    local ziel = tonumber(cmd.menue)
+    if ziel == nil then log(WARNING, "MENUE: Nummer fehlt.") return false end
+    local GC = 0x01FE7D10
+    log(INFO, string.format("MENUE: aktuell %s, Ziel %d, Wechselfrist %s",
+      tostring(core.readInteger(GC + 0x0C)), ziel, tostring(core.readInteger(GC + 0x04))))
+    local ok, wechsel = pcall(core.exposeCode, 0x0046B340, 3, 1)
+    if not ok then
+      log(WARNING, "MENUE: switchToMenuView nicht erreichbar: " .. tostring(wechsel))
+      return false
+    end
+    local ok2, err = pcall(wechsel, GC, ziel, 0)
+    if not ok2 then
+      log(WARNING, "MENUE: Wechsel fehlgeschlagen: " .. tostring(err))
+      return false
+    end
+    log(INFO, string.format("MENUE: Wechsel nach %d angefordert.", ziel))
     return true
   end
 

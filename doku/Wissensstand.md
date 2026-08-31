@@ -564,7 +564,10 @@ ohne Fokus und ohne jeden Zeichenaufruf auskommt.
 | **Das Lua-Modul kann die BMP selbst schreiben** | **belegt** | 1920x1080 aus dem Speicher gelesen und als 6.220.854-Byte-BMP geschrieben, **in 0,36 Sekunden**. Das Bild zeigt lesbar die Spieloberflaeche. Weder Fenster noch Fokus noch Sichtbarkeit spielen eine Rolle |
 | Die Flaeche ist **1920x1080**, obwohl das Fenster 1600x900 misst | **gemessen** | `+0x38`/`+0x3C` lesen 1920/1080, `+0x4C` liest 6.220.800 = 1920*3*1080. Passt exakt |
 | `io.open` im UCP-Sandkasten schreibt **nur innerhalb des Spielordners** | **belegt** | Absoluter Pfad in die Dokumente: `Invalid path`. Relativ (`ucp/villagestudio/...`) geht |
-| **Die Kartenflaeche `+0xD8` hat einen anderen Zeilenabstand** | **gemessen** | Mit `Breite*2` gelesen ergibt sie Rauschen. Die Oberflaechen-Flaeche `+0xD4` dagegen ein sauberes Bild. Welcher Abstand fuer die Karte gilt, ist **offen** |
+| **Die Kartenflaeche `+0xD8` hat einen anderen Zeilenabstand** | **gemessen** | Mit `Breite*2` gelesen ergibt sie Rauschen. Die Oberflaechen-Flaeche `+0xD4` dagegen ein sauberes Bild. Welcher Abstand fuer die Karte gilt, ist **offen** — und dank des Blt-Aufrufs auch nicht mehr noetig |
+| **Das Format ist RGB555, NICHT RGB565** | **gemessen** | Mit 565 gelesen ist das ganze Bild rotstichig, mit 555 einwandfrei (Versionszeile „V1.41 UCP 3.0.7" lesbar). Das Dekompilat rechnet zwar 565 — unter `graphicsApiReplacer 1.3.0` kommt aber 555 aus dem Speicher. **Messung schlaegt Ableitung**: Der Code der exe beschreibt, was die exe tut, nicht was der Ersatztreiber in den Puffer legt |
+| **Der Blt ist aus dem SPIELTICK harmlos** | **belegt** | `bltMapGameSurfaceToScreenMenuSurfaceComplete` (`0x00470610`, thiscall, nur `this`) aus dem Tick-Poll gerufen: Prozess lebt weiter, Bild danach vollstaendig. Toedlich ist nicht die Funktion, sondern **der Aufrufort** — aus dem Zeichenhaken ist sie ein Wiedereintritt |
+| Ohne den Blt zeigt die Flaeche ein **Mischbild** | **belegt** | Von Daniel im Bild erkannt: oben das alte Hauptmenue, unten der startende Spielbildschirm. Die Menueflaeche wird nicht von selbst nachgefuehrt — genau deshalb ruft `takeScreenshot` den Blt zuerst |
 
 **Der Befehl:** `{ "id": <neu>, "bild": "menue" }` — schreibt
 `ucp/villagestudio/vs_menue.bmp`. Kein `player` noetig, der Zweig liegt vor der
@@ -574,19 +577,41 @@ beliebigen Speicher ins Log.
 ### Warum die Spielzeit bei ~4010 Ticks stehenbleibt
 
 Die Uebergabe nannte zwei moegliche Erklaerungen: Gefechtsende oder fehlender
-Fokus. **Beide sind falsch.** Das Bild zeigt es unmittelbar: Nach
-`SetupSkirmishMode(0)` steht das Spiel im Ranglisten-Bildschirm
-**„Maechtigster Fuerst"** (Jan. 1100 – Juni 1100). Dieser Bildschirm haelt die
-Spieluhr an. Gegenprobe im selben Moment: `currentGameMode` (`0x0191DD80`)
-liest **99** — das Gefecht laeuft also, es zeigt nur niemand die Karte.
+Fokus. **Beide waren geraten, und das Bild beantwortet die Frage direkt.**
 
-Das ist zugleich die Erklaerung dafuer, warum bisher jeder Bauversuch nach
-gut 4000 Ticks einschlief.
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Nach `SetupSkirmishMode(0)` steht das Spiel im Auswertungsbildschirm **„Maechtigster Fuerst"** | **belegt** | Bild aus dem Speicher, `doku/bilder/speicherbild_auswertung.png`. Der Lord liegt aufgebahrt — das ist der Niederlage-Bildschirm |
+| `currentMenuViewType` steht auf **30 = `MVT_GAME_LOSTUnk`** | **gemessen** | `GameCore+0x0C` gelesen. **Das Spiel ist verloren**, nicht pausiert |
+| `currentGameMode` (`0x0191DD80`) liest gleichzeitig **99** | **gemessen** | Der Wert taugt also **nicht** als Anzeige dafuer, ob noch gespielt wird. Wer nur ihn prueft, haelt ein verlorenes Spiel fuer ein laufendes |
+| **Der Grund: es ist gar kein vollstaendiges Match** | **belegt** | Daniels Beobachtung am Bild: in der Rangliste steht **nur ein Spieler**, Spieler 1 (rot) fehlt komplett. Ein Gefecht braucht mindestens zwei. `SetupSkirmishMode(0)` setzt die Karte auf, aber besetzt die Spielerplaetze nicht — deshalb ist nach rund 80 Spieltagen Schluss |
+| Dreimal wiederholt, dreimal dasselbe | **gemessen** | Zeitraeume Jan.–Mai 1100 und Jan.–Juni 1100; die Uhr blieb bei 3815 bzw. 4008 Ticks stehen |
 
-**Offen:** wie man aus diesem Bildschirm herauskommt, ohne zu klicken.
-Ansatzpunkte stehen fest: `GameCore` traegt `currentMenuViewType` bei `+0xC`
-und `menuViewToSwitchTo` bei `+0x18`; `switchToMenuView` liegt bei
-`0x0046B340`, `getAreWeInAInGameMenu` bei `0x0046BB60`.
+**Damit ist die Ursachenkette fuer die zweite Aufgabe geklaert, aber noch nicht
+behoben:** Solange kein zweiter Spieler besetzt ist, laeuft kein Gefecht lange
+genug fuer einen Bau-Messlauf. Der naechste Schritt ist die Spielerbesetzung,
+nicht der Gefechtsstart.
+
+### Aus einem Menuebildschirm herauskommen, ohne zu klicken
+
+**Geht** — im Spiel erprobt:
+
+```json
+{ "id": <neu>, "menue": 41 }
+```
+
+| Was | Wert |
+|---|---|
+| `DAT_GameCore` | `0x01FE7D10` (Ghidra-Symbol) |
+| `menuSwitchDelay` / `currentMenuViewType` / `menuViewToSwitchTo` | `+0x04` / `+0x0C` / `+0x18` |
+| `switchToMenuView` | `0x0046B340`, thiscall, `this` + 2 Argumente |
+| Ansichtsnummern | 12 Landschaftseditor, 14 Baumenue, **16 Gebaeude-/Statusleiste**, 30 Spiel verloren, **41 Hauptmenue**, 58 Rangliste |
+
+`getAreWeInAInGameMenu` (`0x0046BB60`) ist genau dann wahr, wenn die Ansicht
+12, 14 oder 16 ist — das ist die Bedingung, an der auch die Taste Q haengt.
+
+Zweimal ausgefuehrt (30 -> 41), beide Male sauber: das Spiel stand danach im
+Hauptmenue und nahm einen neuen Gefechtsbefehl an.
 
 ## 6. Widerlegtes
 
