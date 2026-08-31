@@ -1,0 +1,823 @@
+--[[ Village Studio - Live-Logik fuer Stronghold Crusader
+     Neu geschrieben am 30.08.2026.
+
+     Die Vorgaengerfassung war ueber rund vierzig Textersetzungen gewachsen
+     und dabei zerbrochen. Diese Fassung enthaelt nur, was im Spiel BELEGT
+     ist - jede Adresse und jeder Wert wurde gemessen, nichts geraten.
+     Die alte Datei liegt als logik_alt_20260830.lua daneben.
+
+     Wird von init.lua nachgeladen: sobald sich diese Datei aendert, ist die
+     neue Fassung im naechsten Tick aktiv. Bei einem Syntaxfehler bleibt die
+     laufende Fassung stehen und es kommt eine Warnung ins Log.
+]]--
+
+local VS = ...
+
+--============================================================================
+-- 1. Adressen. Alle im laufenden Spiel gemessen.
+--============================================================================
+
+-- Kachel-Ebenen der Karte. NICHT ueber KACHELGRENZE hinaus lesen:
+-- dahinter steht Zufallsspeicher (29.08.: erfundene Kacheln fuehrten zum
+-- Absturz, weil sie an destroyWall weitergereicht wurden).
+local LOGIK        = 0x01BF8368   -- int  je Kachel: Gelaende- und Baubits
+local HOEHE        = 0x01D32C38   -- byte je Kachel: bei Mauern die GESUNDHEIT
+local GRUNDHOEHE   = 0x01D46648   -- byte je Kachel: Hoehe ohne Bebauung
+local BESITZER     = 0x01D5A058   -- byte je Kachel, zaehlt AB 0
+local SCHADEN      = 0x01DBC2A8   -- byte je Kachel
+local KACHELGRENZE = 80400
+
+-- Mauerwerk: genau die Bits, die destroyWall loescht (ohne Schutt).
+-- 0x100000 ist NICHT dabei - das ist L_RIVER, ein Irrtum vom 29.08.
+local MAUERBIT = 0x100 | 0x200 | 0x800 | 0x10000 | 0x400000
+
+-- Gebaeudetabelle. Ein Eintrag ist 0x32C Bytes, Anzahl steht bei +0x08.
+--
+-- ACHTUNG, der haeufigste Fehler: Das Array beginnt erst bei GEBAEUDE+0x14.
+-- Unsere Basis laesst das weg, deshalb sind in ALLEN Offsets hier 0x14
+-- eingerechnet - nicht nur beim Leben. Wer Werte aus der Ghidra-Referenz
+-- uebernimmt, muss ueberall 0x14 addieren:
+--   Referenz +0xD0 Zustand -> hier 0xE4      Referenz +0xD2 Typ -> hier 0xE6
+--   Referenz +0xD6 Besitzer -> hier 0xEA     Referenz +0x10C Leben -> hier 0x120
+local GEBAEUDE     = 0xF98520
+local G_SCHRITT    = 0x32C
+local G_ZUSTAND    = 0xE4    -- word: 0 = kein Gebaeude, 3 = abgerissen
+local G_TYP        = 0xE6    -- word
+local G_BESITZER   = 0xEA    -- word: Spielernummer (NICHT ab 0)
+-- 30.08.: Hier fehlte der 0x14-Versatz - Gebaeude starben trotz Wacht.
+local G_LEBEN      = 0x120   -- word
+local G_MAXLEBEN   = 0x122   -- word
+
+-- Spielerdaten: Waren bei +0x4D0 als int[25] (2 Holz, 4 Stein, 15 Gold).
+local SPIELERDATEN = 0x0115BDF8
+local SD_SCHRITT   = 0x39F4
+local SD_WAREN     = 0x4D0
+
+-- Baukosten: int[110][5] je 20 Byte (Holz, Stein, Eisen, Pech, Gold).
+-- Index ist die Laufzeit-Gebaeudenummer. VOR dem Gefecht ist die Tabelle
+-- leer - wer da liest, misst Nullen und haelt die Adresse fuer falsch.
+local KOSTEN       = 0x01124CF4
+local KOSTENFELD   = { holz = 0, stein = 4, eisen = 8, pech = 12, gold = 16 }
+
+-- Zeit und Tempo. Ticks je Sekunde = Tempowert (gemessen bei 20/50/100/200).
+-- Tag 50, Woche 200, Monat 800, Jahr 9600 Ticks.
+local TICKZAEHLER  = 0x0117CADC
+local TEMPO        = 0x1FE7DD8
+local PAUSE        = 0x1FEA054
+
+--============================================================================
+-- 2. Kleine Helfer
+--============================================================================
+
+local function ware(spieler, art)
+  return core.readInteger(SPIELERDATEN + spieler * SD_SCHRITT + SD_WAREN + art * 4)
+end
+
+local function wareSetzen(spieler, art, menge)
+  core.writeInteger(SPIELERDATEN + spieler * SD_SCHRITT + SD_WAREN + art * 4, menge)
+end
+
+local function tick()
+  return core.readInteger(TICKZAEHLER) or 0
+end
+
+local function gebaeudeAnzahl()
+  local n = core.readInteger(GEBAEUDE + 8)
+  if n == nil or n < 2 or n > 4000 then return nil, n end
+  return n
+end
+
+--============================================================================
+-- 3. Mauerwacht
+--
+-- BELEGT am 30.08.2026, gemessen im Treffer-Moment:
+--   Logik 0x100 -> 0x100 (unveraendert), Hoehe 98 -> 77, Schaden 0 -> 1
+-- Beschuss laesst die Logikbits also unangetastet und senkt die HOEHE.
+-- Die Hoehe ist die Gesundheit einer Mauerkachel.
+--
+-- Drei harte Grenzen, aus Fehlschlaegen desselben Tages gelernt:
+--   1. Nur Kacheln EINES Besitzerwerts, nicht die ganze Karte.
+--   2. Nur Kacheln, die beim Scharfstellen volle Mauerhoehe hatten.
+--   3. Es werden NIE Logikbits geschrieben - nur Hoehe und Schaden. Damit
+--      kann diese Wacht prinzipiell keine Mauer erzeugen, nur erhalten.
+--      (Ohne Grenze 3 entstanden Phantommauern ueber die halbe Karte.)
+--
+-- Der Schadenswert MUSS mitzurueckgesetzt werden: sonst laeuft er hoch und
+-- das Spiel zerstoert die Kachel trotz gehaltener Hoehe.
+--============================================================================
+
+local mauerwacht = {}   -- schluessel -> { kacheln, ziel, anzahl, wieder, modus }
+
+local function mauerwachtStart(schluessel, besitzer, zielHoehe, modus)
+  local roh, hoechstJeArt, gefunden = {}, {}, 0
+  for k = 0, KACHELGRENZE - 1 do
+    if core.readByte(BESITZER + k) == besitzer then
+      local lg = core.readInteger(LOGIK + k * 4)
+      if (lg & MAUERBIT) ~= 0 then
+        local h = core.readByte(HOEHE + k)
+        roh[k] = { lg, h }
+        local art = lg & MAUERBIT
+        if hoechstJeArt[art] == nil or h > hoechstJeArt[art] then
+          hoechstJeArt[art] = h
+        end
+        gefunden = gefunden + 1
+      end
+    end
+  end
+
+  local kacheln, genommen, zuNiedrig = {}, 0, 0
+  for k, v in pairs(roh) do
+    local gesund = hoechstJeArt[v[1] & MAUERBIT]
+    local eigene = v[2]                     -- Ursprungshoehe DIESER Kachel
+    local ziel = zielHoehe or math.floor((gesund or eigene) / 2)
+    if ziel < 1 then ziel = 1 end
+
+    -- SICHERUNG, zweimal am 30.08. schmerzhaft gelernt:
+    -- Ein Mauerbit auf einer Kachel heisst NICHT, dass dort eine Mauer steht.
+    -- Es sitzt auch unter Lagerplaetzen, Torhaeusern und geplanten Bauten.
+    -- Wird deren niedrige Kachel auf Mauerhoehe gehoben, entsteht eine
+    -- Erhebung, ueber die niemand mehr laeuft - Softlock.
+    -- Deshalb: Kacheln, die nicht klar ueber dem Ziel liegen, bleiben aussen
+    -- vor. Angehoben wird grundsaetzlich nichts.
+    if eigene > ziel then
+      kacheln[k] = { ziel, eigene }         -- 1 = Zielhoehe, 2 = Ursprungshoehe
+      genommen = genommen + 1
+    else
+      zuNiedrig = zuNiedrig + 1
+    end
+  end
+
+  mauerwacht[schluessel] = { kacheln = kacheln, anzahl = genommen,
+                             wieder = 0, modus = modus or "halten" }
+  log(INFO, string.format(
+    "MAUERWACHT %s: %d von %d Kacheln uebernommen, %d zu niedrig (Lager, Torhaeuser, Baufelder - werden NIE angehoben). Zielhoehe %s, Modus %s.",
+    tostring(schluessel), genommen, gefunden, zuNiedrig, tostring(zielHoehe or "halb"), modus or "halten"))
+  return true
+end
+
+local function mauerwachtTick()
+  for schluessel, w in pairs(mauerwacht) do
+    for k, v in pairs(w.kacheln) do
+      local h = core.readByte(HOEHE + k)
+      if h < v[2] then                       -- Ausloeser: Hoehe verloren
+        if w.modus == "melden" then
+          core.writeInteger(PAUSE, 1)
+          log(INFO, string.format("TREFFER Tick %d | Kachel %d: Hoehe %d -> %d. SPIEL PAUSIERT.",
+            tick(), k, v[2], h))
+          mauerwacht[schluessel] = nil
+          return
+        elseif h ~= v[1] then
+          core.writeByte(HOEHE + k, v[1])
+          core.writeByte(SCHADEN + k, 0)
+          w.wieder = w.wieder + 1
+          if w.wieder <= 3 or w.wieder % 1000 == 0 then
+            log(INFO, string.format("MAUER Tick %d | Kachel %d auf %d gehalten (insgesamt %d).",
+              tick(), k, v[1], w.wieder))
+          end
+        end
+      end
+    end
+  end
+end
+
+--============================================================================
+-- 4. Gebaeudewacht
+--
+-- Gebaeude haben ein echtes Lebensfeld (+0x10C) samt Maximum (+0x10E) - hier
+-- muss nichts ueber Hoehen erschlossen werden.
+--
+-- Verhalten nach Daniels Vorgabe: Sobald ein Gebaeude Leben verliert, faellt
+-- es sofort auf den Zielwert (Standard 1) und bleibt dort. Es kann damit
+-- nicht mehr zerstoert werden, sieht aber schwer beschaedigt aus.
+--
+-- Neue Gebaeude werden mitgenommen: die Wacht laeuft ueber die ganze
+-- Tabelle, nicht ueber eine Liste vom Scharfstellen. Deshalb greift sie auch
+-- bei allem, was erst spaeter gebaut wird.
+--============================================================================
+
+local gebaeudewacht = {}   -- spieler -> { ziel, wieder }
+
+local function gebaeudewachtTick()
+  local n = gebaeudeAnzahl()
+  if n == nil then return end
+  for spieler, w in pairs(gebaeudewacht) do
+    for i = 1, n - 1 do
+      local b = GEBAEUDE + i * G_SCHRITT
+      local zustand = core.readSmallInteger(b + G_ZUSTAND)
+      if zustand ~= 0 and core.readSmallInteger(b + G_BESITZER) == spieler then
+        local leben = core.readSmallInteger(b + G_LEBEN)
+        local maxLeben = core.readSmallInteger(b + G_MAXLEBEN)
+        if leben ~= nil and maxLeben ~= nil and maxLeben > 0 then
+          -- Bei genau 1 Leben toetet der naechste Treffer. Deshalb wird auch
+          -- der Zustand 3 (zerstoert) zurueckgenommen - das Gebaeude kommt
+          -- zurueck. UNGEPRUEFT: ob das Spiel mit einer Auferstehung sauber
+          -- umgeht, muss der Test zeigen.
+          if zustand == 3 then
+            core.writeSmallInteger(b + G_ZUSTAND, 1)
+            core.writeSmallInteger(b + G_LEBEN, w.ziel)
+            w.wieder = w.wieder + 1
+            if w.wieder <= 5 or w.wieder % 200 == 0 then
+              log(INFO, string.format("GEBAEUDE Tick %d | Spieler %d Eintrag %d ZURUECKGEHOLT (war zerstoert), Leben %d.",
+                tick(), spieler, i, w.ziel))
+            end
+          elseif leben < maxLeben and leben ~= w.ziel then
+            core.writeSmallInteger(b + G_LEBEN, w.ziel)
+            w.wieder = w.wieder + 1
+            if w.wieder <= 3 or w.wieder % 500 == 0 then
+              log(INFO, string.format("GEBAEUDE Tick %d | Spieler %d Eintrag %d (Typ %d): Leben %d/%d -> %d (insgesamt %d).",
+                tick(), spieler, i, core.readSmallInteger(b + G_TYP),
+                leben, maxLeben, w.ziel, w.wieder))
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
+--============================================================================
+-- 4b. Einheiten - Basis am 30.08.2026 aus dem Maschinencode von spawnUnit
+--     (0x53E440) BELEGT, nicht aus einer Struktur abgeleitet:
+--
+--       0053e443  MOV ECX,0x1              Vergabe beginnt bei 1
+--       0053e44b  LEA EAX,[EBX + 0xb30]    units[1].logicalState = 0x01388A68
+--       0053e451  CMP word ptr [EAX],0x0   belegt-Test: logicalState gegen 0
+--       0053e465  ADD EAX,0x490            Schrittweite 1168
+--       0053e472  CMP EDI,dword ptr [EBX]  Grenze = UnitsState+0x00
+--       0053e46a  CMP EDI,0x9c4            2500 Plaetze
+--
+--     UnitsState = 0x01387F38, units[] bei +0x614 -> units[0] = 0x0138854C
+--     Gegenprobe: 0x0138854C + 1168 + 0x8C = 0x01388A68  geht auf
+--
+-- WARUM DER ERSTE ANLAUF SCHEITERTE - vier Fehler, KEINER in der Adresse:
+--   1. Belegt-Test ueber Leben bzw. Typ. Ein freier Platz behaelt beides von
+--      der gestorbenen Einheit. Das Spiel prueft logicalState (+0x8C).
+--   2. Schleife ab 0. Platz 0 wird nie vergeben.
+--   3. Grenze 0x01387F3C (DAT_UnitCount) statt 0x01387F38 (maxUnitCount).
+--   4. DER EIGENTLICHE FEHLER: Besitzer 0 wurde als Spieler mitgeprueft.
+--      Besitzer 0 ist die neutrale Seite - Tiere und herrenlose Bauern.
+--      Die hat nie einen Lord. Der Messwert vom 30.08. um 21:36 war in
+--      Wahrheit ein Treffer:  Spieler 1 -> 1 Lord,  Spieler 2 -> 1 Lord.
+--============================================================================
+
+local EINHEITEN   = 0x0138854C          -- units[0]
+local E_SCHRITT   = 1168
+local E_MAX       = 0x01387F38          -- maxUnitCount (UnitsState+0x00)
+local E_ZUSTAND   = 0x08C               -- logicalState, 0 = ULS_INVISIBLE = frei
+local E_TYP       = 0x08E
+local E_BESITZER  = 0x096
+local E_UID       = 0x098
+local E_X         = 0x0C4   -- Standort  (short)
+local E_Y         = 0x0C6
+local E_ZIEL_X    = 0x0C8   -- Ziel      (short) - NICHT der Standort
+local E_ZIEL_Y    = 0x0CA
+local E_ZIEL_KACHEL = 0x0D8 -- destinationTilePosition (int)
+local E_LEBEN     = 0x3C8   -- INT, nicht short
+local UT_LORD     = 55
+
+-- Belegt heisst logicalState ~= 0. NICHT ueber Typ oder Leben pruefen.
+local function eBelegt(i)
+  return (core.readSmallInteger(EINHEITEN + i * E_SCHRITT + E_ZUSTAND) or 0) ~= 0
+end
+
+--============================================================================
+-- Totschlagtest - die Widerlegungskriterien stehen VOR der Messung fest.
+--
+--  1  Platz 0 ist frei.        spawnUnit vergibt ihn nie. Prueft die BASIS
+--                              allein, ohne Typnummern und ohne Lord-Regel.
+--  2  maxUnitCount in 1..2500. Sonst falsches Feld gelesen.
+--  3  Kein belegter Platz mit unsinnigem Typ (1..78) oder Besitzer (0..8).
+--                              Prueft die SCHRITTWEITE: bei falschem Abstand
+--                              wandert der Lesepunkt mit jedem Index weiter.
+--  4  Jeder Spieler AB 1 mit Einheiten hat genau einen Lord.
+--                              Besitzer 0 ist neutral und ausgenommen.
+--  5  Hoechstens 9 Lords insgesamt.
+--============================================================================
+local function einheitenBericht()
+  local rot = 0
+  local function pruefe(nr, was, ok, gemessen)
+    if not ok then rot = rot + 1 end
+    log(INFO, string.format("  %d %s  %s   (%s)", nr, ok and "GRUEN" or "ROT  ", was, gemessen))
+  end
+  log(INFO, "=== TOTSCHLAGTEST Einheiten-Array ===")
+
+  -- 1) Basis-Test ueber die Zahlen: die belegten Plaetze muessen zu
+  --    maxUnitCount passen. Belegte Plaetze liegen dicht ab 0; klafft eine
+  --    Luecke oder zaehlt es weit darueber hinaus, zeigt die Basis falsch.
+  --    (Der fruehere Satz "Platz 0 ist nie belegt" war falsch: spawnUnit
+  --    sucht ab 1, aber Platz 0 wird anderweitig belegt - gemessen
+  --    logicalState[0] = 2 bei maxUnitCount 48 und 47 Plaetzen ab 1.)
+
+  -- 2) Grenze plausibel
+  local n = core.readInteger(E_MAX)
+  local nOk = n ~= nil and n >= 1 and n <= 2500
+  pruefe(2, "maxUnitCount in 1..2500", nOk, "maxUnitCount = " .. tostring(n))
+  if not nOk then n = 2500 end
+
+  -- 3) und 4) in einem Durchlauf
+  local jeBesitzer, jeTyp, lords = {}, {}, {}
+  local belegt, schlechtTyp, schlechtOwner, letzter = 0, 0, 0, -1
+  for i = 0, n - 1 do
+    if eBelegt(i) then
+      local b = EINHEITEN + i * E_SCHRITT
+      local t = core.readSmallInteger(b + E_TYP) or -1
+      local o = core.readSmallInteger(b + E_BESITZER) or -1
+      belegt = belegt + 1
+      jeBesitzer[o] = (jeBesitzer[o] or 0) + 1
+      jeTyp[t] = (jeTyp[t] or 0) + 1
+      if t == UT_LORD then lords[o] = (lords[o] or 0) + 1 end
+      if t < 1 or t > 78 then schlechtTyp = schlechtTyp + 1; letzter = i end
+      if o < 0 or o > 8 then schlechtOwner = schlechtOwner + 1; letzter = i end
+    end
+  end
+  pruefe(1, "belegte Plaetze passen zu maxUnitCount (prueft die Basis)",
+         belegt > 0 and belegt <= n and (n - belegt) <= 2,
+         string.format("%d belegt, maxUnitCount %d", belegt, n))
+  pruefe(3, "kein belegter Platz mit unsinnigem Typ/Besitzer (prueft die Schrittweite)",
+         schlechtTyp == 0 and schlechtOwner == 0,
+         string.format("%d belegt, %d Typ-, %d Besitzer-Ausreisser, zuletzt bei %d",
+                       belegt, schlechtTyp, schlechtOwner, letzter))
+
+  -- 4) Lord-Test - Besitzer 0 (neutral) ausgenommen
+  local fehler, txt, geprueft = 0, {}, 0
+  for o = 1, 8 do
+    if jeBesitzer[o] and jeBesitzer[o] > 5 then
+      geprueft = geprueft + 1
+      local k = lords[o] or 0
+      txt[#txt+1] = string.format("S%d:%d", o, k)
+      if k ~= 1 then fehler = fehler + 1 end
+    end
+  end
+  pruefe(4, "jeder Spieler ab 1 hat genau einen Lord (Besitzer 0 = neutral, ausgenommen)",
+         fehler == 0 and geprueft > 0,
+         string.format("%d Spieler geprueft, Lords %s", geprueft,
+                       #txt > 0 and table.concat(txt, " ") or "keine"))
+
+  -- 5) Lords gesamt
+  local ges = 0
+  for _, k in pairs(lords) do ges = ges + k end
+  pruefe(5, "hoechstens 9 Lords insgesamt", ges <= 9, "Lords gesamt = " .. ges)
+
+  -- Zahlen zum Mitlesen
+  log(INFO, "--- belegte Einheiten je Besitzer ---")
+  for o = 0, 8 do
+    if jeBesitzer[o] then
+      log(INFO, string.format("   Besitzer %d : %4d Einheiten, Lords: %d%s",
+        o, jeBesitzer[o], lords[o] or 0, o == 0 and "   (neutral)" or ""))
+    end
+  end
+  local liste = {}
+  for t, k in pairs(jeTyp) do liste[#liste+1] = {t, k} end
+  table.sort(liste, function(a, b) return a[2] > b[2] end)
+  log(INFO, "--- haeufigste Typen ---")
+  for i = 1, math.min(8, #liste) do
+    log(INFO, string.format("   Typ %3d : %d", liste[i][1], liste[i][2]))
+  end
+
+  log(INFO, rot == 0
+    and "=== ALLE GRUEN - Einheiten-Array im Spiel BESTAETIGT ==="
+    or string.format("=== %d ROT - Array bleibt unbestaetigt ===", rot))
+  return true
+end
+
+-- Zeigt die ersten belegten Plaetze roh. Zum Nachsehen, wenn ein Test rot ist.
+local function einheitenRoh(wieviele)
+  wieviele = wieviele or 12
+  local n = core.readInteger(E_MAX) or 2500
+  log(INFO, string.format("ROH: maxUnitCount = %s, Platz 0 logicalState = %s",
+    tostring(n), tostring(core.readSmallInteger(EINHEITEN + E_ZUSTAND))))
+  local gezeigt = 0
+  for i = 1, math.min(n - 1, 2499) do
+    if eBelegt(i) then
+      local b = EINHEITEN + i * E_SCHRITT
+      log(INFO, string.format("   [%4d] zustand=%s typ=%s owner=%s uid=%s leben=%s", i,
+        tostring(core.readSmallInteger(b + E_ZUSTAND)),
+        tostring(core.readSmallInteger(b + E_TYP)),
+        tostring(core.readSmallInteger(b + E_BESITZER)),
+        tostring(core.readInteger(b + E_UID)),
+        tostring(core.readInteger(b + E_LEBEN))))
+      gezeigt = gezeigt + 1
+      if gezeigt >= wieviele then break end
+    end
+  end
+  return true
+end
+
+--============================================================================
+-- 5. Berichte und Werkzeuge
+--============================================================================
+
+local function mauerDiagnose(bis)
+  bis = math.min(bis or KACHELGRENZE, KACHELGRENZE)
+  local mitBit, jeBesitzer = 0, {}
+  for k = 0, bis - 1 do
+    local lg = core.readInteger(LOGIK + k * 4)
+    if lg ~= nil and (lg & MAUERBIT) ~= 0 then
+      mitBit = mitBit + 1
+      local b = core.readByte(BESITZER + k)
+      jeBesitzer[b] = (jeBesitzer[b] or 0) + 1
+    end
+  end
+  log(INFO, string.format("DIAGNOSE: %d Kacheln mit Mauerwerk.", mitBit))
+  for b = 0, 16 do
+    if jeBesitzer[b] then
+      log(INFO, string.format("   Besitzerwert %2d : %5d Kacheln", b, jeBesitzer[b]))
+    end
+  end
+  return true
+end
+
+local function gebaeudeBericht(spieler)
+  local n, roh = gebaeudeAnzahl()
+  if n == nil then
+    log(WARNING, string.format("logik: Gebaeudeanzahl unplausibel (%s).", tostring(roh)))
+    return false
+  end
+  local jeTyp, gesamt, verletzt = {}, 0, 0
+  for i = 1, n - 1 do
+    local b = GEBAEUDE + i * G_SCHRITT
+    local z = core.readSmallInteger(b + G_ZUSTAND)
+    if z ~= 0 and z ~= 3 and core.readSmallInteger(b + G_BESITZER) == spieler then
+      local t = core.readSmallInteger(b + G_TYP)
+      jeTyp[t] = (jeTyp[t] or 0) + 1
+      gesamt = gesamt + 1
+      if core.readSmallInteger(b + G_LEBEN) < core.readSmallInteger(b + G_MAXLEBEN) then
+        verletzt = verletzt + 1
+      end
+    end
+  end
+  log(INFO, string.format("BESTAND Spieler %d: %d Gebaeude, davon %d beschaedigt.",
+    spieler, gesamt, verletzt))
+  for t = 0, 109 do
+    if jeTyp[t] then
+      log(INFO, string.format("   Typ %3d : %3d Stueck", t, jeTyp[t]))
+    end
+  end
+  return true
+end
+
+local function kostenBefehl(cmd)
+  local typ = cmd.typ
+  if type(typ) ~= "number" or typ < 0 or typ > 109 then
+    log(WARNING, "logik: 'typ' fehlt oder liegt ausserhalb 0-109.")
+    return false
+  end
+  local basis = KOSTEN + typ * 20
+  local vorher = {}
+  for name, off in pairs(KOSTENFELD) do vorher[name] = core.readInteger(basis + off) end
+  for name, off in pairs(KOSTENFELD) do
+    if type(cmd[name]) == "number" then core.writeInteger(basis + off, cmd[name]) end
+  end
+  log(INFO, string.format(
+    "KOSTEN Typ %d: Holz %d->%d, Stein %d->%d, Eisen %d->%d, Pech %d->%d, Gold %d->%d",
+    typ,
+    vorher.holz,  core.readInteger(basis + 0),
+    vorher.stein, core.readInteger(basis + 4),
+    vorher.eisen, core.readInteger(basis + 8),
+    vorher.pech,  core.readInteger(basis + 12),
+    vorher.gold,  core.readInteger(basis + 16)))
+  return true
+end
+
+--============================================================================
+-- 6. Befehle
+--============================================================================
+
+local function einzelbefehl(cmd)
+  if type(cmd) ~= "table" then return false end
+  local spieler = cmd.player
+
+  if cmd.pause ~= nil then
+    core.writeInteger(PAUSE, cmd.pause == true and 1 or 0)
+    log(INFO, "logik: Spiel " .. (cmd.pause == true and "pausiert" or "fortgesetzt") .. ".")
+    return true
+  end
+
+  if cmd.tempo ~= nil then
+    local alt = core.readInteger(TEMPO)
+    if type(cmd.tempo) == "number" then core.writeInteger(TEMPO, cmd.tempo) end
+    log(INFO, string.format("TEMPO: %s -> %s (Ticks je Sekunde = Tempowert).",
+      tostring(alt), tostring(core.readInteger(TEMPO))))
+    return true
+  end
+
+  if cmd.zeit == true then
+    local t = tick()
+    log(INFO, string.format("ZEIT: Tick %d | Tag %d/50 | Woche %d/200 | Monat %d/800 | Jahr = 9600",
+      t, t % 50, t % 200, t % 800))
+    return true
+  end
+
+  --==========================================================================
+  -- Bild aus dem Speicher (31.08.2026)
+  --
+  -- Warum nicht takeScreenshot (0x479540): sie ruft als Erstes
+  -- bltMapGameSurfaceToScreenMenuSurfaceComplete. Aus dem Zeichenhaken heraus
+  -- ist das ein Wiedereintritt - der Prozess stirbt, zurueck bleibt eine
+  -- 0-Byte-Datei (am 31.08. zweimal gemessen).
+  --
+  -- Aus dem Dekompilat derselben Funktion ist aber belegt, WIE sie die Pixel
+  -- liest, und das laesst sich ohne jeden Zeichenaufruf nachbauen:
+  --   WindowAndDirectDraw 0x00F98338
+  --     +0x38 Breite   +0x3C Hoehe   +0x4C Breite*3*Hoehe
+  --     +0xD4 Menueflaeche (die takeScreenshot liest)
+  --     +0xD8 Kartenflaeche
+  --   Die Flaeche ist ROHER Speicher: ushort je Pixel, RGB565, Zeilenlaenge
+  --   genau Breite*2 Byte, kein Rand. Zeile 0 liegt oben.
+  --   Farbe wie im Original: B=(v&0x1F)<<3, G=((v>>5)&0x3F)<<2, R=(v>>11)<<3.
+  --
+  -- Befehl: { "bild": "menue" } oder { "bild": "karte" }, dazu optional
+  -- { "datei": "C:/.../name.bmp" }.
+  --==========================================================================
+  if cmd.bild ~= nil then
+    local W = 0x00F98338
+    local resX = core.readInteger(W + 0x38) or 0
+    local resY = core.readInteger(W + 0x3C) or 0
+    local welche = (cmd.bild == "karte") and "karte" or "menue"
+    local ptr = core.readInteger(W + (welche == "karte" and 0xD8 or 0xD4)) or 0
+    local ziel = type(cmd.datei) == "string" and cmd.datei
+      or ("ucp/villagestudio/vs_" .. welche .. ".bmp")
+    -- Der UCP-Sandkasten laesst io.open nur INNERHALB des Spielordners zu.
+    -- Ein absoluter Pfad in die Dokumente scheitert mit "Invalid path"
+    -- (gemessen 31.08. 23:18).
+
+    log(INFO, string.format("BILD %s: Aufloesung %d x %d, Flaeche 0x%08X, Byteszahl %s -> %s",
+      welche, resX, resY, ptr, tostring(core.readInteger(W + 0x4C)), ziel))
+
+    if resX < 1 or resX > 4096 or resY < 1 or resY > 4096
+       or ptr < 0x10000 or ptr > 0x7FFFFFFF then
+      log(WARNING, "BILD: Aufloesung oder Flaechenzeiger unplausibel - nichts geschrieben.")
+      return false
+    end
+
+    local probe = {}
+    for i = 0, 7 do
+      probe[#probe + 1] = string.format("%04X", (core.readSmallInteger(ptr + i * 2) or 0) & 0xFFFF)
+    end
+    log(INFO, "BILD: erste acht Pixel " .. table.concat(probe, " "))
+
+    local f = io.open(ziel, "wb")
+    if not f then
+      log(WARNING, "BILD: Datei nicht schreibbar: " .. ziel)
+      return false
+    end
+
+    local function le32(n)
+      return string.char(n & 0xFF, (n >> 8) & 0xFF, (n >> 16) & 0xFF, (n >> 24) & 0xFF)
+    end
+    local function le16(n) return string.char(n & 0xFF, (n >> 8) & 0xFF) end
+
+    local zeilenBytes = resX * 3
+    local rand = (4 - zeilenBytes % 4) % 4     -- BMP-Zeilen liegen auf 4 Byte
+    local fuell = string.rep("\0", rand)
+    local daten = (zeilenBytes + rand) * resY
+
+    f:write("BM", le32(54 + daten), le16(0), le16(0), le32(54))
+    f:write(le32(40), le32(resX), le32(resY), le16(1), le16(24), le32(0),
+            le32(daten), le32(0), le32(0), le32(0), le32(0))
+
+    local char, concat, lies = string.char, table.concat, core.readSmallInteger
+    for y = resY - 1, 0, -1 do              -- BMP steht auf dem Kopf
+      local basis = ptr + y * resX * 2
+      local zeile = {}
+      for x = 0, resX - 1 do
+        local v = lies(basis + x * 2) or 0
+        if v < 0 then v = v + 65536 end
+        zeile[x + 1] = char((v & 0x1F) << 3, ((v >> 5) & 0x3F) << 2, ((v >> 11) & 0x1F) << 3)
+      end
+      f:write(concat(zeile))
+      if rand > 0 then f:write(fuell) end
+    end
+    f:close()
+    log(INFO, string.format("BILD %s: fertig, %d Byte -> %s", welche, 54 + daten, ziel))
+    return true
+  end
+
+  -- Rohe Speicherstelle ansehen: { "peek": 33325368, "worte": 16 }
+  if cmd.peek ~= nil then
+    local a = tonumber(cmd.peek)
+    if a == nil then log(WARNING, "PEEK: Adresse nicht lesbar.") return false end
+    local n = type(cmd.worte) == "number" and cmd.worte or 16
+    local zeile = {}
+    for k = 0, n - 1 do
+      zeile[#zeile + 1] = string.format("%08X", core.readInteger(a + k * 4) or 0)
+    end
+    log(INFO, string.format("PEEK 0x%08X: %s", a, table.concat(zeile, " ")))
+    return true
+  end
+
+  if cmd.kosten ~= nil then return kostenBefehl(cmd.kosten) end
+  if cmd.mauerDiagnose ~= nil then
+    return mauerDiagnose(type(cmd.mauerDiagnose) == "number" and cmd.mauerDiagnose or nil)
+  end
+
+  if spieler == nil then
+    log(WARNING, "logik: 'player' fehlt im Befehl.")
+    return false
+  end
+
+  if cmd.ware ~= nil then
+    local art = cmd.ware.typ or 4
+    local alt = ware(spieler, art)
+    if type(cmd.ware.menge) == "number" then wareSetzen(spieler, art, cmd.ware.menge) end
+    log(INFO, string.format("WARE %d bei Spieler %d: %s -> %s",
+      art, spieler, tostring(alt), tostring(ware(spieler, art))))
+    return true
+  end
+
+  if cmd.gold ~= nil then
+    local alt = ware(spieler, 15)
+    if type(cmd.gold) == "number" then wareSetzen(spieler, 15, cmd.gold) end
+    log(INFO, string.format("GOLD Spieler %d: %s -> %s",
+      spieler, tostring(alt), tostring(ware(spieler, 15))))
+    return true
+  end
+
+  if cmd.bestand == true then return gebaeudeBericht(spieler) end
+  if cmd.einheiten == true then return einheitenBericht() end
+  -- Bild vom Spiel. Laeuft im Spieltick, weil takeScreenshot selbst
+  -- zeichnet - aus dem Zeichenhaken heraus stirbt der Prozess.
+  -- Die Datei landet im Dokumente-Ordner:
+  --   Dokumente/Stronghold Crusader/screen_capture_NNN.bmp
+  -- Sie ist erst fertig, wenn die Groesse 0x36 + Breite*Hoehe*3 erreicht -
+  -- die Logzeile kommt frueher.
+  if cmd.foto ~= nil then
+    local nr = type(cmd.foto) == "number" and cmd.foto or 1
+    if VS ~= nil and VS.takeScreenshot ~= nil then
+      log(INFO, string.format("FOTO: fordere screen_capture_%03d.bmp an ...", nr))
+      local ok, err = pcall(VS.takeScreenshot, VS.WINDOW_DD or 0x00F98338, nr)
+      if not ok then log(WARNING, "FOTO fehlgeschlagen: " .. tostring(err)) end
+      return true
+    end
+    log(WARNING, "FOTO: takeScreenshot fehlt in der Werkzeugkiste.")
+    return false
+  end
+
+  if cmd.bauwacht ~= nil then
+    if cmd.bauwacht == false then return bauwachtStart(nil) end
+    return bauwachtStart(spieler, type(cmd.bauwacht) == "number" and cmd.bauwacht or nil)
+  end
+
+  if cmd.einheitenroh ~= nil then
+    return einheitenRoh(type(cmd.einheitenroh) == "number" and cmd.einheitenroh or nil)
+  end
+
+  if cmd.mauerwacht ~= nil then
+    if cmd.mauerwacht == false then
+      mauerwacht[spieler] = nil
+      log(INFO, string.format("MAUERWACHT %d aus.", spieler))
+      return true
+    end
+    -- besitzer: Wert in der Besitzer-Ebene. Sie zaehlt ab 0, aber die
+    -- Zuordnung Spieler -> Besitzerwert ist nicht immer spieler-1, deshalb
+    -- ist sie direkt angebbar.
+    return mauerwachtStart(spieler, cmd.besitzer or (spieler - 1), cmd.hoehe,
+      type(cmd.mauerwacht) == "string" and cmd.mauerwacht or nil)
+  end
+
+  if cmd.gebaeudewacht ~= nil then
+    if cmd.gebaeudewacht == false then
+      gebaeudewacht[spieler] = nil
+      log(INFO, string.format("GEBAEUDEWACHT %d aus.", spieler))
+      return true
+    end
+    gebaeudewacht[spieler] = { ziel = cmd.leben or 1, wieder = 0 }
+    log(INFO, string.format(
+      "GEBAEUDEWACHT Spieler %d an: beschaedigte Gebaeude fallen sofort auf %d Leben und bleiben dort.",
+      spieler, gebaeudewacht[spieler].ziel))
+    return true
+  end
+
+  -- Unbekannt hier heisst nicht unbekannt ueberhaupt: der AIV-Tausch
+  -- (ai/file/castle), abriss und bericht sitzen in init.lua. Ohne dieses
+  -- Durchreichen liesse sich keine Messburg laden.
+  if VS ~= nil and type(VS.handleCommand) == "function" then
+    VS.handleCommand(cmd)
+    return true
+  end
+  log(WARNING, "logik: unbekannter Befehl.")
+  return false
+end
+
+-- Befehle koennen einzeln oder als Liste kommen. Eine "id" wird gemerkt,
+-- damit derselbe Befehl nicht zweimal ausgefuehrt wird - so kann die
+-- Befehlsdatei gefahrlos mehrfach geschrieben werden.
+local erledigt = {}
+
+local function handleCommand(cmd)
+  if type(cmd) ~= "table" then return end
+  local liste = cmd
+  if type(cmd.befehle) == "table" then liste = cmd.befehle
+  elseif cmd[1] == nil then liste = { cmd } end
+
+  local ok, fehler, uebersprungen = 0, 0, 0
+  for i = 1, #liste do
+    local c = liste[i]
+    if type(c) == "table" and c.id ~= nil and erledigt[c.id] then
+      uebersprungen = uebersprungen + 1
+    else
+      local gut, err = pcall(einzelbefehl, c)
+      if gut and err then ok = ok + 1 else
+        fehler = fehler + 1
+        if not gut then log(WARNING, "logik: " .. tostring(err)) end
+      end
+      if type(c) == "table" and c.id ~= nil then erledigt[c.id] = true end
+    end
+  end
+  if ok + fehler > 1 or uebersprungen > 0 then
+    log(INFO, string.format("logik: %d von %d Befehlen ausgefuehrt, %d schon erledigt.",
+      ok, ok + fehler, uebersprungen))
+  end
+end
+
+--============================================================================
+-- 6b. Bauwacht - wann entsteht welcher Bauschritt?
+--
+-- Zaehlt in festem Abstand die Mauerkacheln eines Besitzers und meldet jeden
+-- Zuwachs mit Tick. Ein Bauschritt dauert belegte 50 Ticks, die Schrittnummer
+-- laesst sich also aus dem Tick zurueckrechnen; ausgefallene Schritte
+-- erscheinen als Luecke.
+--
+-- Warum ueber die Kacheln und nicht ueber die Bauliste: die Bauliste haette
+-- die Schrittnummer direkt, aber ihr Eintragsabstand ist noch nicht gemessen.
+-- Die Kachelzaehlung braucht nichts Unbelegtes.
+--
+-- Der Besitzerwert zaehlt AB 0 - Spieler 3 steht dort als 2.
+--============================================================================
+
+local bauwacht = nil
+
+local function mauernZaehlen(besitzerWert)
+  local n = 0
+  for k = 0, KACHELGRENZE - 1 do
+    local lg = core.readInteger(LOGIK + k * 4)
+    if lg ~= nil and (lg & MAUERBIT) ~= 0 then
+      if besitzerWert == nil or core.readByte(BESITZER + k) == besitzerWert then
+        n = n + 1
+      end
+    end
+  end
+  return n
+end
+
+local function bauwachtStart(spieler, abstand)
+  if spieler == nil then
+    bauwacht = nil
+    log(INFO, "BAUWACHT: aus.")
+    return true
+  end
+  local bw = spieler - 1                    -- Besitzerschicht zaehlt ab 0
+  local t = tick()
+  bauwacht = {
+    besitzer = bw,
+    abstand  = abstand or 10,
+    zahl     = mauernZaehlen(bw),
+    naechste = t,
+    start    = t,
+    stufen   = 0,
+  }
+  log(INFO, string.format(
+    "BAUWACHT: an fuer Spieler %d (Besitzerwert %d), Startbestand %d Mauern bei Tick %d, Pruefabstand %d.",
+    spieler, bw, bauwacht.zahl, t, bauwacht.abstand))
+  return true
+end
+
+local function bauwachtTick()
+  if bauwacht == nil then return end
+  local t = tick()
+  if t < bauwacht.naechste then return end
+  bauwacht.naechste = t + bauwacht.abstand
+
+  local neu = mauernZaehlen(bauwacht.besitzer)
+  if neu == bauwacht.zahl then return end
+
+  bauwacht.stufen = bauwacht.stufen + 1
+  local seitStart = t - bauwacht.start
+  -- Bei 50 Ticks je Schritt: welcher Schritt ist das rechnerisch?
+  log(INFO, string.format(
+    "BAU Tick %d (+%d seit Start) | Mauern %d -> %d (%+d) | Stufe %d | rechnerisch Schritt %.1f",
+    t, seitStart, bauwacht.zahl, neu, neu - bauwacht.zahl, bauwacht.stufen, seitStart / 50.0))
+  bauwacht.zahl = neu
+end
+
+--============================================================================
+-- 7. Taktgeber
+--============================================================================
+
+local function everyTick()
+  pcall(mauerwachtTick)
+  pcall(gebaeudewachtTick)
+  pcall(bauwachtTick)
+end
+
+log(INFO, "logik.lua (31.08.2026): + Bauwacht, + Durchreichen an init.lua.")
+
+return {
+  handleCommand   = handleCommand,
+  bauwachtStart   = bauwachtStart,
+  mauernZaehlen   = mauernZaehlen,
+  everyTick       = everyTick,
+  mauerwachtStart = mauerwachtStart,
+  gebaeudeBericht = gebaeudeBericht,
+  mauerDiagnose   = mauerDiagnose,
+}

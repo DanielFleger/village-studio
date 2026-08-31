@@ -549,6 +549,45 @@ sucht das eine Gegenbeispiel statt weiterer Belege.
 
 ---
 
+## 5f. Ein Bild vom laufenden Spiel, ohne Fokus (31.08.2026)
+
+Die Aufgabe: ein Bild vom Spielinhalt, waehrend das Fenster im Hintergrund
+liegt und Daniel weiterarbeitet. Geloest — mit einem Weg, der ohne Fenster,
+ohne Fokus und ohne jeden Zeichenaufruf auskommt.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **`PostMessage` an das Spielfenster ist von hier aus unmoeglich** | **belegt** | `PostMessage(hwnd, WM_KEYDOWN, VK_Q, ...)` liefert `false`, `GetLastError` = 5. `IsWindow` sagt gleichzeitig `true`. Das Spiel laeuft erhoeht, unsere Sitzung nicht — Windows (UIPI) sperrt jede Nachricht an ein hoeher berechtigtes Fenster. Der Q-Weg ist damit **nicht** widerlegt, sondern von aussen schlicht nicht erreichbar |
+| **`takeScreenshot` toetet den Prozess auch im laufenden Gefecht** | **belegt** | `{ "foto": 1 }` ueber den Dateikanal: Prozess weg, zurueck bleibt `screen_capture_001.bmp` mit 0 Byte. Die Vermutung, es liege am fehlenden Gefecht, ist damit widerlegt — es liegt am Aufrufort |
+| **Der Grund steht im Dekompilat**: `takeScreenshot` ruft als Erstes `bltMapGameSurfaceToScreenMenuSurfaceComplete` | **belegt** | Dekompilat von `0x00479540`, Zeile 107. Aus dem Zeichenhaken heraus ist das ein Wiedereintritt. Das Dekompilat liegt als `doku/takeScreenshot_dekompilat.c` daneben |
+| **Die Zeichenflaeche ist roher Speicher und laesst sich direkt lesen** | **belegt** | Aus demselben Dekompilat: `puVar10 = surfacePointer_screenMenu + resolutionX * y`, `ushort` je Pixel. Also Zeilenlaenge genau `Breite * 2` Byte, **kein Rand**, Zeile 0 oben. Farbe: B=`(v&0x1F)<<3`, G=`((v>>5)&0x3F)<<2`, R=`(v>>11)<<3` |
+| **Das Lua-Modul kann die BMP selbst schreiben** | **belegt** | 1920x1080 aus dem Speicher gelesen und als 6.220.854-Byte-BMP geschrieben, **in 0,36 Sekunden**. Das Bild zeigt lesbar die Spieloberflaeche. Weder Fenster noch Fokus noch Sichtbarkeit spielen eine Rolle |
+| Die Flaeche ist **1920x1080**, obwohl das Fenster 1600x900 misst | **gemessen** | `+0x38`/`+0x3C` lesen 1920/1080, `+0x4C` liest 6.220.800 = 1920*3*1080. Passt exakt |
+| `io.open` im UCP-Sandkasten schreibt **nur innerhalb des Spielordners** | **belegt** | Absoluter Pfad in die Dokumente: `Invalid path`. Relativ (`ucp/villagestudio/...`) geht |
+| **Die Kartenflaeche `+0xD8` hat einen anderen Zeilenabstand** | **gemessen** | Mit `Breite*2` gelesen ergibt sie Rauschen. Die Oberflaechen-Flaeche `+0xD4` dagegen ein sauberes Bild. Welcher Abstand fuer die Karte gilt, ist **offen** |
+
+**Der Befehl:** `{ "id": <neu>, "bild": "menue" }` — schreibt
+`ucp/villagestudio/vs_menue.bmp`. Kein `player` noetig, der Zweig liegt vor der
+Spielerpruefung. Ein zweiter Zweig `{ "peek": <Adresse>, "worte": <n> }` liest
+beliebigen Speicher ins Log.
+
+### Warum die Spielzeit bei ~4010 Ticks stehenbleibt
+
+Die Uebergabe nannte zwei moegliche Erklaerungen: Gefechtsende oder fehlender
+Fokus. **Beide sind falsch.** Das Bild zeigt es unmittelbar: Nach
+`SetupSkirmishMode(0)` steht das Spiel im Ranglisten-Bildschirm
+**„Maechtigster Fuerst"** (Jan. 1100 – Juni 1100). Dieser Bildschirm haelt die
+Spieluhr an. Gegenprobe im selben Moment: `currentGameMode` (`0x0191DD80`)
+liest **99** — das Gefecht laeuft also, es zeigt nur niemand die Karte.
+
+Das ist zugleich die Erklaerung dafuer, warum bisher jeder Bauversuch nach
+gut 4000 Ticks einschlief.
+
+**Offen:** wie man aus diesem Bildschirm herauskommt, ohne zu klicken.
+Ansatzpunkte stehen fest: `GameCore` traegt `currentMenuViewType` bei `+0xC`
+und `menuViewToSwitchTo` bei `+0x18`; `switchToMenuView` liegt bei
+`0x0046B340`, `getAreWeInAInGameMenu` bei `0x0046BB60`.
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
