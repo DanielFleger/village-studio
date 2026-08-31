@@ -532,6 +532,11 @@ local function einzelbefehl(cmd)
 
   if cmd.bestand == true then return gebaeudeBericht(spieler) end
   if cmd.einheiten == true then return einheitenBericht() end
+  if cmd.bauwacht ~= nil then
+    if cmd.bauwacht == false then return bauwachtStart(nil) end
+    return bauwachtStart(spieler, type(cmd.bauwacht) == "number" and cmd.bauwacht or nil)
+  end
+
   if cmd.einheitenroh ~= nil then
     return einheitenRoh(type(cmd.einheitenroh) == "number" and cmd.einheitenroh or nil)
   end
@@ -562,6 +567,13 @@ local function einzelbefehl(cmd)
     return true
   end
 
+  -- Unbekannt hier heisst nicht unbekannt ueberhaupt: der AIV-Tausch
+  -- (ai/file/castle), abriss und bericht sitzen in init.lua. Ohne dieses
+  -- Durchreichen liesse sich keine Messburg laden.
+  if VS ~= nil and type(VS.handleCommand) == "function" then
+    VS.handleCommand(cmd)
+    return true
+  end
   log(WARNING, "logik: unbekannter Befehl.")
   return false
 end
@@ -598,18 +610,91 @@ local function handleCommand(cmd)
 end
 
 --============================================================================
+-- 6b. Bauwacht - wann entsteht welcher Bauschritt?
+--
+-- Zaehlt in festem Abstand die Mauerkacheln eines Besitzers und meldet jeden
+-- Zuwachs mit Tick. Ein Bauschritt dauert belegte 50 Ticks, die Schrittnummer
+-- laesst sich also aus dem Tick zurueckrechnen; ausgefallene Schritte
+-- erscheinen als Luecke.
+--
+-- Warum ueber die Kacheln und nicht ueber die Bauliste: die Bauliste haette
+-- die Schrittnummer direkt, aber ihr Eintragsabstand ist noch nicht gemessen.
+-- Die Kachelzaehlung braucht nichts Unbelegtes.
+--
+-- Der Besitzerwert zaehlt AB 0 - Spieler 3 steht dort als 2.
+--============================================================================
+
+local bauwacht = nil
+
+local function mauernZaehlen(besitzerWert)
+  local n = 0
+  for k = 0, KACHELGRENZE - 1 do
+    local lg = core.readInteger(LOGIK + k * 4)
+    if lg ~= nil and (lg & MAUERBIT) ~= 0 then
+      if besitzerWert == nil or core.readByte(BESITZER + k) == besitzerWert then
+        n = n + 1
+      end
+    end
+  end
+  return n
+end
+
+local function bauwachtStart(spieler, abstand)
+  if spieler == nil then
+    bauwacht = nil
+    log(INFO, "BAUWACHT: aus.")
+    return true
+  end
+  local bw = spieler - 1                    -- Besitzerschicht zaehlt ab 0
+  local t = tick()
+  bauwacht = {
+    besitzer = bw,
+    abstand  = abstand or 10,
+    zahl     = mauernZaehlen(bw),
+    naechste = t,
+    start    = t,
+    stufen   = 0,
+  }
+  log(INFO, string.format(
+    "BAUWACHT: an fuer Spieler %d (Besitzerwert %d), Startbestand %d Mauern bei Tick %d, Pruefabstand %d.",
+    spieler, bw, bauwacht.zahl, t, bauwacht.abstand))
+  return true
+end
+
+local function bauwachtTick()
+  if bauwacht == nil then return end
+  local t = tick()
+  if t < bauwacht.naechste then return end
+  bauwacht.naechste = t + bauwacht.abstand
+
+  local neu = mauernZaehlen(bauwacht.besitzer)
+  if neu == bauwacht.zahl then return end
+
+  bauwacht.stufen = bauwacht.stufen + 1
+  local seitStart = t - bauwacht.start
+  -- Bei 50 Ticks je Schritt: welcher Schritt ist das rechnerisch?
+  log(INFO, string.format(
+    "BAU Tick %d (+%d seit Start) | Mauern %d -> %d (%+d) | Stufe %d | rechnerisch Schritt %.1f",
+    t, seitStart, bauwacht.zahl, neu, neu - bauwacht.zahl, bauwacht.stufen, seitStart / 50.0))
+  bauwacht.zahl = neu
+end
+
+--============================================================================
 -- 7. Taktgeber
 --============================================================================
 
 local function everyTick()
   pcall(mauerwachtTick)
   pcall(gebaeudewachtTick)
+  pcall(bauwachtTick)
 end
 
-log(INFO, "logik.lua neu (30.08.2026): Mauerwacht, Gebaeudewacht, Waren, Kosten, Zeit.")
+log(INFO, "logik.lua (31.08.2026): + Bauwacht, + Durchreichen an init.lua.")
 
 return {
   handleCommand   = handleCommand,
+  bauwachtStart   = bauwachtStart,
+  mauernZaehlen   = mauernZaehlen,
   everyTick       = everyTick,
   mauerwachtStart = mauerwachtStart,
   gebaeudeBericht = gebaeudeBericht,

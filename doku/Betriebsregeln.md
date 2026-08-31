@@ -295,6 +295,40 @@ Get-Process | Where-Object { $_.ProcessName -match "Crusader" } | ForEach-Object
 und danach prüfen, dass **genau eine** Instanz läuft und ihr Fenstertitel
 `Crusader` heißt (nicht `FATAL`, nicht `Stronghold Crusader Error`).
 
+### Die Testsperre — nur eine Sitzung fährt das Spiel
+
+**Am 31.08. um 20:36 haben beide Sitzungen gleichzeitig einen Testlauf
+gestartet.** Beide Läufe waren wertlos, und keiner der beiden hat es sofort
+gemerkt — denn von außen sieht alles gesund aus:
+
+- Die zweite Instanz bleibt im Dialog *„is already running"* hängen, lädt UCP
+  aber **vollständig** und schreibt Logzeilen. Das Log meldet „Haken gesetzt"
+  und „Modul aktiv", während das Spiel nie ins Menü kommt.
+- `ucp3.log` wird bei **jedem** Spielstart neu angelegt. Wer startet, löscht
+  die Messwerte des anderen.
+- Beide schreiben in dieselbe `befehl.json` und überschreiben sich.
+
+Deshalb gibt es `werkzeug/sperre.py` und die Datei
+`ucp/villagestudio/wer_testet.txt`:
+
+```bash
+python werkzeug/sperre.py nachsehen
+```
+
+**Vor jedem Testlauf holen, danach freigeben:**
+
+```bash
+python werkzeug/sperre.py holen villagestudio "Burg_left_2-Lauf"
+```
+
+Rückgabe 0 heißt bekommen, 1 heißt belegt — dann **nicht testen**, sondern der
+anderen Sitzung schreiben. Eine Sperre, die älter als 30 Minuten ist, gilt als
+vergessen und darf übernommen werden. `werkzeug/lauf_burg2.py` holt und gibt
+sie von selbst frei, auch bei jedem Abbruch.
+
+Das ersetzt keine Absprache, es fängt nur den Fall ab, dass eine vergessen
+wurde.
+
 ### Start von Hand
 
 Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":
