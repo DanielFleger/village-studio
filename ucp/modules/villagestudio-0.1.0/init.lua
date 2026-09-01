@@ -680,6 +680,19 @@ local function onMenuFrame()
   -- gibt es dafuer kein einziges Beispiel.
   -- Beim ersten Bild sofort nach hinten, danach regelmaessig nachfassen -
   -- das Spiel holt sich waehrend des Ladens mehrfach die Spitze zurueck.
+  --
+  -- Abschaltbar ueber eine Datei, nicht ueber einen Befehl: Die Wacht feuert
+  -- schon beim ERSTEN Bild, lange bevor die Befehlsdatei zum ersten Mal
+  -- gelesen wird. Ein Befehl kaeme also immer zu spaet. Wer das Spiel im
+  -- Vordergrund braucht, legt ucp/villagestudio/vorn.txt an.
+  if menuCounter == 1 then
+    local f = io.open("ucp/villagestudio/vorn.txt", "r")
+    if f ~= nil then
+      f:close()
+      fensterWachtAn = false
+      log(INFO, "FENSTER: vorn.txt gefunden - das Fenster bleibt, wo es ist.")
+    end
+  end
   if fensterWachtAn and (menuCounter <= 60 or menuCounter % 300 == 0) then
     pcall(fensterNachHinten)
   end
@@ -710,7 +723,12 @@ local function onMenuFrame()
   -- Bis 01.09. verwarf dieser Haken jeden anderen Befehl stillschweigend -
   -- ein neuer Befehl kam im Hauptmenue schlicht nie an, ohne eine einzige
   -- Zeile im Log. Genau das hat den ersten Anlauf zum eigenen Gefecht gekostet.
-  if cmd.eigenesGefecht ~= nil or cmd.fenster ~= nil
+  -- Eine LISTE ist hier genauso gueltig wie ein einzelner Befehl. Ohne diese
+  -- Zeile verwirft der Haken sie stillschweigend: bei { "befehle": [...] } ist
+  -- cmd.menue leer, und keine der Einzelpruefungen greift. Am 02.09.2026 kam
+  -- dadurch ein Menuesprung nie an - ohne eine Zeile im Log.
+  if cmd.befehle ~= nil
+     or cmd.eigenesGefecht ~= nil or cmd.fenster ~= nil
      or cmd.kette ~= nil or cmd.wo ~= nil or cmd.menue ~= nil
      or cmd.peek ~= nil or cmd.bild ~= nil or cmd.beenden ~= nil
      or cmd.hinten ~= nil or cmd.regel ~= nil or cmd.tausche ~= nil then
