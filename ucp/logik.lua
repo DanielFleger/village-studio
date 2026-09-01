@@ -880,6 +880,45 @@ local function einzelbefehl(cmd)
     return true
   end
 
+  --==========================================================================
+  -- Fenster nach ganz unten - aus dem Spiel heraus
+  --
+  --   { "hinten": true }              Aufrufart 0 (cdecl)
+  --   { "hinten": true, "art": 2 }    andere Aufrufart probieren
+  --
+  -- Von aussen ist das gesperrt (Fehler 5, hohe Rechtestufe). Das Modul laeuft
+  -- IM Spiel und darf es. Am 01.09. starb der Prozess bei Aufrufart 0, weil
+  -- SetWindowPos stdcall ist und seine sieben Argumente selbst vom Stapel
+  -- raeumt - exposeCode raeumt bei cdecl ein zweites Mal auf. Deshalb ist die
+  -- Aufrufart hier von aussen einstellbar: der Neustart kostet nur Sekunden,
+  -- also lassen sich die Kandidaten der Reihe nach messen.
+  --
+  -- Das Fensterhandle steht in der Grafikstruktur bei +0xAC. Am 01.09. belegt:
+  -- der Wert stimmte mit dem ueberein, den Windows fuer das Spielfenster nennt.
+  --==========================================================================
+  if cmd.hinten ~= nil then
+    local hwnd = core.readInteger(0x00F98338 + 0xAC)
+    if hwnd == nil or hwnd == 0 then
+      log(WARNING, "HINTEN: kein Fensterhandle in der Grafikstruktur.")
+      return true
+    end
+    local adr = core.readInteger(0x0059E1F4)          -- IAT SetWindowPos
+    if adr == nil or adr == 0 then
+      log(WARNING, "HINTEN: kein Import-Eintrag bei 0x0059E1F4.")
+      return true
+    end
+    local art = tonumber(cmd.art) or 0
+    log(INFO, string.format("HINTEN: Fenster 0x%X, SetWindowPos 0x%X, Aufrufart %d",
+      hwnd, adr, art))
+    -- HWND_BOTTOM = 1; NOMOVE|NOSIZE|NOACTIVATE = 0x13 - kein Fokusraub
+    local ok, err = pcall(function()
+      core.exposeCode(adr, 7, art)(hwnd, 1, 0, 0, 0, 0, 0x13)
+    end)
+    log(INFO, "HINTEN: Aufruf zurueck, ok=" .. tostring(ok) ..
+      (ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
   -- Ereignis-Regel setzen oder alle loeschen.
   --   { "regel": { "name": "...", "wenn": {...}, "dann": [...], "einmal": true } }
   --   { "regeln": "aus" }

@@ -31,6 +31,11 @@ public class Hi {
   [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h);
   [DllImport("user32.dll")] public static extern int GetWindowTextLength(IntPtr h);
   [DllImport("user32.dll", SetLastError=true)] public static extern bool SetWindowPos(IntPtr h, IntPtr nach, int x, int y, int cx, int cy, uint f);
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, IntPtr p);
+  [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+  [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint a, uint b, bool an);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
 }
 "@
 
@@ -80,6 +85,23 @@ function PlatzImStapel([IntPtr]$spiel) {
     return @($platz, $gesamt)
 }
 
+# Wer hat gerade den Tastaturfokus? Den bekommt er am Ende zurueck.
+$vorherVorn = [Hi]::GetForegroundWindow()
+
+# Den Fokus zurueckgeben. Ein blosses SetForegroundWindow reicht NICHT - Windows
+# erlaubt den Wechsel nur einem Prozess, der selbst gerade Eingabe hat. Der
+# uebliche Ausweg: den eigenen Eingabe-Thread kurz an den des aktuellen
+# Vordergrundfensters haengen.
+function GibFokusZurueck([IntPtr]$ziel) {
+    if ($ziel -eq [IntPtr]::Zero) { return $false }
+    $v = [Hi]::GetWindowThreadProcessId([Hi]::GetForegroundWindow(), [IntPtr]::Zero)
+    $m = [Hi]::GetCurrentThreadId()
+    $a = [Hi]::AttachThreadInput($m, $v, $true)
+    $ok = [Hi]::SetForegroundWindow($ziel)
+    if ($a) { [void][Hi]::AttachThreadInput($m, $v, $false) }
+    return $ok
+}
+
 if (-not $NurSchieben) {
     # Ein stehengebliebener Auftrag wuerde beim Start sofort erneut feuern.
     Set-Content -Path (Join-Path $SPIEL_ORDNER "ucp\villagestudio\befehl.json") `
@@ -94,6 +116,9 @@ $gefunden = $false
 $erstesMal = $null
 $durchgaenge = 0
 
+$LOG = Join-Path $SPIEL_ORDNER "ucp3.log"
+$ruhig = 0
+
 while ($uhr.Elapsed.TotalSeconds -lt $Sekunden) {
     $spiel = Spielfenster
     if ($spiel -ne [IntPtr]::Zero) {
@@ -103,7 +128,32 @@ while ($uhr.Elapsed.TotalSeconds -lt $Sekunden) {
             Write-Output ("Fenster da nach {0:N1} s - schiebe sofort nach hinten." -f $erstesMal)
         }
         [void](SenkeSpiel $spiel)
+        # Auch waehrend des Ladens: sobald das Spiel den Fokus hat, zurueck
+        # damit. Nur am Ende zu pruefen genuegt nicht - das Spiel holt ihn
+        # sich beim Fertigladen erneut.
+        if ([Hi]::GetForegroundWindow() -eq $spiel) {
+            [void](GibFokusZurueck $vorherVorn)
+            $ruhig = 0
+        } else {
+            $ruhig++
+        }
         $durchgaenge++
+
+        # Frueher aufhoeren, sobald das Modul laeuft UND die Lage eine Sekunde
+        # lang stabil ist: ab dann haelt die Wacht IM Spiel das Fenster unten,
+        # dieses Skript wird nicht mehr gebraucht. Sonst laufen hier stur die
+        # vollen Sekunden ab, in denen laengst nichts mehr passiert.
+        if ($ruhig -ge 5 -and $uhr.Elapsed.TotalSeconds -gt 3) {
+            $stand = PlatzImStapel $spiel
+            $untenGenug = ($stand[0] -ge ($stand[1] - 1))
+            $modulDa = (Test-Path $LOG) -and
+                       ((Get-Content $LOG -Raw -ErrorAction SilentlyContinue) -match 'villagestudio aktiv')
+            if ($untenGenug -and $modulDa) {
+                Write-Output ("Modul laeuft und Lage sitzt - uebergebe nach {0:N1} s an die Wacht im Spiel." `
+                              -f $uhr.Elapsed.TotalSeconds)
+                break
+            }
+        }
     }
     Start-Sleep -Milliseconds 200
 }
@@ -113,9 +163,22 @@ if ($spiel -eq [IntPtr]::Zero) {
     Write-Output "Kein Spielfenster gefunden."
     exit 1
 }
+# Fokus zurueckgeben. Das Senken selbst nimmt keinen Fokus (SWP_NOACTIVATE),
+# aber Windows hat ihn dem Spiel beim Start gegeben - dort bleibt er sonst,
+# und Daniels Tastatureingaben landen im Spiel statt in seinem Fenster.
+# Am 01.09. im ersten Testdurchgang aufgefallen: Fenster lag hinten, Fokus
+# trotzdem beim Spiel.
+$fokus = $false
+for ($i = 0; $i -lt 5; $i++) {
+    if ([Hi]::GetForegroundWindow() -ne $spiel) { $fokus = $true; break }
+    $fokus = GibFokusZurueck $vorherVorn
+    Start-Sleep -Milliseconds 300
+}
+
 $stand = PlatzImStapel $spiel
 Write-Output ("Fertig: {0} Durchgaenge in {1:N0} s. Spiel steht auf Platz {2} von {3} sichtbaren Fenstern." `
               -f $durchgaenge, $uhr.Elapsed.TotalSeconds, $stand[0], $stand[1])
+Write-Output ("Fokus beim Spiel: {0}" -f ([Hi]::GetForegroundWindow() -eq $spiel))
 if ($stand[0] -eq $stand[1]) {
     Write-Output "-> zuunterst, alles andere liegt darueber."
 } else {

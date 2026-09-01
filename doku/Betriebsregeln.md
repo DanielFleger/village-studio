@@ -455,6 +455,62 @@ laeuft stabil. **Der Monitorwechsel ist die Ursache, nicht die Option.**
 
 ---
 
+### exposeCode kennt drei Aufrufarten - die 2 ist stdcall (01.09.2026)
+
+**Der wichtigste Fund des Abends**, weil er nicht nur ein Problem loest, sondern
+eine ganze Tuer oeffnet: Windows-Funktionen sind aus dem Modul heraus rufbar.
+
+| Wert | Aufrufart | Beispiel |
+|---|---|---|
+| 0 | cdecl | `SetupSkirmishMode`, `LaunchSkirmishGame` |
+| 1 | thiscall (`this` zaehlt als erstes Argument mit) | `applyAIV` mit 2 Argumenten -> `exposeCode(a, 3, 1)` |
+| **2** | **stdcall** | **alle Windows-Funktionen** |
+
+Vorgeschichte: `SetWindowPos` mit Aufrufart 0 hat den Prozess **zweimal
+getoetet**. Die Funktion ist stdcall und raeumt ihre sieben Argumente selbst
+vom Stapel; exposeCode raeumte bei cdecl ein zweites Mal auf, der Stapelzeiger
+wanderte, der naechste Ruecksprung ging ins Leere. Der Verdacht fiel dabei
+nacheinander auf die Fensterposition des Grafikmoduls und auf die Rechtestufe -
+beides falsch. Mit Aufrufart 2 kommt der Aufruf sauber zurueck.
+
+**Merksatz:** Stirbt ein Aufruf ueber exposeCode ohne Fehlermeldung, ist die
+Aufrufart der erste Verdaechtige, nicht die Adresse.
+
+---
+
+### Das Spielfenster in den Hintergrund - was geht und was nicht
+
+„Im Hintergrund" heisst hier genau eine Sache: **zuunterst im Fensterstapel,
+alles andere darueber.** Nicht minimiert (dann friert der Zeichenhaken), nicht
+bloss ohne Tastaturfokus (dann verdeckt es weiter den Bildschirm).
+
+| Weg | Ergebnis |
+|---|---|
+| `SetWindowPos` von aussen auf das Spielfenster | **Fehler 5** - hohe Rechtestufe |
+| Alle anderen Fenster von aussen anheben | wirkt, aber ist ein Wettlauf: das Spiel drueckt zurueck |
+| **`SetWindowPos` aus dem Modul, Aufrufart 2** | **wirkt dauerhaft** - Platz 6 von 7, nur der Desktop darunter |
+
+Der Fokus ist eine zweite, unabhaengige Sache: Windows gibt ihn dem frisch
+gestarteten Spiel, und `SWP_NOACTIVATE` nimmt ihn nicht weg. Ihn
+zurueckzugeben braucht `AttachThreadInput` - ein blosses
+`SetForegroundWindow` aus einem Hintergrundprozess gibt `false` zurueck und
+tut nichts. Zwoelf Wiederholungen davon sind zwoelfmal nichts.
+
+**Gemessen, drei Durchgaenge in Folge:** Oeffnen im Hintergrund 3,6 s,
+Schliessen 0,4 s. `werkzeug/start_hinten.ps1` ueberbrueckt die ersten Sekunden,
+bis das Modul laeuft, und uebergibt dann an die Wacht im Spiel.
+
+**Zwei Zeitfresser, die dabei aufgefallen sind:**
+- Jeder PowerShell-Start kostet rund eine halbe Sekunde. Wer im Takt fragt
+  „laeuft der Prozess noch?", nimmt `tasklist` direkt - das antwortet in
+  Millisekunden. Dabei `errors="replace"` setzen: tasklist gibt Zeichen aus,
+  die die Windows-Standardkodierung nicht kennt, sonst ist `stdout` **None**.
+- Feste Wartezeiten sind fast immer zu lang. Besser eine Abbruchbedingung:
+  das Startskript hoert auf, sobald das Modul laeuft und die Lage sitzt - das
+  hat aus 22 Sekunden 3,2 gemacht.
+
+---
+
 ### Start von Hand
 
 Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":

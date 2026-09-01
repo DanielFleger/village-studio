@@ -77,10 +77,21 @@ def ps(befehl):
 
 
 def laeuft():
-    """Anzahl der Spielprozesse als Zahl."""
-    aus = ps("(Get-Process 'Stronghold Crusader' -ErrorAction SilentlyContinue "
-             "| Measure-Object).Count")
-    return int(aus) if aus.isdigit() else 0
+    """Anzahl der Spielprozesse als Zahl.
+
+    Bewusst OHNE PowerShell: jeder PowerShell-Start kostet rund eine halbe
+    Sekunde, und diese Frage wird beim Beenden im Takt gestellt. tasklist ist
+    ein schlankes Programm und antwortet in Millisekunden - beim Beenden macht
+    das den Unterschied zwischen vier Sekunden und einer.
+    """
+    # errors="replace" ist Pflicht: tasklist gibt Zeichen aus, die die
+    # Windows-Standardkodierung nicht kennt. Ohne das bricht der Lesevorgang
+    # ab, stdout ist None, und der naechste Zugriff wirft einen Fehler -
+    # gemessen am 01.09.2026, mitten im dritten Testdurchgang.
+    aus = subprocess.run(
+        ["tasklist", "/FI", "IMAGENAME eq Stronghold Crusader.exe", "/NH"],
+        capture_output=True, text=True, errors="replace").stdout or ""
+    return aus.count("Stronghold Crusader.exe")
 
 
 def fenster():
@@ -163,8 +174,11 @@ def stop(leise=False):
             print("Es laeuft kein Spiel.")
         return True
     schreibe('{ "id": %d, "beenden": true }' % naechste_id())
-    for _ in range(20):
-        time.sleep(1)
+    # Alle 100 ms nachsehen. Das Modul liest die Befehlsdatei im Spieltakt,
+    # der Befehl kommt also binnen Millisekunden an - eine Sekunde Wartezeit
+    # je Blick verschenkt die ganze Zeit, die danach noch vergeht.
+    for _ in range(200):
+        time.sleep(0.1)
         if laeuft() == 0:
             print("Spiel beendet.")
             return True

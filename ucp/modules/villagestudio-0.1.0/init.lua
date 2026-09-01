@@ -620,23 +620,25 @@ local function fensterNachHinten(x, y)
       return false
     end
   end
-  -- GEMESSEN 01.09.2026, 21:58: Der Aufruf von SetWindowPos ueber exposeCode
-  -- mit Konvention 0 (cdecl) TOETET den Prozess. Das Log endet mitten im
-  -- Start, direkt nach der Handle-Meldung.
+  -- GELOEST 01.09.2026, 23:33. Der Aufruf hat den Prozess zweimal getoetet,
+  -- solange er mit Aufrufart 0 (cdecl) lief: SetWindowPos ist stdcall und
+  -- raeumt seine sieben Argumente selbst vom Stapel, exposeCode raeumte ein
+  -- zweites Mal auf.
   --
-  -- Der Grund: SetWindowPos ist stdcall und raeumt seine 7 Argumente (28 Byte)
-  -- selbst vom Stapel. exposeCode raeumt bei Konvention 0 noch einmal auf -
-  -- der Stapelzeiger wandert, und der naechste Ruecksprung geht ins Leere.
-  -- Eine stdcall-Konvention kennt exposeCode nicht; im ganzen UCP gibt es
-  -- keinen einzigen Aufruf einer Windows-Funktion mit Argumenten.
+  -- exposeCode kennt eine dritte Aufrufart: **2 = stdcall**. Damit kommt der
+  -- Aufruf sauber zurueck (ok=true), das Spiel lebt weiter, und das Fenster
+  -- liegt danach auf Platz 7 von 8 - nur der Desktop noch darunter.
   --
-  -- Deshalb bleibt der Aufruf hier ABGESCHALTET. Die Fensterlage regelt jetzt
-  -- der graphicsApiReplacer selbst ueber window.pos in der ucp-config.yml -
-  -- das Modul erzeugt das Fenster und darf es auch platzieren.
-  log(INFO, string.format(
-    "FENSTER: Handle 0x%X erkannt. Verschieben ist abgeschaltet - " ..
-    "SetWindowPos ueber exposeCode toetet den Prozess (gemessen 01.09.).",
-    eigenesFenster))
+  -- Das war nie eine Rechtefrage: von aussen ist es gesperrt (Fehler 5), aber
+  -- das Modul laeuft IM Spiel. Es fehlte nur die richtige Aufrufart.
+  local adrSet = core.readInteger(IAT_SETWINDOWPOS)
+  if adrSet == nil or adrSet == 0 then return false end
+  -- HWND_BOTTOM = 1; NOMOVE|NOSIZE|NOACTIVATE = 0x13 - nimmt keinen Fokus weg
+  core.exposeCode(adrSet, 7, 2)(eigenesFenster, 1, 0, 0, 0, 0, 0x13)
+  return true
+end
+
+local function _unbenutzt_alt()
   fensterWachtAn = false
   return true
 end
@@ -676,8 +678,10 @@ local function onMenuFrame()
   -- Wer das hier je wieder einschaltet, braucht zuerst eine belegte Antwort
   -- auf die Frage, wie exposeCode eine stdcall-Funktion ruft. Im ganzen UCP
   -- gibt es dafuer kein einziges Beispiel.
-  if false then
-    pcall(fensterNachHinten, ZIEL_X, ZIEL_Y)
+  -- Beim ersten Bild sofort nach hinten, danach regelmaessig nachfassen -
+  -- das Spiel holt sich waehrend des Ladens mehrfach die Spitze zurueck.
+  if fensterWachtAn and (menuCounter <= 60 or menuCounter % 300 == 0) then
+    pcall(fensterNachHinten)
   end
 
   -- Menue-Takt der Logik: Kette und Fenster-Wacht arbeiten auch hier weiter.
@@ -708,7 +712,8 @@ local function onMenuFrame()
   -- Zeile im Log. Genau das hat den ersten Anlauf zum eigenen Gefecht gekostet.
   if cmd.eigenesGefecht ~= nil or cmd.fenster ~= nil
      or cmd.kette ~= nil or cmd.wo ~= nil or cmd.menue ~= nil
-     or cmd.peek ~= nil or cmd.bild ~= nil or cmd.beenden ~= nil then
+     or cmd.peek ~= nil or cmd.bild ~= nil or cmd.beenden ~= nil
+     or cmd.hinten ~= nil or cmd.regel ~= nil or cmd.tausche ~= nil then
     lastRaw = raw
     checkLogic()          -- erst den neuesten Stand der Logik holen
     if custom ~= nil and type(custom.handleCommand) == "function" then
