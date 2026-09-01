@@ -727,7 +727,7 @@ local function onMenuFrame()
   -- Zeile verwirft der Haken sie stillschweigend: bei { "befehle": [...] } ist
   -- cmd.menue leer, und keine der Einzelpruefungen greift. Am 02.09.2026 kam
   -- dadurch ein Menuesprung nie an - ohne eine Zeile im Log.
-  if cmd.befehle ~= nil
+  if cmd.poke ~= nil or cmd.befehle ~= nil
      or cmd.eigenesGefecht ~= nil or cmd.fenster ~= nil
      or cmd.kette ~= nil or cmd.wo ~= nil or cmd.menue ~= nil
      or cmd.peek ~= nil or cmd.bild ~= nil or cmd.beenden ~= nil

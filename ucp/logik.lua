@@ -1023,6 +1023,39 @@ local function einzelbefehl(cmd)
     return true
   end
 
+  -- Untereintraege des Optionen-Dialogs: { "unteropt": 1 }
+  -- MenuItemActionHandler_OptionsMenu_SubOptionsButtons (0x00493BD0, cdecl).
+  -- Das sind Spieloptionen / Grafikoptionen / Soundoptionen / Identitaet -
+  -- die Nummern des Haupt-Optionenhandlers (0x00496B80) greifen dort NICHT,
+  -- am 02.09.2026 mit 1, 4, 5, 6 und 8 durchprobiert: keine Wirkung.
+  if cmd.unteropt ~= nil then
+    local nr = tonumber(cmd.unteropt)
+    if nr == nil then return false end
+    local ok, err = pcall(function()
+      core.exposeCode(0x00493BD0, 1, 0)(nr)
+    end)
+    log(INFO, string.format("UNTEROPT: Knopf %d, ok=%s%s", nr, tostring(ok),
+      ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
+  -- Speicher schreiben: { "poke": 17982500, "wert": 2 }
+  -- Gegenstueck zu peek. Liest den alten Wert mit, damit im Log steht, was
+  -- ueberschrieben wurde - ohne das ist ein Fehlgriff spaeter nicht mehr
+  -- nachvollziehbar.
+  if cmd.poke ~= nil then
+    local adr = tonumber(cmd.poke)
+    local wert = tonumber(cmd.wert)
+    if adr == nil or wert == nil then
+      log(WARNING, "POKE: Adresse oder Wert fehlt.")
+      return false
+    end
+    local alt = core.readInteger(adr)
+    core.writeInteger(adr, wert)
+    log(INFO, string.format("POKE 0x%08X: %s -> %d", adr, tostring(alt), wert))
+    return true
+  end
+
   -- Ereignis-Regel setzen oder alle loeschen.
   --   { "regel": { "name": "...", "wenn": {...}, "dann": [...], "einmal": true } }
   --   { "regeln": "aus" }
