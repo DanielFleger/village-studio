@@ -416,6 +416,45 @@ Kostentabelle, bei KI-Nummern die Zuordnung im Plugin.
 
 ---
 
+### Was von aussen geht und was nicht (Stand 01.09.2026)
+
+Der Spielprozess laeuft auf hoher Rechtestufe, die Claude-Sitzung nicht. Diese
+Tabelle ist gemessen, nicht hergeleitet - jede Zeile hat einen Versuch gekostet.
+
+| Von aussen | Ergebnis |
+|---|---|
+| Tastendruck an das Fenster schicken | Fehler 5 |
+| Fenster nach hinten setzen, verschieben, minimieren | Fehler 5 |
+| Speicher lesen oder schreiben | Fehler 5 |
+| Prozess beenden (taskkill, Stop-Process) | Zugriff verweigert |
+| Fenster **suchen** und Lage **lesen** | geht |
+| Ein ANDERES Fenster nach vorn holen | geht — und das genuegt |
+
+**Der Weg hinein fuehrt ausschliesslich ueber das Modul**, das im Spielprozess
+laeuft und dessen Rechte hat. Alles, was von aussen gesperrt ist, muss dort
+hinein.
+
+**Spiel beenden — geht jetzt selbst.** `{ "beenden": true }` ruft im Modul
+`ExitProcess` ueber den Import-Eintrag bei `0x0059E110`. Ausgerechnet hier ist
+der Aufruf sicher: Die Funktion kehrt nie zurueck, der Stapelschaden aus der
+falschen Aufrufart kann also nicht mehr wirken. `werkzeug/starte_spiel.py`
+beendet damit von selbst, bevor es neu startet.
+
+**Fenster in den Hintergrund — ohne es anzufassen.** Vor dem Start merken,
+welches Fenster vorn war, danach dieses zurueckholen. Das Spiel rutscht von
+selbst nach hinten und laeuft mit `continueOutOfFocus: render` weiter.
+**Dabei die Fenstergroesse nicht anfassen:** `ShowWindow(9)` holt ein
+minimiertes Fenster zurueck, macht aber ein maximiertes klein - am 01.09. ist
+Daniels Vollbild-Browser dadurch geschrumpft. Erst `IsIconic` fragen.
+
+**Monitor 2 ist ueber die Fensterlage nicht erreichbar.** `window.pos:
+topRight` verschiebt korrekt, aber beim Wechsel auf den zweiten Schirm bricht
+die Darstellung zusammen und der Prozess stirbt (dreimal gemessen, von Daniel
+im Bild bestaetigt). Gegenprobe mit `bottomLeft`, das auf Monitor 1 bleibt:
+laeuft stabil. **Der Monitorwechsel ist die Ursache, nicht die Option.**
+
+---
+
 ### Start von Hand
 
 Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":

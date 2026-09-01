@@ -46,11 +46,32 @@ def schreibe(text):
     io.open(BEFEHL, "wb").write(text.encode("utf-8"))
 
 
+# Die PowerShell-Schnipsel stehen als eigene Zeichenketten da, damit die
+# Anfuehrungszeichen nicht mit denen von Python kollidieren.
+_TYP_VORN = (
+    "Add-Type 'using System;using System.Runtime.InteropServices;"
+    "public class Fv{[DllImport(\"user32.dll\")]public static extern IntPtr "
+    "GetForegroundWindow();}'; [Fv]::GetForegroundWindow()"
+)
+
+_TYP_ZURUECK = (
+    "Add-Type 'using System;using System.Runtime.InteropServices;"
+    "public class Fz{[DllImport(\"user32.dll\")]public static extern bool "
+    "SetForegroundWindow(IntPtr h);"
+    "[DllImport(\"user32.dll\")]public static extern bool ShowWindow(IntPtr h,int c);"
+    "[DllImport(\"user32.dll\")]public static extern bool IsIconic(IntPtr h);}'; "
+    # ShowWindow(9) NUR bei minimierten Fenstern. Auf ein maximiertes Fenster
+    # angewandt macht es dieses klein - am 01.09. ist Daniels Vollbild-Browser
+    # dadurch auf Fenstergroesse geschrumpft. Wer den Fokus zurueckgibt, darf
+    # die Fenstergroesse nicht anfassen.
+    "$h=[IntPtr]{handle}; if ([Fz]::IsIconic($h)) { [void][Fz]::ShowWindow($h,9) }; "
+    "[Fz]::SetForegroundWindow($h)"
+)
+
+
 def fokus_merken():
     """Handle des Fensters, das gerade vorn ist - vor dem Spielstart."""
-    return ps("Add-Type '"'"'using System;using System.Runtime.InteropServices;"
-              "public class F{[DllImport(\"user32.dll\")]public static extern IntPtr "
-              "GetForegroundWindow();}'"'"'; [F]::GetForegroundWindow()").strip()
+    return ps(_TYP_VORN).strip()
 
 
 def fokus_zurueck(handle):
@@ -63,21 +84,37 @@ def fokus_zurueck(handle):
     """
     if not handle or handle == "0":
         return False
-    aus = ps("Add-Type '"'"'using System;using System.Runtime.InteropServices;"
-             "public class G{[DllImport(\"user32.dll\")]public static extern bool "
-             "SetForegroundWindow(IntPtr h);"
-             "[DllImport(\"user32.dll\")]public static extern bool "
-             "ShowWindow(IntPtr h,int c);}'"'"'; "
-             "$h=[IntPtr]%s; [void][G]::ShowWindow($h,9); [G]::SetForegroundWindow($h)" % handle)
-    return aus.strip().lower() in ("true", "wahr")
+    return ps(_TYP_ZURUECK.replace("{handle}", handle)).strip().lower() in ("true", "wahr")
+
+
+def beenden():
+    """Beendet ein laufendes Spiel ueber das Modul.
+
+    Von aussen geht das nicht: taskkill und Stop-Process scheitern mit
+    Fehler 5, weil der Prozess auf hoher Rechtestufe laeuft. Das Modul laeuft
+    IM Spiel und ruft dort ExitProcess. Belegt am 01.09.2026.
+    """
+    if laeuft() in ("", "0"):
+        return True
+    schreibe('{ "id": 94099, "beenden": true }')
+    for _ in range(20):
+        time.sleep(1)
+        if laeuft() in ("", "0"):
+            print("Laufendes Spiel beendet.")
+            return True
+    print("Das Spiel liess sich nicht beenden - steht es im Hauptmenue und ist")
+    print("der Modulkern von vor dem 01.09.? Dann kennt er den Befehl nicht.")
+    return False
 
 
 def main():
     if laeuft() not in ("", "0"):
-        print("Es laeuft schon eine Instanz. Zwei Instanzen verfaelschen jede")
-        print("Messung - die zweite haengt im Dialog 'is already running', laedt")
-        print("UCP aber vollstaendig und schreibt Logzeilen. Erst beenden.")
-        return 1
+        # Zwei Instanzen verfaelschen jede Messung: die zweite haengt im Dialog
+        # "is already running", laedt UCP aber vollstaendig und schreibt
+        # Logzeilen. Von aussen sieht das gesund aus.
+        print("Es laeuft schon eine Instanz - ich beende sie.")
+        if not beenden():
+            return 1
 
     # Ein stehengebliebener Auftrag wuerde beim Start sofort erneut feuern.
     schreibe("{}")

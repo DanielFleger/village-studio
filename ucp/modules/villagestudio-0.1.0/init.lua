@@ -708,7 +708,7 @@ local function onMenuFrame()
   -- Zeile im Log. Genau das hat den ersten Anlauf zum eigenen Gefecht gekostet.
   if cmd.eigenesGefecht ~= nil or cmd.fenster ~= nil
      or cmd.kette ~= nil or cmd.wo ~= nil or cmd.menue ~= nil
-     or cmd.peek ~= nil or cmd.bild ~= nil then
+     or cmd.peek ~= nil or cmd.bild ~= nil or cmd.beenden ~= nil then
     lastRaw = raw
     checkLogic()          -- erst den neuesten Stand der Logik holen
     if custom ~= nil and type(custom.handleCommand) == "function" then

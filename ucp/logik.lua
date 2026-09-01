@@ -757,6 +757,30 @@ local function einzelbefehl(cmd)
     return mauerDiagnose(type(cmd.mauerDiagnose) == "number" and cmd.mauerDiagnose or nil)
   end
 
+  -- Spiel beenden. Von aussen ist das gesperrt: taskkill und Stop-Process
+  -- scheitern beide mit Fehler 5, weil der Prozess auf hoher Rechtestufe
+  -- laeuft. Das Modul laeuft IM Spiel und darf es.
+  --
+  -- Warum ausgerechnet ExitProcess und nicht die saubere Beenden-Funktion des
+  -- Spiels: ExitProcess kehrt nie zurueck. Der Stapelschaden, an dem
+  -- SetWindowPos den Prozess getoetet hat (stdcall gegen cdecl), kann hier
+  -- also nicht mehr wirken - es gibt kein Danach. Genau die Eigenschaft, die
+  -- den Aufruf sonst gefaehrlich macht, macht ihn hier verlaesslich.
+  --
+  -- Preis: Das Spiel raeumt nicht auf, das Log bricht mitten ab. Fuer einen
+  -- Neustart ist das ohne Belang - ucp3.log wird beim naechsten Start
+  -- ohnehin neu angelegt.
+  if cmd.beenden == true then
+    local adr = core.readInteger(0x0059E110)          -- IAT-Eintrag ExitProcess
+    if adr == nil or adr == 0 then
+      log(WARNING, "BEENDEN: kein Eintrag fuer ExitProcess bei 0x0059E110.")
+      return true
+    end
+    log(INFO, "BEENDEN: Spiel wird jetzt beendet (ExitProcess).")
+    core.exposeCode(adr, 1, 0)(0)
+    return true                                       -- wird nie erreicht
+  end
+
   -- "Wo bin ich?" - Fenster, Spielzeit und Stand der Kette in einer Zeile.
   if cmd.wo ~= nil then
     local ansicht = core.readInteger(0x01FE7D1C)
