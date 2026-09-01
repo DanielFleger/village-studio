@@ -102,13 +102,43 @@ Befehl: `{"unteropt": N}`
 
 | N | Führt zu | Marke |
 |---|---|---|
-| 1–3 | keine Wirkung | gemessen |
 | 4 | **Grafikoptionen** (Auflösung, Scrolltempo) | **gemessen** |
 | 5 | **Soundoptionen** (Musik, SFX, Sprache) | **gemessen** |
-| 6 | **Netzwerkoptionen** (leer ohne Mehrspielerspiel) | **gemessen** |
-| 7–9 | keine weitere Wirkung | gemessen |
+| 6 | Netzwerkoptionen — **toter Zweig**, hat gar keinen Knopf | **gemessen** |
+| 17 | **Zurück** (schließt den Dialog) | **gemessen** |
+| 25 | **Spieloptionen** (Tempo, Sprechblasenhilfe) | **gemessen** |
+| 45 | **Identität** (Spielername) | **gemessen** |
+| 1–3, 7–9 | keine Wirkung | gemessen |
 
-Noch offen: die Nummern für **Spieloptionen** und **Identität zulegen**.
+Damit ist dieser Zweig vollständig. Die Knopfnummer ist zugleich der
+Textindex für die Beschriftung — die Texte selbst liegen aber nicht in der
+exe, sondern in den Sprachdateien.
+
+### Die Elementtabellen
+
+Welche Knöpfe wirklich sichtbar sind, steht in zwei Tabellen (je 80 Byte pro
+Eintrag mit Lage und Nummer):
+
+| Tabelle | Adresse | enthält |
+|---|---|---|
+| Hauptmenü | `0x006006D8` | 25, 4, 5, 45, 17 |
+| Pause-Menü im Spiel | `0x006004F8` | 25, 4, 5, 17 |
+
+Der Unterschied erklärt den toten Zweig: **6 (Netzwerkoptionen) und 45
+(Identität im Spiel) kommen in keiner Tabelle vor** — der Code kann sie, das
+Menü zeigt sie nicht.
+
+### Grafikoptionen im Einzelnen
+
+`MenuItemActionHandler_VideoOptions_Main` — `0x00493E20`, cdecl.
+
+| N | Wirkung |
+|---|---|
+| 11 | Auflösung weiterschalten |
+| 16 | Scrolltempo weiterschalten |
+| 18 | **OK** — übernimmt und baut die Anzeige neu auf |
+| 17 | Abbrechen |
+| −10 / −20 | Mauszeiger-Art 2 bzw. 1 |
 
 ---
 
