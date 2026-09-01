@@ -662,6 +662,28 @@ local bauwachtStart, autobildStart
 -- setzt und der Taktgeber ihn weiter unten liest.
 local kette = nil
 
+--============================================================================
+-- Ereignis-Regeln: "wenn X, dann Y"
+--
+-- Der Sinn: Ein Testlauf soll von selbst reagieren, statt dass jemand
+-- zuschaut. Beispiele, die Daniel genannt hat - pausieren, sobald eine KI zum
+-- ersten Mal 100.000 Gold hat; das Spiel beenden, sobald jemand angreift.
+--
+-- Die Wacht laeuft in JEDEM Takt. Deshalb duerfen die Bedingungen nur
+-- Speicherstellen lesen, keine Schleifen ueber 2500 Einheiten. Was teuer ist,
+-- traegt ein eigenes Intervall.
+--============================================================================
+
+local regeln = {}          -- jede Regel merkt sich, ob sie schon gefeuert hat
+
+-- Gold eines Spielers: EIN Lesezugriff.
+-- playerDataArray 0x0115BDF8, je Spieler 0x39F4, currentResources +0x4D0,
+-- Gold ist Ware 15. Am 01.09. gegengeprueft: Spieler 1 las 3960 - ein
+-- normaler Startwert, wie er auch in der Anzeige steht.
+local function goldVon(spieler)
+  return core.readInteger(0x0115BDF8 + spieler * 0x39F4 + 0x4D0 + 15 * 4) or 0
+end
+
 local function einzelbefehl(cmd)
   if type(cmd) ~= "table" then return false end
   local spieler = cmd.player
@@ -791,6 +813,29 @@ local function einzelbefehl(cmd)
       kette and string.format("Schritt %d von %d", kette.index, #kette.schritte)
              or "keine",
       fensterWacht and "an" or "aus"))
+    return true
+  end
+
+  -- Ereignis-Regel setzen oder alle loeschen.
+  --   { "regel": { "name": "...", "wenn": {...}, "dann": [...], "einmal": true } }
+  --   { "regeln": "aus" }
+  if cmd.regeln ~= nil then
+    regeln = {}
+    log(INFO, "REGELN: alle geloescht.")
+    return true
+  end
+  if cmd.regel ~= nil then
+    local r = cmd.regel
+    if type(r) ~= "table" or type(r.wenn) ~= "table" then
+      log(WARNING, "REGEL: 'wenn' fehlt.")
+      return false
+    end
+    r.dann = (type(r.dann) == "table") and r.dann or {}
+    r.einmal = (r.einmal ~= false)          -- Vorgabe: nur einmal ausloesen
+    r.gefeuert = false
+    r.name = r.name or ("Regel " .. tostring(#regeln + 1))
+    table.insert(regeln, r)
+    log(INFO, string.format("REGEL '%s' scharf: %d Regel(n) aktiv.", r.name, #regeln))
     return true
   end
 
@@ -1259,6 +1304,58 @@ local function ketteTick()
 end
 
 --============================================================================
+-- 6d. Regelwacht: prueft die Bedingungen und fuehrt die Folgen aus
+--============================================================================
+
+local function bedingungErfuellt(w)
+  local sp = tonumber(w.spieler)
+
+  if w.gold ~= nil and sp ~= nil then
+    return goldVon(sp) >= tonumber(w.gold)
+  end
+  if w.tick ~= nil then
+    return tick() >= tonumber(w.tick)
+  end
+  if w.jahr ~= nil then
+    return tick() >= tonumber(w.jahr) * 9600
+  end
+  -- Teuer: laeuft ueber alle Einheiten. Deshalb nur jeden 25. Takt.
+  if w.einheiten ~= nil and sp ~= nil then
+    if tick() % 25 ~= 0 then return false end
+    local n = 0
+    local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+    for i = 0, grenze - 1 do
+      local b = 0x0138854C + i * 1168
+      if (core.readSmallInteger(b + 0x8C) or 0) ~= 0
+         and (core.readSmallInteger(b + 0x96) or -1) == sp then
+        n = n + 1
+      end
+    end
+    return n >= tonumber(w.einheiten)
+  end
+  return false
+end
+
+local function regelwachtTick()
+  if #regeln == 0 then return end
+  for _, r in ipairs(regeln) do
+    if not (r.einmal and r.gefeuert) then
+      local gut, erfuellt = pcall(bedingungErfuellt, r.wenn)
+      if gut and erfuellt then
+        r.gefeuert = true
+        log(INFO, string.format("REGEL '%s' hat ausgeloest (Tick %d).", r.name, tick()))
+        for _, aktion in ipairs(r.dann) do
+          local ok, err = pcall(einzelbefehl, aktion)
+          if not ok then
+            log(WARNING, string.format("REGEL '%s': %s", r.name, tostring(err)))
+          end
+        end
+      end
+    end
+  end
+end
+
+--============================================================================
 -- 7. Taktgeber
 --============================================================================
 
@@ -1269,6 +1366,7 @@ local function everyTick()
   pcall(autobildTick)
   pcall(fensterWachtTick)
   pcall(ketteTick)
+  pcall(regelwachtTick)
 end
 
 log(INFO, "logik.lua (31.08.2026): + Bauwacht, + Durchreichen an init.lua.")
