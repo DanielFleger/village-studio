@@ -46,6 +46,32 @@ def schreibe(text):
     io.open(BEFEHL, "wb").write(text.encode("utf-8"))
 
 
+def fokus_merken():
+    """Handle des Fensters, das gerade vorn ist - vor dem Spielstart."""
+    return ps("Add-Type '"'"'using System;using System.Runtime.InteropServices;"
+              "public class F{[DllImport(\"user32.dll\")]public static extern IntPtr "
+              "GetForegroundWindow();}'"'"'; [F]::GetForegroundWindow()").strip()
+
+
+def fokus_zurueck(handle):
+    """Holt Daniels Fenster wieder nach vorn.
+
+    Das Spielfenster wird dabei NICHT angefasst - das ist gesperrt (Fehler 5)
+    und hat dreimal den Prozess gekostet. Stattdessen kommt einfach das
+    Fenster zurueck, das vorher da war; das Spiel rutscht dadurch von selbst
+    nach hinten und laeuft dank continueOutOfFocus: render weiter.
+    """
+    if not handle or handle == "0":
+        return False
+    aus = ps("Add-Type '"'"'using System;using System.Runtime.InteropServices;"
+             "public class G{[DllImport(\"user32.dll\")]public static extern bool "
+             "SetForegroundWindow(IntPtr h);"
+             "[DllImport(\"user32.dll\")]public static extern bool "
+             "ShowWindow(IntPtr h,int c);}'"'"'; "
+             "$h=[IntPtr]%s; [void][G]::ShowWindow($h,9); [G]::SetForegroundWindow($h)" % handle)
+    return aus.strip().lower() in ("true", "wahr")
+
+
 def main():
     if laeuft() not in ("", "0"):
         print("Es laeuft schon eine Instanz. Zwei Instanzen verfaelschen jede")
@@ -55,6 +81,9 @@ def main():
 
     # Ein stehengebliebener Auftrag wuerde beim Start sofort erneut feuern.
     schreibe("{}")
+
+    vorher = fokus_merken()
+    print("Fenster im Vordergrund vor dem Start: %s" % (vorher or "keines"))
 
     subprocess.run(["powershell", "-NoProfile", "-Command",
                     "Start-Process -FilePath '%s' -ArgumentList '--ucp-no-security' "
@@ -87,19 +116,19 @@ def main():
         print("Modul meldet sich nicht - lief der Start ohne --ucp-no-security?")
         return 1
 
-    schreibe('{ "id": %d, "fenster": { "hwnd": %d, "x": %d, "y": %d, "alle": 300 } }'
-             % (93000 + hwnd % 1000, hwnd, ZIEL_X, ZIEL_Y))
-    print("Fenster-Wacht angefordert: hinten, auf (%d,%d), Nachfassen alle 300 Takte."
-          % (ZIEL_X, ZIEL_Y))
-
-    for _ in range(20):
-        time.sleep(1)
-        text = io.open(LOG, encoding="utf-8", errors="replace").read()
-        if "FENSTER:" in text:
-            print([z for z in text.splitlines() if "FENSTER:" in z][-1].split("]: ")[-1])
-            return 0
-    print("Das Modul hat den Fensterbefehl nicht quittiert.")
-    return 1
+    # KEIN Fensterbefehl mehr. Er hat das Spiel dreimal getoetet: das Modul
+    # ruft dafuer SetWindowPos ueber exposeCode, und dabei zerfaellt der
+    # Stapel. Die Fensterlage stellt der graphicsApiReplacer ueber window.pos
+    # in der ucp-config.yml - und "topRight" darf es dort NICHT sein, das
+    # bringt beim Wechsel auf den zweiten Schirm die Darstellung zum Erliegen.
+    # Daniels Fenster zurueckholen. Damit rutscht das Spiel nach hinten, ohne
+    # dass jemand sein Fenster anfassen muss.
+    if fokus_zurueck(vorher):
+        print("Dein Fenster ist wieder vorn, das Spiel liegt dahinter.")
+    else:
+        print("Konnte den Fokus nicht zurueckgeben - bitte einmal Alt+Tab.")
+    print("Spiel laeuft. Fensterlage kommt aus der ucp-config.yml.")
+    return 0
 
 
 if __name__ == "__main__":

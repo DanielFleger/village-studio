@@ -620,12 +620,24 @@ local function fensterNachHinten(x, y)
       return false
     end
   end
-  local adrSet = core.readInteger(IAT_SETWINDOWPOS)
-  if adrSet == nil or adrSet == 0 then return false end
-  -- HWND_BOTTOM = 1; NOSIZE|NOACTIVATE - der Tastaturfokus bleibt, wo er ist
-  local flags = 0x0001 + 0x0010
-  if x == nil then flags = flags + 0x0002 end          -- NOMOVE
-  core.exposeCode(adrSet, 7, 0)(eigenesFenster, 1, x or 0, y or 0, 0, 0, flags)
+  -- GEMESSEN 01.09.2026, 21:58: Der Aufruf von SetWindowPos ueber exposeCode
+  -- mit Konvention 0 (cdecl) TOETET den Prozess. Das Log endet mitten im
+  -- Start, direkt nach der Handle-Meldung.
+  --
+  -- Der Grund: SetWindowPos ist stdcall und raeumt seine 7 Argumente (28 Byte)
+  -- selbst vom Stapel. exposeCode raeumt bei Konvention 0 noch einmal auf -
+  -- der Stapelzeiger wandert, und der naechste Ruecksprung geht ins Leere.
+  -- Eine stdcall-Konvention kennt exposeCode nicht; im ganzen UCP gibt es
+  -- keinen einzigen Aufruf einer Windows-Funktion mit Argumenten.
+  --
+  -- Deshalb bleibt der Aufruf hier ABGESCHALTET. Die Fensterlage regelt jetzt
+  -- der graphicsApiReplacer selbst ueber window.pos in der ucp-config.yml -
+  -- das Modul erzeugt das Fenster und darf es auch platzieren.
+  log(INFO, string.format(
+    "FENSTER: Handle 0x%X erkannt. Verschieben ist abgeschaltet - " ..
+    "SetWindowPos ueber exposeCode toetet den Prozess (gemessen 01.09.).",
+    eigenesFenster))
+  fensterWachtAn = false
   return true
 end
 
@@ -651,7 +663,20 @@ local function onMenuFrame()
   end
   -- Beim allerersten Bild sofort nach hinten, danach regelmaessig nachfassen.
   -- Frueher geht es nicht: vorher hat das Spiel noch kein Fenster gezeichnet.
-  if fensterWachtAn and (menuCounter == 1 or menuCounter % fensterWachtAlle == 0) then
+  -- ABGESCHALTET 01.09.2026. Zwei Startversuche endeten im Absturz, beide mit
+  -- diesem Block als einzigem Unterschied. Der erste starb direkt beim Aufruf
+  -- von SetWindowPos, der zweite kurz danach - auch die blosse Abfrage von
+  -- GetForegroundWindow ueber exposeCode steht damit unter Verdacht.
+  --
+  -- Gebraucht wird der Block ohnehin nicht mehr: Die Fensterlage stellt jetzt
+  -- der graphicsApiReplacer selbst ueber window.pos = topRight in der
+  -- ucp-config.yml - das Modul erzeugt das Fenster und darf es platzieren.
+  -- Im Bild bestaetigt: das Fenster geht auf dem rechten Schirm auf.
+  --
+  -- Wer das hier je wieder einschaltet, braucht zuerst eine belegte Antwort
+  -- auf die Frage, wie exposeCode eine stdcall-Funktion ruft. Im ganzen UCP
+  -- gibt es dafuer kein einziges Beispiel.
+  if false then
     pcall(fensterNachHinten, ZIEL_X, ZIEL_Y)
   end
 

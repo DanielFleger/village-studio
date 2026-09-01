@@ -628,10 +628,21 @@ local function fensterSetzen(hwnd, x, y)
   -- stdcall: alle Argumente auf dem Stack, die Funktion raeumt selbst auf.
   -- exposeCode mit Konvention 0 stellt den Stapelzeiger danach wieder her -
   -- dasselbe Muster, mit dem das Modul schon 'ret 8'-Funktionen ruft.
-  local setzen = core.exposeCode(adr, 7, 0)
-  local flags = SWP_NOSIZE + SWP_NOACTIVATE
-  if x == nil then flags = flags + SWP_NOMOVE end
-  return setzen(hwnd, HWND_BOTTOM, x or 0, y or 0, 0, 0, flags)
+  -- ABGESCHALTET 01.09.2026 nach drei Abstuerzen in Folge.
+  -- SetWindowPos ist stdcall und raeumt seine 7 Argumente (28 Byte) selbst vom
+  -- Stapel. exposeCode raeumt bei Konvention 0 noch einmal auf - der
+  -- Stapelzeiger wandert, der naechste Ruecksprung geht ins Leere. Eine
+  -- stdcall-Konvention kennt exposeCode nicht; im ganzen UCP gibt es kein
+  -- einziges Beispiel fuer den Aufruf einer Windows-Funktion mit Argumenten.
+  --
+  -- Der Aufruf stand an ZWEI Stellen (hier und in init.lua). Nach dem
+  -- Abschalten der einen stuerzte das Spiel weiter ab, und der Verdacht fiel
+  -- faelschlich auf die Fensterposition des Grafikmoduls.
+  log(WARNING, string.format(
+    "FENSTER: Verschieben von 0x%X abgelehnt - SetWindowPos ueber exposeCode " ..
+    "toetet den Prozess (dreimal gemessen 01.09.). Fensterlage bitte ueber " ..
+    "window.pos in der ucp-config.yml stellen.", hwnd))
+  return false
 end
 
 local function fensterWachtTick()
