@@ -567,6 +567,68 @@ end
 -- vorgegebenen Gefechtspfad-Mission. Welche Liste gilt, entscheidet
 -- currentTrailType (0x01FE9CAC): 0 = Original, 1 = Warchest, 2 = Extreme.
 
+--[[ Fenster sofort nach hinten - ohne Befehl von aussen
+
+Daniel arbeitet weiter, waehrend das Spiel laeuft. Ein frisch gestartetes
+Spiel nimmt ihm aber den Bildschirm weg, und von aussen laesst sich das nicht
+beheben: der Prozess laeuft auf hoher Rechtestufe, jede Fensterfunktion von
+einer normalen Sitzung aus scheitert mit Fehler 5 (01.09. dreimal gemessen).
+Ein Befehl ueber die Befehlsdatei kaeme erst, wenn das Modul laeuft - das sind
+rund 25 Sekunden Vollbild im Vordergrund.
+
+Deshalb steht das hier im Modulkern und feuert beim ERSTEN gezeichneten Bild.
+Das Handle holt sich das Modul selbst: beim ersten Bild ist das eigene Fenster
+im Vordergrund, GetForegroundWindow liefert also genau dieses.
+]]--
+
+local IAT_SETWINDOWPOS      = 0x0059E1F4
+local IAT_GETFOREGROUNDWND  = 0x0059E208
+local ZIEL_X, ZIEL_Y        = 2560, 0     -- Monitor 2 beginnt bei x = 2560
+
+local eigenesFenster = nil
+local fensterWachtAn   = true      -- von aussen abschaltbar
+local fensterWachtAlle = 300
+
+-- Verdacht aus dem Speicherabzug vom 31.08.: in der Grafikstruktur steht bei
+-- +0xAC ein Wert, der wie ein Fensterhandle aussieht. Ungeprueft - deshalb
+-- wird er nicht blind benutzt, sondern gegen den Vordergrund gehalten.
+local WINDOWSTRUKTUR_HWND = 0x00F98338 + 0xAC
+
+local function fensterNachHinten(x, y)
+  if eigenesFenster == nil then
+    local ausStruktur = core.readInteger(WINDOWSTRUKTUR_HWND)
+    local adrGet = core.readInteger(IAT_GETFOREGROUNDWND)
+    local imVordergrund = nil
+    if adrGet ~= nil and adrGet ~= 0 then
+      imVordergrund = core.exposeCode(adrGet, 0, 0)()
+    end
+
+    -- Nur handeln, wenn beide Wege dasselbe Fenster nennen. Sonst koennte das
+    -- Modul ein FREMDES Fenster nach hinten schieben - Daniel arbeitet
+    -- daneben weiter, das waere schlimmer als ein Spiel im Vordergrund.
+    if ausStruktur ~= nil and ausStruktur ~= 0 and ausStruktur == imVordergrund then
+      eigenesFenster = ausStruktur
+      log(INFO, string.format(
+        "FENSTER: Handle 0x%X (Struktur und Vordergrund stimmen ueberein)",
+        eigenesFenster))
+    else
+      log(WARNING, string.format(
+        "FENSTER: kein sicheres Handle - Struktur sagt %s, Vordergrund %s. " ..
+        "Es wird nichts verschoben; Handle bitte mit { \"fenster\": { \"hwnd\": N } } setzen.",
+        tostring(ausStruktur), tostring(imVordergrund)))
+      fensterWachtAn = false          -- nicht bei jedem Bild erneut jammern
+      return false
+    end
+  end
+  local adrSet = core.readInteger(IAT_SETWINDOWPOS)
+  if adrSet == nil or adrSet == 0 then return false end
+  -- HWND_BOTTOM = 1; NOSIZE|NOACTIVATE - der Tastaturfokus bleibt, wo er ist
+  local flags = 0x0001 + 0x0010
+  if x == nil then flags = flags + 0x0002 end          -- NOMOVE
+  core.exposeCode(adrSet, 7, 0)(eigenesFenster, 1, x or 0, y or 0, 0, 0, flags)
+  return true
+end
+
 local menuCounter = 0
 -- Offener Foto-Wunsch. Wird im Bild-Haken gesetzt und BEIM NAECHSTEN Aufruf
 -- ausgefuehrt, bevor das Original zeichnet - sonst ist es ein Wiedereintritt
@@ -587,6 +649,12 @@ local function onMenuFrame()
       menuCounter, ticks, einh,
       ticks > 0 and "Gefecht laeuft" or "KEIN Gefecht"))
   end
+  -- Beim allerersten Bild sofort nach hinten, danach regelmaessig nachfassen.
+  -- Frueher geht es nicht: vorher hat das Spiel noch kein Fenster gezeichnet.
+  if fensterWachtAn and (menuCounter == 1 or menuCounter % fensterWachtAlle == 0) then
+    pcall(fensterNachHinten, ZIEL_X, ZIEL_Y)
+  end
+
   -- Menue-Takt der Logik: Kette und Fenster-Wacht arbeiten auch hier weiter.
   -- everyTick waere falsch - das ruft Wachten, die in Gefechtsstrukturen
   -- schreiben, die im Menue leer sind.
