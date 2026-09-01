@@ -587,6 +587,13 @@ local function onMenuFrame()
       menuCounter, ticks, einh,
       ticks > 0 and "Gefecht laeuft" or "KEIN Gefecht"))
   end
+  -- Menue-Takt der Logik: Kette und Fenster-Wacht arbeiten auch hier weiter.
+  -- everyTick waere falsch - das ruft Wachten, die in Gefechtsstrukturen
+  -- schreiben, die im Menue leer sind.
+  if custom ~= nil and type(custom.menuTick) == "function" then
+    pcall(custom.menuTick)
+  end
+
   if menuCounter % 20 ~= 0 then return end
 
   local raw = readCommandFile()
@@ -606,7 +613,9 @@ local function onMenuFrame()
   -- Bis 01.09. verwarf dieser Haken jeden anderen Befehl stillschweigend -
   -- ein neuer Befehl kam im Hauptmenue schlicht nie an, ohne eine einzige
   -- Zeile im Log. Genau das hat den ersten Anlauf zum eigenen Gefecht gekostet.
-  if cmd.eigenesGefecht ~= nil or cmd.fenster ~= nil then
+  if cmd.eigenesGefecht ~= nil or cmd.fenster ~= nil
+     or cmd.kette ~= nil or cmd.wo ~= nil or cmd.menue ~= nil
+     or cmd.peek ~= nil or cmd.bild ~= nil then
     lastRaw = raw
     checkLogic()          -- erst den neuesten Stand der Logik holen
     if custom ~= nil and type(custom.handleCommand) == "function" then

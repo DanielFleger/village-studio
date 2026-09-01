@@ -746,6 +746,19 @@ local function einzelbefehl(cmd)
     return mauerDiagnose(type(cmd.mauerDiagnose) == "number" and cmd.mauerDiagnose or nil)
   end
 
+  -- "Wo bin ich?" - Fenster, Spielzeit und Stand der Kette in einer Zeile.
+  if cmd.wo ~= nil then
+    local ansicht = core.readInteger(0x01FE7D1C)
+    local t = tick()
+    log(INFO, string.format(
+      "WO: Fenster %s | Spielzeit %d Ticks | Kette %s | Fenster-Wacht %s",
+      tostring(ansicht), t,
+      kette and string.format("Schritt %d von %d", kette.index, #kette.schritte)
+             or "keine",
+      fensterWacht and "an" or "aus"))
+    return true
+  end
+
   -- Kette annehmen: eine Liste von Schritten, die der Taktgeber abarbeitet.
   if cmd.kette ~= nil then
     if type(cmd.kette) ~= "table" then return false end
@@ -1159,8 +1172,36 @@ local function ketteTick()
     kette = nil
     return
   end
+  local nr = kette.index
+
+  -- Vor jedem Schritt nachsehen, in welchem Fenster wir wirklich stehen.
+  -- Daniel kann jederzeit selbst klicken, und ein Schritt kann einen anderen
+  -- Wechsel ausgeloest haben als erwartet. Eine Kette, die das nicht prueft,
+  -- fuehrt ihre Befehle im falschen Fenster aus - und keiner merkt es.
+  if schritt.erwarte ~= nil then
+    local jetzt = core.readInteger(0x01FE7D1C)      -- currentMenuViewType
+    local ziel  = tonumber(schritt.erwarte)
+    if jetzt ~= ziel then
+      kette.versuche = (kette.versuche or 0) + 1
+      if kette.versuche > 40 then
+        log(WARNING, string.format(
+          "KETTE %d: stehe in Fenster %s, brauche %d - komme nicht hin, Abbruch.",
+          nr, tostring(jetzt), ziel))
+        kette = nil
+        return
+      end
+      -- Nur alle acht Takte anstossen; der Wechsel braucht ein paar Bilder.
+      if kette.versuche % 8 == 1 then
+        log(INFO, string.format("KETTE %d: bin in Fenster %s, gehe nach %d",
+          nr, tostring(jetzt), ziel))
+        pcall(einzelbefehl, { menue = ziel })
+      end
+      return
+    end
+    kette.versuche = 0
+  end
+
   kette.index = kette.index + 1
-  local nr = kette.index - 1
 
   if schritt.warte ~= nil then
     local w = schritt.warte
@@ -1197,7 +1238,16 @@ end
 
 log(INFO, "logik.lua (31.08.2026): + Bauwacht, + Durchreichen an init.lua.")
 
+-- Im Hauptmenue laeuft processGameTick nicht, also auch everyTick nicht.
+-- Kette und Fenster-Wacht muessen dort trotzdem arbeiten - beide fassen nur
+-- Menue- und Fensterzustand an, nichts aus einem laufenden Gefecht.
+local function menuTick()
+  pcall(fensterWachtTick)
+  pcall(ketteTick)
+end
+
 return {
+  menuTick        = menuTick,
   handleCommand   = handleCommand,
   bauwachtStart   = bauwachtStart,
   mauernZaehlen   = mauernZaehlen,
