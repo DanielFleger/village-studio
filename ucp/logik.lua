@@ -600,11 +600,56 @@ local function bildSchreiben(wunsch)
     return true
 end
 
+--============================================================================
+-- 6b. Fenster-Wacht: haelt das Spielfenster hinten und auf dem rechten Schirm
+--
+-- Warum aus dem Spiel heraus: Von aussen ist jeder Zugriff auf dieses Fenster
+-- gesperrt - der Prozess laeuft auf hoher Rechtestufe, die Claude-Sitzung
+-- nicht. SetWindowPos, Stop-Process und selbst das blosse Zuruecksetzen in
+-- der Fensterreihenfolge scheitern mit Fehler 5 (am 01.09. dreimal gemessen).
+-- Das Modul laeuft IM Spiel und hat dessen Rechte - hier geht es.
+--
+-- SetWindowPos wird ueber den Import-Eintrag bei 0x0059E1F4 gerufen; dort
+-- steht die echte Adresse in user32.dll, die das Spiel selbst benutzt.
+--============================================================================
+
+local IAT_SETWINDOWPOS = 0x0059E1F4
+local HWND_BOTTOM      = 1
+-- NOSIZE|NOACTIVATE: nie den Tastaturfokus wegnehmen, nie die Groesse aendern
+local SWP_NOSIZE       = 0x0001
+local SWP_NOMOVE       = 0x0002
+local SWP_NOACTIVATE   = 0x0010
+
+local fensterWacht = nil        -- { hwnd, x, y, alle, zaehler }
+
+local function fensterSetzen(hwnd, x, y)
+  local adr = core.readInteger(IAT_SETWINDOWPOS)
+  if adr == nil or adr == 0 then return false, "kein Import bei 0x59E1F4" end
+  -- stdcall: alle Argumente auf dem Stack, die Funktion raeumt selbst auf.
+  -- exposeCode mit Konvention 0 stellt den Stapelzeiger danach wieder her -
+  -- dasselbe Muster, mit dem das Modul schon 'ret 8'-Funktionen ruft.
+  local setzen = core.exposeCode(adr, 7, 0)
+  local flags = SWP_NOSIZE + SWP_NOACTIVATE
+  if x == nil then flags = flags + SWP_NOMOVE end
+  return setzen(hwnd, HWND_BOTTOM, x or 0, y or 0, 0, 0, flags)
+end
+
+local function fensterWachtTick()
+  if fensterWacht == nil then return end
+  fensterWacht.zaehler = fensterWacht.zaehler + 1
+  if fensterWacht.zaehler % fensterWacht.alle ~= 0 then return end
+  pcall(fensterSetzen, fensterWacht.hwnd, fensterWacht.x, fensterWacht.y)
+end
+
 -- Vorwaertsdeklaration. Beide Funktionen werden aus einzelbefehl gerufen,
 -- stehen aber weiter unten. Ohne diese Zeile sucht Lua sie im globalen Raum,
 -- findet nichts und bricht mit "attempt to call a nil value" ab - der
 -- Bauwacht-Befehl war deshalb seit jeher wirkungslos (gefunden 31.08.2026).
 local bauwachtStart, autobildStart
+
+-- Zustand der Befehlskette. Muss hier oben stehen, weil einzelbefehl ihn
+-- setzt und der Taktgeber ihn weiter unten liest.
+local kette = nil
 
 local function einzelbefehl(cmd)
   if type(cmd) ~= "table" then return false end
@@ -699,6 +744,40 @@ local function einzelbefehl(cmd)
   if cmd.kosten ~= nil then return kostenBefehl(cmd.kosten) end
   if cmd.mauerDiagnose ~= nil then
     return mauerDiagnose(type(cmd.mauerDiagnose) == "number" and cmd.mauerDiagnose or nil)
+  end
+
+  -- Kette annehmen: eine Liste von Schritten, die der Taktgeber abarbeitet.
+  if cmd.kette ~= nil then
+    if type(cmd.kette) ~= "table" then return false end
+    kette = { schritte = cmd.kette, index = 1, wartetBis = nil }
+    log(INFO, string.format("KETTE: %d Schritte angenommen.", #cmd.kette))
+    return true
+  end
+
+  -- Fenster hinten halten. Das Handle kommt von aussen, weil das Spiel es
+  -- nirgends unter einem auffindbaren Namen ablegt und es sich bei jedem
+  -- Start aendert. { "fenster": { "hwnd": 526086, "x": 2560, "y": 0 } }
+  -- Ohne "alle" wird einmal gesetzt, mit "alle": 300 alle 300 Takte.
+  if cmd.fenster ~= nil then
+    local f = type(cmd.fenster) == "table" and cmd.fenster or {}
+    local hwnd = tonumber(f.hwnd) or (fensterWacht and fensterWacht.hwnd)
+    if hwnd == nil then
+      log(WARNING, "FENSTER: kein Handle - bitte hwnd mitgeben.")
+      return true
+    end
+    if f.aus == true then
+      fensterWacht = nil
+      log(INFO, "FENSTER: Wacht abgeschaltet.")
+      return true
+    end
+    local x, y = tonumber(f.x), tonumber(f.y)
+    local ok, ergebnis = pcall(fensterSetzen, hwnd, x, y)
+    fensterWacht = { hwnd = hwnd, x = x, y = y,
+                     alle = tonumber(f.alle) or 300, zaehler = 0 }
+    log(INFO, string.format("FENSTER: 0x%X nach hinten%s - Rueckgabe %s, Wacht alle %d Takte",
+      hwnd, x and string.format(" auf (%d,%d)", x, y or 0) or "",
+      tostring(ok and ergebnis or "Fehler"), fensterWacht.alle))
+    return true
   end
 
   --==========================================================================
@@ -1053,6 +1132,57 @@ local function autobildTick()
 end
 
 --============================================================================
+-- 6c. Befehlskette: kleine Schritte, jeder einzeln pruefbar
+--
+-- Warum nicht ein grosser Sprung: Der direkte Weg (alles setzen, dann
+-- LaunchSkirmishGame) startet zwar ein Gefecht, laesst aber Zustaende zurueck,
+-- die niemand geprueft hat - am 01.09. waren das 1 Stueck Startgueter und
+-- 5,9 Millionen Gold. Eine Kette macht jeden Schritt sichtbar und haltbar.
+--
+-- Gewartet wird auf SPIELZEIT, nicht auf Sekunden: bei Tempo 400 vergeht ein
+-- Spieljahr in 24 Sekunden, bei Tempo 20 in acht Minuten. Eine feste Pause
+-- waere mal zu kurz und mal sinnlos lang.
+--============================================================================
+
+local function ketteTick()
+  if kette == nil then return end
+  local t = tick()
+
+  if kette.wartetBis ~= nil then
+    if t < kette.wartetBis then return end
+    kette.wartetBis = nil
+  end
+
+  local schritt = kette.schritte[kette.index]
+  if schritt == nil then
+    log(INFO, string.format("KETTE: alle %d Schritte erledigt.", kette.index - 1))
+    kette = nil
+    return
+  end
+  kette.index = kette.index + 1
+  local nr = kette.index - 1
+
+  if schritt.warte ~= nil then
+    local w = schritt.warte
+    local dauer = (tonumber(w.ticks) or 0)
+                + (tonumber(w.tage)  or 0) * 50
+                + (tonumber(w.jahre) or 0) * 9600
+    kette.wartetBis = t + dauer
+    log(INFO, string.format("KETTE %d/%d: warte %d Ticks (bis %d)",
+      nr, #kette.schritte, dauer, kette.wartetBis))
+    return
+  end
+
+  log(INFO, string.format("KETTE %d/%d: %s",
+    nr, #kette.schritte, schritt.name or "Schritt"))
+  local gut, err = pcall(einzelbefehl, schritt)
+  if not gut then
+    log(WARNING, string.format("KETTE %d: abgebrochen - %s", nr, tostring(err)))
+    kette = nil
+  end
+end
+
+--============================================================================
 -- 7. Taktgeber
 --============================================================================
 
@@ -1061,6 +1191,8 @@ local function everyTick()
   pcall(gebaeudewachtTick)
   pcall(bauwachtTick)
   pcall(autobildTick)
+  pcall(fensterWachtTick)
+  pcall(ketteTick)
 end
 
 log(INFO, "logik.lua (31.08.2026): + Bauwacht, + Durchreichen an init.lua.")
