@@ -388,6 +388,34 @@ EOF
 
 ---
 
+### Die Null ist auch nur geraten (01.09.2026)
+
+Die Regel *"keine geschaetzten Konstanten - Wert auf 0 setzen oder echt messen"*
+hat eine Luecke, die an diesem Tag zugeschlagen hat.
+
+Beim Aufsetzen eines eigenen Gefechts wurden `skirmishGameIntensityType`
+(Startgueter) und `skirmishCurrentAdvantageBalance` (Ausgleich) auf 0 gesetzt -
+in der Annahme, 0 sei der neutrale Wert. Ergebnis im Spiel: **1 Stueck von
+jedem Startgut, Tierhaeute, die es in Crusader gar nicht gibt, und 5.892.144
+Gold.** Die Null ist dort kein neutraler Wert, sondern ein ungueltiger Index in
+eine Guetertabelle - das Spiel las daneben.
+
+Die echten Werte standen die ganze Zeit im Spiel selbst, in Gefechtspfad-
+Mission 0 bei `0x00B3EC48`: **fairness = 2, startLevels = 1.** Ein Blick
+dorthin haette zwei Minuten gekostet.
+
+**Die Praezisierung:** Die Null ist nur bei *Zaehlern und Summen* ein
+neutraler Anfangswert. Bei einem **Index, einer Art- oder Stufennummer** ist
+sie genauso geraten wie jede andere Zahl - und faellt haerter auf, weil sie
+harmlos aussieht.
+
+Vor dem Schreiben eines solchen Feldes deshalb immer: **Wo benutzt das Spiel
+dieses Feld selbst?** Diese Stelle auslesen und den echten Wert nehmen. Bei
+Gefechtseinstellungen ist das die Missionstabelle, bei Gebaeuden die
+Kostentabelle, bei KI-Nummern die Zuordnung im Plugin.
+
+---
+
 ### Start von Hand
 
 Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":

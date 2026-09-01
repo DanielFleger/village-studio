@@ -785,8 +785,13 @@ local function einzelbefehl(cmd)
     for i = 0, 8 do
       core.writeByte(gruppe + i, (i >= 1 and i <= 1 + anzKI) and (i - 1) or 0xFF)
     end
-    core.writeInteger(0x01A24A4C, 0)                  -- Ausgleich aus
-    core.writeInteger(0x01A245A4, 0)                  -- Startstaerke normal
+    -- GEMESSEN 01.09. an Gefechtspfad-Mission 0 (0x00B3EC48): das Spiel selbst
+    -- benutzt fairness = 2 und startLevels = 1.
+    -- Vorher stand hier 0/0 - das war geraten und falsch: Daniel bekam 1 Stueck
+    -- von jedem Startgut, Tierhaeute (die es in Crusader gar nicht gibt) und
+    -- 5,9 Millionen Gold. Die 0 ist kein gueltiger Index in die Gueter-Tabelle.
+    core.writeInteger(0x01A24A4C, tonumber(cmd.ausgleich) or 2)    -- fairness
+    core.writeInteger(0x01A245A4, tonumber(cmd.startgueter) or 1)  -- startLevels
 
     for i = 1, #karte do core.writeByte(kartName + i - 1, karte:byte(i)) end
     core.writeByte(kartName + #karte, 0)
