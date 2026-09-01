@@ -38,13 +38,37 @@ _VORN = ("Add-Type 'using System;using System.Runtime.InteropServices;"
 # ShowWindow(9) NUR bei minimierten Fenstern: auf ein maximiertes angewandt
 # macht es dieses klein. Am 01.09.2026 ist so Daniels Vollbild-Browser
 # geschrumpft. Wer den Fokus zurueckgibt, laesst die Groesse in Ruhe.
-_ZURUECK = ("Add-Type 'using System;using System.Runtime.InteropServices;"
-            "public class Fz{[DllImport(\"user32.dll\")]public static extern bool "
-            "SetForegroundWindow(IntPtr h);"
-            "[DllImport(\"user32.dll\")]public static extern bool ShowWindow(IntPtr h,int c);"
-            "[DllImport(\"user32.dll\")]public static extern bool IsIconic(IntPtr h);}'; "
-            "$h=[IntPtr]{handle}; if ([Fz]::IsIconic($h)) { [void][Fz]::ShowWindow($h,9) }; "
-            "[Fz]::SetForegroundWindow($h)")
+# GEMESSEN 01.09.2026: Ein blosses SetForegroundWindow reicht NICHT. Windows
+# laesst den Fokuswechsel nur zu, wenn der aufrufende Prozess selbst gerade
+# Eingabe hat - eine PowerShell im Hintergrund hat die nicht. Der Aufruf gibt
+# dann brav "false" zurueck und nichts passiert; zwoelf Wiederholungen aendern
+# daran nichts (Daniel sah das Spiel weiter im Vordergrund).
+#
+# Der Ausweg ist der uebliche: den eigenen Eingabe-Thread per
+# AttachThreadInput an den des Vordergrundfensters haengen. Danach gilt man
+# als eingabeberechtigt und der Wechsel klappt. Das Spielfenster wird dabei
+# NICHT angefasst - das ist gesperrt und hat dreimal den Prozess gekostet.
+_ZURUECK = (
+    "Add-Type 'using System;using System.Runtime.InteropServices;"
+    "public class Fz{"
+    "[DllImport(\"user32.dll\")]public static extern IntPtr GetForegroundWindow();"
+    "[DllImport(\"user32.dll\")]public static extern uint GetWindowThreadProcessId(IntPtr h,IntPtr p);"
+    "[DllImport(\"kernel32.dll\")]public static extern uint GetCurrentThreadId();"
+    "[DllImport(\"user32.dll\")]public static extern bool AttachThreadInput(uint a,uint b,bool an);"
+    "[DllImport(\"user32.dll\")]public static extern bool SetForegroundWindow(IntPtr h);"
+    "[DllImport(\"user32.dll\")]public static extern bool BringWindowToTop(IntPtr h);"
+    "[DllImport(\"user32.dll\")]public static extern bool IsIconic(IntPtr h);"
+    "[DllImport(\"user32.dll\")]public static extern bool ShowWindow(IntPtr h,int c);}'; "
+    "$h=[IntPtr]{handle}; "
+    "if ([Fz]::IsIconic($h)) { [void][Fz]::ShowWindow($h,9) }; "
+    "$v=[Fz]::GetWindowThreadProcessId([Fz]::GetForegroundWindow(),[IntPtr]::Zero); "
+    "$m=[Fz]::GetCurrentThreadId(); "
+    "$a=[Fz]::AttachThreadInput($m,$v,$true); "
+    "[void][Fz]::BringWindowToTop($h); "
+    "$ok=[Fz]::SetForegroundWindow($h); "
+    "if ($a) { [void][Fz]::AttachThreadInput($m,$v,$false) }; "
+    "$ok"
+)
 
 
 def ps(befehl):
@@ -95,6 +119,25 @@ def fenstermodus(vollbild):
                 newline="\n").write("\n".join(zeilen) + "\n")
         print("Fenstermodus auf '%s' gestellt." % ziel)
     return geaendert
+
+
+def nach_hinten():
+    """Legt das Spielfenster ganz unten in den Fensterstapel.
+
+    Das Spielfenster selbst darf nicht angefasst werden (Fehler 5). Der Umweg:
+    alle ANDEREN Fenster in ihrer bisherigen Reihenfolge wieder nach oben
+    holen - dann rutscht das Spiel von selbst nach unten. Die Einzelheiten
+    stehen in nach_hinten.ps1.
+    """
+    skript = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "nach_hinten.ps1")
+    aus = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy",
+                          "Bypass", "-File", skript],
+                         capture_output=True, text=True).stdout.strip()
+    letzte = [z for z in aus.splitlines() if z.strip()]
+    if letzte:
+        print(letzte[-1] if "GANZ UNTEN" in letzte[-1] else letzte[-1])
+    return "GANZ UNTEN" in aus
 
 
 def schreibe(text):
@@ -176,10 +219,44 @@ def start(vollbild=False):
 
     # Daniels Fenster zurueckholen. Das Spielfenster wird dabei NICHT
     # angefasst - das ist gesperrt und hat schon dreimal den Prozess gekostet.
-    if vorher and vorher != "0" and ps(_ZURUECK.replace("{handle}", vorher)).strip().lower() in ("true", "wahr"):
-        print("Spiel laeuft im Hintergrund, dein Fenster ist wieder vorn.")
+    if not vorher or vorher == "0":
+        print("Spiel laeuft. Es war vorher kein Fenster im Vordergrund.")
+        return True
+
+    # Fenster ganz nach unten in den Stapel. Das ist etwas anderes als der
+    # Fokus: Daniel stoert nicht, WER tippt, sondern was er SIEHT. Das Spiel
+    # lag ohne diesen Schritt auf Platz 2 - ohne Fokus, aber ueber seinem
+    # Browser. Das Skript daneben hebt alle anderen Fenster darueber.
+    nach_hinten()
+
+    # GEMESSEN 01.09.2026: Zweimal erfolgreich zurueckgeben genuegt NICHT.
+    # Das Spiel laedt nach dem Erscheinen des Fensters noch Logos und Menue
+    # und holt sich den Fokus dabei erneut - mein Skript war da laengst fertig
+    # und meldete "im Hintergrund", waehrend Daniel das Spiel vorn sah.
+    #
+    # Deshalb wird jetzt nicht blind wiederholt, sondern nachgesehen: Wer ist
+    # gerade vorn? Nur wenn es das SPIEL ist, wird zurueckgeholt. Die Wache
+    # laeuft, bis es 12 Sekunden am Stueck ruhig geblieben ist.
+    vordrang = 0
+    ruhig = 0
+    for _ in range(45):
+        vorn = ps(_VORN).strip()
+        if vorn == str(hwnd):
+            vordrang += 1
+            ruhig = 0
+            ps(_ZURUECK.replace("{handle}", vorher))
+        else:
+            ruhig += 1
+            if ruhig >= 6:
+                break
+        time.sleep(2)
+
+    if ruhig >= 6:
+        print("Spiel laeuft im Hintergrund (hat sich %dx vorgedraengt, "
+              "jeweils zurueckgeholt)." % vordrang)
     else:
-        print("Spiel laeuft. Den Fokus konnte ich nicht zurueckgeben - Alt+Tab.")
+        print("Das Spiel draengt sich immer wieder nach vorn (%dx) - "
+              "bitte einmal Alt+Tab." % vordrang)
     return True
 
 

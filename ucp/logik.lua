@@ -816,6 +816,70 @@ local function einzelbefehl(cmd)
     return true
   end
 
+  --==========================================================================
+  -- Massentausch: alle Einheiten oder Gebaeude eines Typs in einen anderen
+  --
+  --   { "tausche": { "was": "einheit", "von": 22, "nach": 28, "spieler": 2 } }
+  --   { "tausche": { "was": "gebaeude", "von": 20, "nach": 12 } }
+  --
+  -- "spieler" ist freiwillig; ohne ihn werden alle Besitzer erfasst.
+  -- Gezaehlt wird immer, auch wenn nichts passt - eine 0 ist ein Ergebnis
+  -- und keine Panne.
+  --==========================================================================
+  if cmd.tausche ~= nil then
+    local t = cmd.tausche
+    local von, nach = tonumber(t.von), tonumber(t.nach)
+    local nurSpieler = tonumber(t.spieler)
+    if von == nil or nach == nil then
+      log(WARNING, "TAUSCH: 'von' und 'nach' werden gebraucht.")
+      return false
+    end
+    local was = (t.was == "gebaeude") and "gebaeude" or "einheit"
+    local getroffen, geprueft = 0, 0
+
+    if was == "einheit" then
+      -- Einheit: Basis 0x0138854C, Schrittweite 1168 (aus spawnUnit gelesen).
+      -- Belegt heisst logicalState (+0x8C) ~= 0 - NICHT unitType, denn ein
+      -- freier Platz behaelt den Typ der gestorbenen Einheit.
+      local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+      for i = 0, grenze - 1 do
+        local b = 0x0138854C + i * 1168
+        if (core.readSmallInteger(b + 0x8C) or 0) ~= 0 then
+          geprueft = geprueft + 1
+          local besitzer = core.readSmallInteger(b + 0x96) or -1
+          if (core.readSmallInteger(b + 0x8E) or -1) == von
+             and (nurSpieler == nil or besitzer == nurSpieler) then
+            core.writeSmallInteger(b + 0x8E, nach)
+            getroffen = getroffen + 1
+          end
+        end
+      end
+    else
+      -- Gebaeude: Basis 0xF98520 + 0x14, Schrittweite 812 (0x32C).
+      -- Der Typ steht bei +0xD2, der Besitzer bei +0xD6.
+      local anzahl = math.min(core.readInteger(0x00F98520) or 0, 2000)
+      for i = 0, anzahl - 1 do
+        local b = 0x00F98520 + 0x14 + i * 812
+        local zustand = core.readSmallInteger(b + 0xD0) or 0
+        if zustand ~= 0 then
+          geprueft = geprueft + 1
+          local besitzer = core.readSmallInteger(b + 0xD6) or -1
+          if (core.readSmallInteger(b + 0xD2) or -1) == von
+             and (nurSpieler == nil or besitzer == nurSpieler) then
+            core.writeSmallInteger(b + 0xD2, nach)
+            getroffen = getroffen + 1
+          end
+        end
+      end
+    end
+
+    log(INFO, string.format("TAUSCH %s: Typ %d -> %d%s | %d von %d geaendert",
+      was, von, nach,
+      nurSpieler and (" bei Spieler " .. nurSpieler) or " (alle Spieler)",
+      getroffen, geprueft))
+    return true
+  end
+
   -- Ereignis-Regel setzen oder alle loeschen.
   --   { "regel": { "name": "...", "wenn": {...}, "dann": [...], "einmal": true } }
   --   { "regeln": "aus" }
