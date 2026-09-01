@@ -919,6 +919,110 @@ local function einzelbefehl(cmd)
     return true
   end
 
+  --==========================================================================
+  -- Einen Knopf im Hauptmenue druecken: { "hauptmenue": 5 }
+  --
+  -- MenuItemActionHandler_MainMenu_Main (0x004251A0, cdecl, ein Argument) ist
+  -- genau die Funktion, die das Spiel beim Anklicken ruft. Aus dem Dekompilat
+  -- vom 02.09.2026:
+  --   1 Historische Kampagnen   2 Kreuzzug        3 Burgenbau
+  --   4 Mehrspieler             5 Beenden (Tor)   6 Tutorial (Buch)
+  --   7 Abspann                 8 Einstellungen (Schluessel)
+  --   9 Eigene Szenarien
+  --
+  -- ACHTUNG bei 5: Der Knopf beendet NICHT sofort, sondern oeffnet einen
+  -- Ja/Nein-Dialog. Wer danach nichts weiter tut, steht im Dialog fest.
+  --==========================================================================
+  if cmd.hauptmenue ~= nil then
+    local nr = tonumber(cmd.hauptmenue)
+    if nr == nil then
+      log(WARNING, "HAUPTMENUE: Nummer fehlt.")
+      return false
+    end
+    local vorher = core.readInteger(0x01FE7D1C)
+    local ok, err = pcall(function()
+      core.exposeCode(0x004251A0, 1, 0)(nr)
+    end)
+    log(INFO, string.format("HAUPTMENUE: Knopf %d gedrueckt (Ansicht vorher %s), ok=%s%s",
+      nr, tostring(vorher), tostring(ok), ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
+  --==========================================================================
+  -- Den Ja-Knopf eines Dialogs druecken: { "dialogJa": 9 }
+  --
+  -- Alle Ja/Nein-Dialoge laufen ueber DIESELBE Funktion:
+  -- MenuItemActionHandler_General_LaunchOrQuitMultiplayerGameUnk
+  -- (0x00494950, cdecl, ein Argument).
+  --
+  -- WICHTIG: Das Argument ist NICHT der Zweck, sondern welcher Knopf gedrueckt
+  -- wurde: 22 (0x16) = Ja, 23 (0x17) = Nein. Den Zweck liest die Funktion aus
+  -- DAT_MenuTextInputState.DAT_MenuOptionsActionParameter - dort hinterlegt
+  -- ihn der Knopf, der den Dialog geoeffnet hat (das Tor im Hauptmenue: 9).
+  --
+  -- Am 02.09. erst mit dem Zweck 9 als Argument gerufen: Die Funktion lief
+  -- sauber durch, meldete ok=true - und tat nichts, weil weder 22 noch 23
+  -- getroffen war. Ein Aufruf, der zurueckkehrt, hat nichts bewiesen.
+  --==========================================================================
+  if cmd.dialogJa ~= nil then
+    local knopf = (cmd.dialogJa == false) and 23 or 22    -- 22 = Ja, 23 = Nein
+    local zweck = core.readInteger(0x00F02D24)            -- nur zum Mitschreiben
+    log(INFO, string.format("DIALOG: Knopf %d (%s), hinterlegter Zweck %s",
+      knopf, knopf == 22 and "Ja" or "Nein", tostring(zweck)))
+    local ok, err = pcall(function()
+      core.exposeCode(0x00494950, 1, 0)(knopf)
+    end)
+    log(INFO, "DIALOG: zurueck, ok=" .. tostring(ok) ..
+      (ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
+  --==========================================================================
+  -- Einen Knopf im Optionen-Dialog druecken: { "optionen": 2 }
+  --
+  -- MenuItemActionHandler_OptionsMenu_Buttons (0x00496B80, cdecl, ein
+  -- Argument). Nummern aus dem Dekompilat vom 02.09.2026:
+  --   2  Laden        3  Speichern    7  Mission verlassen
+  --   9  Crusader verlassen           10 Spiel fortsetzen
+  --   26 Hilfe        39 Briefing     44 Mission neu starten
+  --==========================================================================
+  if cmd.optionen ~= nil then
+    local nr = tonumber(cmd.optionen)
+    if nr == nil then
+      log(WARNING, "OPTIONEN: Nummer fehlt.")
+      return false
+    end
+    local ok, err = pcall(function()
+      core.exposeCode(0x00496B80, 1, 0)(nr)
+    end)
+    log(INFO, string.format("OPTIONEN: Knopf %d gedrueckt, ok=%s%s",
+      nr, tostring(ok), ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
+  --==========================================================================
+  -- Knopf im Laden-/Speichern-Dialog: { "laden": 2 }
+  --
+  -- MenuItemActionHandler_SaveLoadMap_Buttons (0x004943B0, cdecl, ein
+  -- Argument). Aus dem Dekompilat vom 02.09.2026:
+  --   2  Laden      3  Speichern      17 Zurueck
+  -- Geladen wird der Eintrag, der in der Liste markiert ist - beim Oeffnen
+  -- ist das der oberste, also der neueste Spielstand.
+  --==========================================================================
+  if cmd.laden ~= nil then
+    local nr = tonumber(cmd.laden)
+    if nr == nil then
+      log(WARNING, "LADEN: Nummer fehlt.")
+      return false
+    end
+    local ok, err = pcall(function()
+      core.exposeCode(0x004943B0, 1, 0)(nr)
+    end)
+    log(INFO, string.format("LADEN: Knopf %d gedrueckt, ok=%s%s",
+      nr, tostring(ok), ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
   -- Ereignis-Regel setzen oder alle loeschen.
   --   { "regel": { "name": "...", "wenn": {...}, "dann": [...], "einmal": true } }
   --   { "regeln": "aus" }
