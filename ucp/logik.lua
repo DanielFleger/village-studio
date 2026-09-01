@@ -485,18 +485,43 @@ end
 
 local function bildSchreiben(wunsch)
     local W = 0x00F98338
-    local resX = core.readInteger(W + 0x38) or 0
-    local resY = core.readInteger(W + 0x3C) or 0
     local welche = (wunsch.bild == "karte") and "karte" or "menue"
     local ptr = core.readInteger(W + (welche == "karte" and 0xD8 or 0xD4)) or 0
+
+    -- GEMESSEN 01.09.: Die beiden Flaechen sind NICHT gleich gross. Hinter der
+    -- Struktur stehen zwei DirectDraw-Flaechenbeschreibungen, und dort steht
+    -- es schwarz auf weiss:
+    --   Oberflaeche  0x00F98444  1080 hoch, 1920 breit, Zeile 3840 Byte
+    --   Karte        0x00F984AC  2076 hoch, 4056 breit, Zeile 8112 Byte
+    -- Wer die Karte mit 1920 Breite liest, bekommt Streifenmuster - so ist am
+    -- 31.08. eine halbe Stunde in die Suche nach dem "richtigen Zeilenabstand"
+    -- geflossen, den das Spiel die ganze Zeit selbst notiert hat.
+    -- Aufbau ab dwSize: +0x08 Hoehe, +0x0C Breite, +0x10 Zeilenlaenge,
+    -- +0x24 Zeiger auf die Pixel (der zum Zeiger bei 0xD4/0xD8 passt).
+    local beschreibung = (welche == "karte") and 0x00F984A8 or 0x00F9843C
+    local resY   = core.readInteger(beschreibung + 0x08) or 0
+    local resX   = core.readInteger(beschreibung + 0x0C) or 0
+    local zeile  = core.readInteger(beschreibung + 0x10) or (resX * 2)
+    -- Notnagel, falls die Beschreibung einmal nicht passt
+    if resX < 1 or resY < 1 then
+      resX = core.readInteger(W + 0x38) or 0
+      resY = core.readInteger(W + 0x3C) or 0
+      zeile = resX * 2
+    end
+    -- Nur einen Ausschnitt lesen: { "aus": [x, y, breite, hoehe] }
+    local ax, ay = 0, 0
+    if type(wunsch.aus) == "table" and #wunsch.aus == 4 then
+      ax, ay = wunsch.aus[1], wunsch.aus[2]
+      resX, resY = wunsch.aus[3], wunsch.aus[4]
+    end
     local ziel = type(wunsch.datei) == "string" and wunsch.datei
       or ("ucp/villagestudio/vs_" .. welche .. ".bmp")
     -- Der UCP-Sandkasten laesst io.open nur INNERHALB des Spielordners zu.
     -- Ein absoluter Pfad in die Dokumente scheitert mit "Invalid path"
     -- (gemessen 31.08. 23:18).
 
-    log(INFO, string.format("BILD %s: Aufloesung %d x %d, Flaeche 0x%08X, Byteszahl %s -> %s",
-      welche, resX, resY, ptr, tostring(core.readInteger(W + 0x4C)), ziel))
+    log(INFO, string.format("BILD %s: %d x %d ab (%d,%d), Zeile %d Byte, Flaeche 0x%08X -> %s",
+      welche, resX, resY, ax, ay, zeile, ptr, ziel))
 
     if resX < 1 or resX > 4096 or resY < 1 or resY > 4096
        or ptr < 0x10000 or ptr > 0x7FFFFFFF then
@@ -556,7 +581,7 @@ local function bildSchreiben(wunsch)
     local f555 = tonumber(wunsch.format) ~= 565
     local char, concat, lies = string.char, table.concat, core.readSmallInteger
     for y = resY - 1, 0, -1 do              -- BMP steht auf dem Kopf
-      local basis = ptr + y * resX * 2
+      local basis = ptr + (ay + y) * zeile + ax * 2
       local zeile = {}
       for x = 0, resX - 1 do
         local v = lies(basis + x * 2) or 0
@@ -674,6 +699,105 @@ local function einzelbefehl(cmd)
   if cmd.kosten ~= nil then return kostenBefehl(cmd.kosten) end
   if cmd.mauerDiagnose ~= nil then
     return mauerDiagnose(type(cmd.mauerDiagnose) == "number" and cmd.mauerDiagnose or nil)
+  end
+
+  --==========================================================================
+  -- Eigenes Gefecht aufsetzen, ohne das Menue zu bedienen (01.09.2026)
+  --
+  -- Nachgebaut aus SetupSkirmishMode (0x4C68D0), Schritt fuer Schritt in
+  -- derselben Reihenfolge - aber mit eigenen Werten statt denen einer
+  -- Kampagnenmission. Der Kampagnenweg taugt hier nicht: in diesem Mod ist
+  -- kein Spieler 1 vorgesehen, die Partie ist nach 87 Ticks entschieden.
+  --
+  -- Die Reihenfolge ist nicht beliebig. Der Code verlangt sie so:
+  --   isHost und currentGameMode VOR dem Slot-Befehl, sonst laeuft
+  --   addPlayerToCurrentPlayerArray ins Leere und der Mensch bleibt ohne Burg.
+  --==========================================================================
+  if cmd.eigenesGefecht ~= nil then
+    local GSS  = 0x0191D768
+    local CORE = 0x01FE7D10
+
+    local fullID   = 0x0191DE10     -- currentPlayerFullIDArray   int[9]
+    local aiArr    = 0x0191DE7C     -- currentAIArray             int[9]
+    local aiVar    = 0x0191DEA0     -- SEC_AIVariationArray       int[9]
+    local bereit   = 0x01A24518     -- DAT_PlayerSlotArraySomeValue int[9]
+    local gruppe   = 0x01A275B5     -- DAT_PlayerGroupArray       byte[9]
+    local posArr   = 0x01A275D0     -- playerPositionsArray       byte[8]
+    local kartName = 0x01A22F9C     -- mapName char[1000], OHNE ".map"
+    local namen    = 0x01A23384     -- DAT_PlayerNames char[9][250]
+
+    local setupLobby    = core.exposeCode(0x00487650, 1, 1)   -- this
+    local queueBefehl   = core.exposeCode(0x00489100, 2, 1)   -- this + Befehl
+    local resetAiVar    = core.exposeCode(0x00428050, 1, 0)
+    local platziereZuf  = core.exposeCode(0x00428480, 1, 0)
+    local starteGefecht = core.exposeCode(0x00441270, 1, 0)
+    local zeigeMenue    = core.exposeCode(0x0046B340, 3, 1)   -- this + Ansicht + 0
+
+    local karte = cmd.karte or "!KOphase Map 1"
+    -- Die Nummer ist aiType+1, weil 0 in currentAIArray "leer" bedeutet.
+    -- Rotkaeppchen sitzt in diesem Mod auf dem Vanilla-Platz "rat" = aiType 0.
+    local ki    = tonumber(cmd.ki) or 1
+    local anzKI = tonumber(cmd.gegner) or 2
+
+    setupLobby(GSS)
+    core.writeInteger(0x0191DEF8, 1)                  -- isHost
+    core.writeInteger(0x0191DD80, 99)                 -- GM_SKIRMISH_SINGLE_PLAYER
+    core.writeInteger(0x0191DE04, 1)                  -- DPLAYX_ReceivedPlayerID
+    core.writeInteger(0x01FE7D78, 3)                  -- gameMode_2 = Gefecht
+    core.writeInteger(CORE + 0x152C, 0)               -- mapU4Int0
+    core.writeInteger(CORE + 0x1F94, 0)               -- isSkirmishTrail = FALSE
+
+    for i = 0, 8 do
+      core.writeInteger(fullID + i*4, 0xFFFFFFFF)
+      core.writeInteger(aiArr  + i*4, 0)
+      core.writeInteger(aiVar  + i*4, 0xFFFFFFFF)
+      core.writeByte(namen + i*250, 0)
+    end
+    for i, c in ipairs({68, 97, 110, 105, 101, 108, 0}) do   -- "Daniel"
+      core.writeByte(namen + 250 + (i-1), c)
+    end
+
+    queueBefehl(GSS, 4)                               -- soll den Menschen eintragen
+
+    -- GEMESSEN 01.09.: queueCommand(4) traegt hier NICHTS ein - nach dem Aufruf
+    -- steht currentPlayerFullIDArray noch komplett auf -1, und der Mensch fehlt
+    -- im fertigen Gefecht (zwei Lords statt drei, Besitzer 1 gar nicht da).
+    -- Der Befehl ist auf den Lobby-Ablauf mit Netzwerkschicht ausgelegt; aus
+    -- einem Haken heraus fehlt ihm offenbar etwas. Deshalb wird das Ergebnis
+    -- geprueft und notfalls von Hand nachgezogen - genau das, was
+    -- addPlayerToCurrentPlayerArray(1) tun wuerde.
+    -- Ohne Pruefung setzen: core.readInteger liefert die -1 vorzeichenbehaftet,
+    -- ein Vergleich mit 0xFFFFFFFF greift also nie (Betriebsregel 4). Zweimal
+    -- setzen schadet nicht, einmal zu wenig kostet den ganzen Lauf.
+    core.writeInteger(fullID + 4, 1)                  -- Slot 1 = der Mensch
+    core.writeInteger(0x01A275DC, 1)                  -- currentPlayerSlotID
+    log(INFO, string.format("GEFECHT: Mensch in Slot 1 (steht jetzt: %s)",
+      tostring(core.readInteger(fullID + 4))))
+
+    for i = 0, 8 do core.writeInteger(bereit + i*4, 1) end
+
+    for slot = 2, 1 + anzKI do
+      core.writeInteger(aiArr + slot*4, ki)
+      resetAiVar(slot)
+    end
+
+    for i = 0, 7 do core.writeByte(posArr + i, 0xF6) end
+    for i = 0, 8 do
+      core.writeByte(gruppe + i, (i >= 1 and i <= 1 + anzKI) and (i - 1) or 0xFF)
+    end
+    core.writeInteger(0x01A24A4C, 0)                  -- Ausgleich aus
+    core.writeInteger(0x01A245A4, 0)                  -- Startstaerke normal
+
+    for i = 1, #karte do core.writeByte(kartName + i - 1, karte:byte(i)) end
+    core.writeByte(kartName + #karte, 0)
+
+    for slot = 1, 1 + anzKI do platziereZuf(slot) end
+
+    log(INFO, string.format("GEFECHT: Karte '%s', %d Gegner vom Typ %d", karte, anzKI, ki))
+    starteGefecht(0)                                  -- 0 = Burgen selbst waehlen
+    zeigeMenue(CORE, 14, 0)                           -- MVT_BUILD_MENU
+    log(INFO, "GEFECHT: LaunchSkirmishGame zurueck")
+    return true
   end
 
   if spieler == nil then
