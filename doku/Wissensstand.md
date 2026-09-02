@@ -330,6 +330,38 @@ schreibbar.
 
 **Marke: abgelesen.** Im Spiel nicht ausprobiert.
 
+### Einheitentyp umschreiben aendert das AUSSEHEN nicht (02.09.2026)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `unitType` (+0x8E) laesst sich schreiben, und die Zaehlung folgt sofort | **belegt** | 49 Einheiten von Typ 22 auf 24 gesetzt: Typ 22 verschwindet, Typ 24 steigt von 29 auf exakt 78. Dreimal wiederholt, immer aufs Stueck genau |
+| **Die Darstellung aendert sich dabei NICHT** | **belegt** | Dieselbe Gruppe am Bergfried vor und nach dem Tausch: Schleuderer bleiben Schleuderer. Auch als ALLE Einheiten der Karte auf Typ 27 gesetzt wurden - inklusive der Lords - blieb jede Figur, wie sie war |
+| `unitType` steuert also die Logik, nicht die Grafik | **belegt** | siehe oben |
+| Wo die Grafik haengt | **offen** | Vermutlich ein Feld, das beim Erzeugen gesetzt wird. Zu finden ueber den Vergleich einer ECHTEN Einheit vom Zieltyp mit einer getauschten: das unterscheidende Feld ist es |
+
+**Was das fuer Tests bedeutet:** Ein Einheitentausch ist im Bild **nicht**
+nachweisbar. Wer ihn belegen will, nimmt den Einheitenbericht - der zeigt die
+Aenderung sofort und exakt.
+
+### Kachelnummer ist NICHT `x = k % 400`
+
+Die Umrechnung, die im Werkzeug stand, ist falsch. Gemessen an einer Gruppe,
+die im Bild dicht beieinandersteht:
+
+```
+Lord              Kachel 67433
+Gruppe daneben    68109, 68327, 68329, 68331, 68545, 68547, 68549, 68764, 68767
+```
+
+Innerhalb einer Bildreihe betraegt der Abstand **2**, zwischen den Reihen rund
+**215**. Mit der Annahme `x = k % 400` lagen Lord und Gruppe rechnerisch fast
+hundert Kacheln auseinander - im Bild stehen sie nebeneinander.
+
+**Folge:** Jede Bereichssuche ueber `x`/`y` liefert falsche Ergebnisse. Am
+02.09. fand sie am Bergfried zehn Einheiten, waehrend im Bild rund
+fuenfundzwanzig standen. Bis die Geometrie geklaert ist, mit **rohen
+Kachelnummern** arbeiten, nicht mit umgerechneten Koordinaten.
+
 ### Der Lord
 
 `UT_LORD = 55` im `UnitType`. Damit ist die Todeserkennung einfacher als über

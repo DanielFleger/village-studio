@@ -1056,6 +1056,195 @@ local function einzelbefehl(cmd)
     return true
   end
 
+  --==========================================================================
+  -- Wo stehen die Einheiten eines Typs? { "woSind": 24, "spieler": 1 }
+  --
+  -- Gibt Schwerpunkt und Streuung der Kacheln aus. Der Sinn: Ein Bildbeweis
+  -- ist nur dann einer, wenn die geaenderten Einheiten auch im Ausschnitt
+  -- liegen. Am 02.09.2026 zeigte ein Differenzbild 4,3 Prozent Aenderung -
+  -- das waren aber Baeume im Wind und ein Ochsengespann, weil das Spiel
+  -- wieder lief. Die getauschten Einheiten standen ganz woanders.
+  --
+  -- Kachel -> Karte: x = kachel % 400, y = math.floor(kachel / 400)
+  --==========================================================================
+  if cmd.woSind ~= nil then
+    local typ = tonumber(cmd.woSind)
+    local nurSpieler = tonumber(cmd.spieler)
+    if typ == nil then return false end
+    local n, sx, sy = 0, 0, 0
+    local minx, maxx, miny, maxy = 9999, -1, 9999, -1
+    local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+    for i = 0, grenze - 1 do
+      local b = 0x0138854C + i * 1168
+      if (core.readSmallInteger(b + 0x8C) or 0) ~= 0
+         and (core.readSmallInteger(b + 0x8E) or -1) == typ
+         and (nurSpieler == nil or (core.readSmallInteger(b + 0x96) or -1) == nurSpieler) then
+        local k = core.readInteger(b + 0xD4) or 0
+        local x, y = k % 400, math.floor(k / 400)
+        n = n + 1; sx = sx + x; sy = sy + y
+        if x < minx then minx = x end
+        if x > maxx then maxx = x end
+        if y < miny then miny = y end
+        if y > maxy then maxy = y end
+      end
+    end
+    if n == 0 then
+      log(INFO, string.format("WOSIND Typ %d: keine gefunden.", typ))
+    else
+      log(INFO, string.format(
+        "WOSIND Typ %d%s: %d Stueck, Schwerpunkt (%d,%d), Bereich x %d-%d y %d-%d",
+        typ, nurSpieler and (" Spieler " .. nurSpieler) or "",
+        n, math.floor(sx/n), math.floor(sy/n), minx, maxx, miny, maxy))
+    end
+    return true
+  end
+
+  -- Welche Einheiten stehen in einem Kachelbereich?
+  --   { "dortSind": [x1, y1, x2, y2] }
+  -- Zaehlt nach Typ und Besitzer. Damit laesst sich pruefen, WAS man im Bild
+  -- sieht, bevor man etwas aendert - der Umweg ueber "ich tausche mal und
+  -- schaue" hat am 02.09.2026 zwei Fehlversuche gekostet.
+  if cmd.dortSind ~= nil then
+    local r = cmd.dortSind
+    if type(r) ~= "table" or #r ~= 4 then return false end
+    local x1, y1, x2, y2 = r[1], r[2], r[3], r[4]
+    local zaehler = {}
+    local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+    for i = 0, grenze - 1 do
+      local b = 0x0138854C + i * 1168
+      if (core.readSmallInteger(b + 0x8C) or 0) ~= 0 then
+        local k = core.readInteger(b + 0xD4) or 0
+        local x, y = k % 400, math.floor(k / 400)
+        if x >= x1 and x <= x2 and y >= y1 and y <= y2 then
+          local typ = core.readSmallInteger(b + 0x8E) or -1
+          local bes = core.readSmallInteger(b + 0x96) or -1
+          local schl = string.format("Typ %d / Spieler %d", typ, bes)
+          zaehler[schl] = (zaehler[schl] or 0) + 1
+        end
+      end
+    end
+    local liste = {}
+    for k, v in pairs(zaehler) do table.insert(liste, {k, v}) end
+    table.sort(liste, function(a, b) return a[2] > b[2] end)
+    log(INFO, string.format("DORTSIND x %d-%d y %d-%d:", x1, x2, y1, y2))
+    for i = 1, math.min(#liste, 8) do
+      log(INFO, string.format("   %-24s %d", liste[i][1], liste[i][2]))
+    end
+    if #liste == 0 then log(INFO, "   nichts gefunden") end
+    return true
+  end
+
+  --==========================================================================
+  -- Kamera steuern
+  --
+  --   { "kamera": [233, 168] }     auf eine Kartenstelle springen
+  --   { "grundriss": true }        Grundrissmodus (Leertaste)
+  --   { "drehen": 2 }              Karte drehen: 0, 2, 4 oder 6
+  --
+  -- focusOnCoordinate 0x004E8CA0, thiscall, ECX = ViewportRenderState
+  -- (0x021AEBD8), zwei Argumente. Bei thiscall zaehlt "this" mit, also drei.
+  -- Grundriss: toggleFlatView 0x004F70B0, ECX = TileMapState (0x01A93208).
+  -- Drehen:    setMapRotation 0x004F70E0, ECX ebenso. Der Wert ist nur ein
+  --            Auftrag - processGameTick fuehrt ihn im naechsten Bild aus.
+  --==========================================================================
+  if cmd.kamera ~= nil then
+    local k = cmd.kamera
+    if type(k) ~= "table" or #k ~= 2 then
+      log(WARNING, "KAMERA: [x, y] erwartet.")
+      return false
+    end
+    local ok, err = pcall(function()
+      core.exposeCode(0x004E8CA0, 3, 1)(0x021AEBD8, k[1], k[2])
+    end)
+    log(INFO, string.format("KAMERA: auf (%d,%d), ok=%s%s", k[1], k[2],
+      tostring(ok), ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
+  if cmd.grundriss ~= nil then
+    local an = (cmd.grundriss == true) and 1 or 0
+    local ok, err = pcall(function()
+      core.exposeCode(0x004F70B0, 2, 1)(0x01A93208, an)
+    end)
+    log(INFO, string.format("GRUNDRISS: %d, ok=%s%s", an, tostring(ok),
+      ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
+  if cmd.drehen ~= nil then
+    local w = tonumber(cmd.drehen)
+    if w == nil then return false end
+    local vorher = core.readInteger(0x01FE7AA4)
+    local ok, err = pcall(function()
+      core.exposeCode(0x004F70E0, 2, 1)(0x01A93208, w)
+    end)
+    log(INFO, string.format("DREHEN: %s -> Auftrag %d, ok=%s%s",
+      tostring(vorher), w, tostring(ok), ok and "" or (" - " .. tostring(err))))
+    return true
+  end
+
+  -- Wo stehen die meisten Einheiten eines Spielers dicht beieinander?
+  --   { "dichteste": 1 }   (Spielernummer)
+  -- Rastert die Karte in 20x20-Felder und nennt das vollste. Ein Schwerpunkt
+  -- taugt dafuer NICHT: Bei ueber die halbe Karte verstreuten Einheiten liegt
+  -- er im Nichts - am 02.09.2026 zeigte die Kamera dort vier neutrale Tiere.
+  if cmd.dichteste ~= nil then
+    local sp = tonumber(cmd.dichteste)
+    if sp == nil then return false end
+    local feld = {}
+    local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+    for i = 0, grenze - 1 do
+      local b = 0x0138854C + i * 1168
+      if (core.readSmallInteger(b + 0x8C) or 0) ~= 0
+         and (core.readSmallInteger(b + 0x96) or -1) == sp then
+        local k = core.readInteger(b + 0xD4) or 0
+        local fx = math.floor((k % 400) / 20)
+        local fy = math.floor(math.floor(k / 400) / 20)
+        local schl = fx * 100 + fy
+        feld[schl] = (feld[schl] or 0) + 1
+      end
+    end
+    local besteSchl, besteZahl = nil, 0
+    for k, v in pairs(feld) do
+      if v > besteZahl then besteSchl, besteZahl = k, v end
+    end
+    if besteSchl == nil then
+      log(INFO, string.format("DICHTESTE Spieler %d: keine Einheiten.", sp))
+    else
+      local fx, fy = math.floor(besteSchl / 100), besteSchl % 100
+      log(INFO, string.format(
+        "DICHTESTE Spieler %d: %d Einheiten im Feld x %d-%d y %d-%d, Mitte (%d,%d)",
+        sp, besteZahl, fx*20, fx*20+19, fy*20, fy*20+19, fx*20+10, fy*20+10))
+    end
+    return true
+  end
+
+  -- Rohe Kachelnummern der Einheiten eines Spielers: { "kacheln": 1 }
+  -- Ohne Umrechnung, damit sichtbar wird, ob die Annahme "x = k % 400"
+  -- ueberhaupt stimmt. Am 02.09.2026 fand die Bereichssuche am Bergfried nur
+  -- zehn Einheiten, waehrend im Bild rund 25 standen - ein Zeichen, dass die
+  -- Umrechnung und nicht die Suche falsch war.
+  if cmd.kacheln ~= nil then
+    local sp = tonumber(cmd.kacheln)
+    local liste, n = {}, 0
+    local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+    for i = 0, grenze - 1 do
+      local b = 0x0138854C + i * 1168
+      if (core.readSmallInteger(b + 0x8C) or 0) ~= 0
+         and (sp == nil or (core.readSmallInteger(b + 0x96) or -1) == sp) then
+        n = n + 1
+        if n <= 20 then
+          table.insert(liste, string.format("%d:Typ%d", core.readInteger(b + 0xD4) or -1,
+            core.readSmallInteger(b + 0x8E) or -1))
+        end
+      end
+    end
+    log(INFO, string.format("KACHELN Spieler %s: %d Einheiten, erste 20:",
+      tostring(sp), n))
+    log(INFO, "   " .. table.concat(liste, "  "))
+    return true
+  end
+
   -- Ereignis-Regel setzen oder alle loeschen.
   --   { "regel": { "name": "...", "wenn": {...}, "dann": [...], "einmal": true } }
   --   { "regeln": "aus" }
