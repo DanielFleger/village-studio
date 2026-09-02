@@ -1528,8 +1528,21 @@ local function einzelbefehl(cmd)
     end
 
     for i = 0, 7 do core.writeByte(posArr + i, 0xF6) end
+    -- Teams: { "teams": [1, 1, 2, 2] } - je Gegner eine Mannschaftsnummer.
+    -- Gleiche Zahl heisst verbuendet. Ohne Angabe bekommt jeder sein eigenes
+    -- Team, 0xFF heisst "Platz nicht besetzt".
+    local teams = (type(cmd.teams) == "table") and cmd.teams or nil
     for i = 0, 8 do
-      core.writeByte(gruppe + i, (i >= 1 and i <= 1 + anzKI) and (i - 1) or 0xFF)
+      local wert = 0xFF
+      if i == 1 then
+        wert = 0                                   -- der Mensch
+      elseif i >= 2 and i <= 1 + anzKI then
+        wert = teams and (tonumber(teams[i - 1]) or (i - 1)) or (i - 1)
+      end
+      core.writeByte(gruppe + i, wert)
+    end
+    if teams then
+      log(INFO, "GEFECHT: Mannschaften " .. table.concat(teams, ", "))
     end
     -- GEMESSEN 01.09. an Gefechtspfad-Mission 0 (0x00B3EC48): das Spiel selbst
     -- benutzt fairness = 2 und startLevels = 1.

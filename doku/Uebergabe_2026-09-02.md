@@ -85,6 +85,41 @@ Gruppe auf freiem Feld.
 
 ---
 
+## Der Gefechtsstart muss über das MENÜ laufen — nicht per Direktsprung
+
+**Das ist der nächste Arbeitsauftrag.** Der bisherige Weg
+(`{"eigenesGefecht": true}`) ruft `LaunchSkirmishGame` direkt und **umgeht
+damit die Lobby**. Das hat zwei sichtbare Folgen, beide am 02.09. im Bild
+belegt:
+
+- **Der Mensch ist immer dabei.** Ein reines KI-gegen-KI-Gefecht lässt sich so
+  nicht aufsetzen; in der Rangliste stand „Daniel" mit 4000 Gold zwischen den
+  Rotkäppchen.
+- **Die Farben verrutschen.** Bei vier Gegnern plus Mensch bekommt der vierte
+  Gegner Farbe 5 (schwarz), weil die Plätze der Reihe nach vergeben werden
+  statt über die Lobby.
+
+Teams selbst funktionieren: `{"teams": [1, 1, 2, 2]}` schreibt
+`DAT_PlayerGroupArray` und die Zuordnung steht im Log. Nur die Plätze und
+Farben brauchen den Menüweg.
+
+**Der Weg, der gebaut werden muss:**
+
+| Schritt | Stand |
+|---|---|
+| Hauptmenü → Kreuzzug | `{"hauptmenue": 2}` → Ansicht 55, **gemessen** |
+| Kreuzzug → Eigenes Spiel | Handler und Knopfnummer noch **unbekannt** |
+| Gegner einzeln hinzufügen | `MenuItemActionHandler_LobbyMenu_PlayerListAndNpcButtons` (0x00440E50) — gefunden, nicht erprobt |
+| KI je Platz wählen | `currentAIArray[slot]`, Wert = aiType − 1 (abgelesen) |
+| Karte wählen | `MenuItemActionHandler_LobbyMenu_MapSelectTable` (0x0042B470) |
+| Starten | `MenuItemActionHandler_LobbyMenu_LobbyscreenStartButtonClick` (0x00442640), Fall 4 |
+
+Die Handler sind alle bekannt (siehe `Menue-Handbuch.md`), nur ihre
+Knopfnummern nicht. Das ist dieselbe Arbeit wie beim Optionen-Dialog:
+Nummern durchprobieren und mit dem Bild abgleichen.
+
+---
+
 ## Methodisches, das sich bewährt hat
 
 **Der Zahlenweg schlägt den Bildweg.** Der Einheitenbericht zeigt eine
