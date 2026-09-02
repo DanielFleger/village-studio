@@ -1245,6 +1245,151 @@ local function einzelbefehl(cmd)
     return true
   end
 
+  --==========================================================================
+  -- Zwei Einheiten desselben Typs Feld fuer Feld vergleichen
+  --   { "vergleiche": 27, "a": 1, "b": 5 }
+  --
+  -- Sinn: Am 02.09.2026 kam heraus, dass ein Typwechsel die Darstellung NICHT
+  -- aendert. Also muss es ein zweites Feld geben, das die Grafik traegt und
+  -- beim Erzeugen gesetzt wird. Wer eine ECHTE Einheit des Zieltyps mit einer
+  -- getauschten vergleicht, findet es: Es ist das Feld, das sich
+  -- unterscheidet, obwohl unitType gleich ist.
+  --==========================================================================
+  if cmd.vergleiche ~= nil then
+    local typ = tonumber(cmd.vergleiche)
+    local spA, spB = tonumber(cmd.a), tonumber(cmd.b)
+    if typ == nil or spA == nil or spB == nil then return false end
+
+    local function finde(sp)
+      local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+      for i = 0, grenze - 1 do
+        local b = 0x0138854C + i * 1168
+        if (core.readSmallInteger(b + 0x8C) or 0) ~= 0
+           and (core.readSmallInteger(b + 0x8E) or -1) == typ
+           and (core.readSmallInteger(b + 0x96) or -1) == sp then
+          return i, b
+        end
+      end
+      return nil, nil
+    end
+
+    local iA, bA = finde(spA)
+    local iB, bB = finde(spB)
+    if bA == nil or bB == nil then
+      log(WARNING, string.format("VERGLEICHE: Typ %d nicht bei beiden gefunden (A=%s B=%s)",
+        typ, tostring(iA), tostring(iB)))
+      return true
+    end
+
+    log(INFO, string.format("VERGLEICHE Typ %d: Einheit %d (Spieler %d) gegen %d (Spieler %d)",
+      typ, iA, spA, iB, spB))
+    local anders = {}
+    -- Nur die ersten 0x120 Byte: dort liegen Typ, Zustand, Besitzer, Position
+    -- und alles, was mit Darstellung zu tun haben koennte.
+    for off = 0, 0x11C, 4 do
+      local va = core.readInteger(bA + off) or 0
+      local vb = core.readInteger(bB + off) or 0
+      if va ~= vb then
+        table.insert(anders, string.format("+0x%03X: %08X / %08X", off, va, vb))
+      end
+    end
+    log(INFO, string.format("   %d Felder unterscheiden sich:", #anders))
+    for i = 1, math.min(#anders, 14) do
+      log(INFO, "   " .. anders[i])
+    end
+    return true
+  end
+
+  -- Eine einzelne Einheit tauschen und dabei ALLE Felder mitschreiben.
+  --   { "einzelTausch": 27, "nach": 22, "spieler": 1 }
+  -- Zeigt, welche Felder sich beim Tausch aendern und welche NICHT. Das Feld,
+  -- das die Darstellung traegt, gehoert zur zweiten Gruppe.
+  if cmd.einzelTausch ~= nil then
+    local von = tonumber(cmd.einzelTausch)
+    local nach = tonumber(cmd.nach)
+    local sp = tonumber(cmd.spieler)
+    if von == nil or nach == nil then return false end
+    local gefunden = nil
+    local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+    for i = 0, grenze - 1 do
+      local b = 0x0138854C + i * 1168
+      if (core.readSmallInteger(b + 0x8C) or 0) ~= 0
+         and (core.readSmallInteger(b + 0x8E) or -1) == von
+         and (sp == nil or (core.readSmallInteger(b + 0x96) or -1) == sp) then
+        gefunden = b
+        break
+      end
+    end
+    if gefunden == nil then
+      log(WARNING, string.format("EINZELTAUSCH: keine Einheit vom Typ %d.", von))
+      return true
+    end
+    -- Die GANZE Struktur, nicht nur der Anfang: Unit ist 1168 Byte lang
+    -- (0x490). Beim ersten Versuch am 02.09. reichte der Blick nur bis 0x11C -
+    -- und fand deshalb nur das Feld, in das ich selbst geschrieben hatte.
+    local vorher = {}
+    for off = 0, 0x48C, 4 do vorher[off] = core.readInteger(gefunden + off) or 0 end
+    core.writeSmallInteger(gefunden + 0x8E, nach)
+    local geaendert = {}
+    for off = 0, 0x48C, 4 do
+      local jetzt = core.readInteger(gefunden + off) or 0
+      if jetzt ~= vorher[off] then
+        table.insert(geaendert, string.format("+0x%03X", off))
+      end
+    end
+    log(INFO, string.format("EINZELTAUSCH Typ %d -> %d: %d Feld(er) haben sich geaendert: %s",
+      von, nach, #geaendert, table.concat(geaendert, " ")))
+    return true
+  end
+
+  --==========================================================================
+  -- Einheiten WIRKLICH umwandeln - mit Figur, nicht nur mit Zahl
+  --   { "wandle": { "von": 72, "nach": 27, "spieler": 1 } }
+  --
+  -- Warum nicht einfach unitType schreiben: Die Figur haengt an spriteID
+  -- (+0x0C), und die wird nur ZWEIMAL aus dem Typ abgeleitet - beim Erzeugen
+  -- und beim Umwandeln. Wer nur unitType setzt, aendert das Verhalten
+  -- (die Update-Funktion wird jeden Tick neu aus einer Zeigertabelle geholt),
+  -- aber die Figur bleibt, wie sie war. Am 02.09.2026 im Bild belegt.
+  --
+  -- Das Spiel hat einen eigenen Umwandlungs-Pfad; er laeuft ueber
+  -- changeUnitType (0x0053E6C0), das im naechsten Tick setUnitValues ruft -
+  -- dieselbe Funktion wie beim Erzeugen. Drei Felder anstossen, den Rest
+  -- macht das Spiel:
+  --   +0x2CC state_2              = 0
+  --   +0x2CA unitTypeToChangeInto = Zieltyp
+  --   +0x8C  logicalState         = 4 (ULS_TRANSITIONING)
+  -- unitType selbst NICHT anfassen - setUnitValues schreibt ihn.
+  --
+  -- Nebenwirkung: Leben, Tempo und Sichtweite werden auf die Werte des neuen
+  -- Typs gesetzt. Das ist gewollt - es ist eine echte Umwandlung.
+  --==========================================================================
+  if cmd.wandle ~= nil then
+    local w = cmd.wandle
+    local von, nach = tonumber(w.von), tonumber(w.nach)
+    local sp = tonumber(w.spieler)
+    if von == nil or nach == nil then
+      log(WARNING, "WANDLE: 'von' und 'nach' werden gebraucht.")
+      return false
+    end
+    local getroffen = 0
+    local grenze = math.min(core.readInteger(0x01387F38) or 0, 2500)
+    for i = 0, grenze - 1 do
+      local b = 0x0138854C + i * 1168
+      if (core.readSmallInteger(b + 0x8C) or 0) ~= 0
+         and (core.readSmallInteger(b + 0x8E) or -1) == von
+         and (sp == nil or (core.readSmallInteger(b + 0x96) or -1) == sp) then
+        core.writeSmallInteger(b + 0x2CC, 0)      -- state_2
+        core.writeSmallInteger(b + 0x2CA, nach)   -- unitTypeToChangeInto
+        core.writeSmallInteger(b + 0x8C, 4)       -- ULS_TRANSITIONING
+        getroffen = getroffen + 1
+      end
+    end
+    log(INFO, string.format("WANDLE: Typ %d -> %d%s | %d Einheiten angestossen",
+      von, nach, sp and (" bei Spieler " .. sp) or " (alle)", getroffen))
+    return true
+  end
+
   -- Ereignis-Regel setzen oder alle loeschen.
   --   { "regel": { "name": "...", "wenn": {...}, "dann": [...], "einmal": true } }
   --   { "regeln": "aus" }

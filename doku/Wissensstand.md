@@ -346,10 +346,59 @@ ist bisher NUR belegt, dass sich die Zahl aendert. Weder Aussehen noch
 Verhalten. Solange das so ist, taugt er nicht als Werkzeug, sondern nur als
 Beobachtung: `unitType` laesst sich schreiben, und die Zaehlung folgt.
 
-**Der naechste Schritt**, falls der Tausch gebraucht wird: Nicht weiter im
-Bild suchen, sondern die ZEICHENROUTINE lesen. Welches Feld nimmt sie fuer
-die Figur? Erst wenn das bekannt ist, weiss man, ob ein sichtbarer Tausch
-ueberhaupt moeglich ist - und ob er ein zweites Feld braucht.
+### Geloest: Die Figur haengt an spriteID, nicht am Typ
+
+Die Zeichenroutine `renderMap` (0x004E8CF0) liest fuer die Figur **nicht**
+`unitType`, sondern:
+
+| Feld | Offset | Bedeutung |
+|---|---|---|
+| `spriteID` | **+0x0C** | welcher Grafiksatz (die Figur) |
+| `gfxNumber` | +0x04 | Bildnummer darin |
+| `gmIDUnk` | +0x7E | zweite Ebene (Pferd, Geruest) |
+
+Die Zuordnung Typ zu Grafiksatz steht in `DAT_SPRITE_ID` (**0x00B4E0A0**,
+int[80]) - und wird im ganzen Programm nur an **zwei** Stellen gelesen:
+`setUnitValues` (0x0053B8E0) beim Erzeugen und beim Umwandeln. **Danach steht
+die Figur im Feld und wird nie wieder aus dem Typ abgeleitet.** Genau deshalb
+bleibt ein per Direktschreiben umgestellter Schleuderer ein Schleuderer.
+
+### Das Rezept fuer eine ECHTE Umwandlung - gemessen und im Bild belegt
+
+Das Spiel hat einen eigenen Umwandlungs-Pfad (so wird ein arbeitsloser
+Handwerker wieder Bauer): `changeUnitType` (0x0053E6C0) ruft im naechsten
+Tick `setUnitValues` - dieselbe Funktion wie beim Erzeugen.
+
+**Drei Felder anstossen, den Rest macht das Spiel:**
+
+| Reihenfolge | Offset | Wert |
+|---|---|---|
+| 1 | +0x2CC `state_2` | 0 |
+| 2 | +0x2CA `unitTypeToChangeInto` | Zieltyp |
+| 3 | +0x8C `logicalState` | **4** = ULS_TRANSITIONING |
+
+`unitType` (+0x8E) dabei **nicht** anfassen - `setUnitValues` schreibt ihn.
+
+**Belegt am 02.09.2026:** 46 Schleuderer von Spieler 1 umgewandelt; im Bild
+standen danach weisse Kreuzritter mit rotem Kreuz, wo vorher Schleuderer
+waren. Befehl: `{ "wandle": { "von": 72, "nach": 27, "spieler": 1 } }`.
+
+**Nebenwirkung:** Leben, Tempo und Sichtweite werden auf die Werte des neuen
+Typs gesetzt. Das ist gewollt - es ist eine echte Umwandlung, kein Etikett.
+
+### Das Verhalten folgt dem Typ - sofort
+
+`updateUnits` (0x00579300) holt die Update-Funktion **jeden Tick** aus der
+Zeigertabelle `PTR_UpdateUnitFunctions` (**0x00B4DF60**, 80 Zeiger, Index =
+unitType). Wer nur `unitType` schreibt, aendert also sehr wohl das Verhalten -
+ein Schleuderer mit Typ 27 wird ab dem naechsten Tick von `UpdateSwordsman`
+gesteuert und sieht dabei weiter aus wie ein Schleuderer.
+
+Auch der Nahkampfschaden folgt dem Typ: `DAT_MELEE_DAMAGE` (0x00B4EE60,
+int[80][80]) wird bei jedem Treffer mit Angreifer- und Zieltyp gelesen.
+
+**Damit ist die Bilanz vom Vormittag korrigiert:** Der Typwechsel ist NICHT
+wirkungslos - er wirkt auf Verhalten und Schaden, nur nicht auf die Figur.
 
 ### Kachelnummer ist NICHT `x = k % 400`
 
