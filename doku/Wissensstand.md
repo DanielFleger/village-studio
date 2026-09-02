@@ -337,11 +337,19 @@ schreibbar.
 | `unitType` (+0x8E) laesst sich schreiben, und die Zaehlung folgt sofort | **belegt** | 49 Einheiten von Typ 22 auf 24 gesetzt: Typ 22 verschwindet, Typ 24 steigt von 29 auf exakt 78. Dreimal wiederholt, immer aufs Stueck genau |
 | **Die Darstellung aendert sich dabei NICHT** | **belegt** | Dieselbe Gruppe am Bergfried vor und nach dem Tausch: Schleuderer bleiben Schleuderer. Auch als ALLE Einheiten der Karte auf Typ 27 gesetzt wurden - inklusive der Lords - blieb jede Figur, wie sie war |
 | `unitType` steuert also die Logik, nicht die Grafik | **belegt** | siehe oben |
-| Wo die Grafik haengt | **offen** | Vermutlich ein Feld, das beim Erzeugen gesetzt wird. Zu finden ueber den Vergleich einer ECHTEN Einheit vom Zieltyp mit einer getauschten: das unterscheidende Feld ist es |
+| Beim Tausch aendert sich **kein einziges anderes Feld** | **belegt** | Die ganze Struktur (1168 Byte) vor und nach dem Schreiben verglichen: nur das Wort bei +0x08C ist anders - genau das, in das geschrieben wird. Kein Grafikzeiger, kein Animationsfeld, nichts reagiert |
+| Ob sich das **Verhalten** aendert | **UNBELEGT** | Bisher wurde nur eine Zahl geschrieben und dieselbe Zahl zurueckgelesen. Weder Reichweite noch Angriffsart noch Wegverhalten wurden gemessen. Daniels Einwand am 02.09.: „ob du das Einheitenverhalten abgeaendert hast, laesst sich auch nur vermuten" - richtig |
+| Wo die Darstellung haengt | **offen** | Nicht in der Einheitenstruktur. Entweder liest die Zeichenroutine `unitType` gar nicht, oder es gibt eine getrennte Liste, die beim Erzeugen gefuellt wird |
 
-**Was das fuer Tests bedeutet:** Ein Einheitentausch ist im Bild **nicht**
-nachweisbar. Wer ihn belegen will, nimmt den Einheitenbericht - der zeigt die
-Aenderung sofort und exakt.
+**Was das fuer Tests bedeutet - unbequem, aber ehrlich:** Vom Einheitentausch
+ist bisher NUR belegt, dass sich die Zahl aendert. Weder Aussehen noch
+Verhalten. Solange das so ist, taugt er nicht als Werkzeug, sondern nur als
+Beobachtung: `unitType` laesst sich schreiben, und die Zaehlung folgt.
+
+**Der naechste Schritt**, falls der Tausch gebraucht wird: Nicht weiter im
+Bild suchen, sondern die ZEICHENROUTINE lesen. Welches Feld nimmt sie fuer
+die Figur? Erst wenn das bekannt ist, weiss man, ob ein sichtbarer Tausch
+ueberhaupt moeglich ist - und ob er ein zweites Feld braucht.
 
 ### Kachelnummer ist NICHT `x = k % 400`
 
