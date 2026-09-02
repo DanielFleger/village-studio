@@ -187,6 +187,64 @@ stand binnen Sekunden auf Ansicht 30 (*verloren*).
 
 ---
 
+## Ebene 1 vollständig — alle Knöpfe gemessen
+
+| N | Knopf | Führt zu | Rückweg |
+|---|---|---|---|
+| 1 | Historische Kampagnen | Ansicht 42 | `{"menue": 41}` |
+| 2 | Kreuzzug | Ansicht 55 | `{"menue": 41}` |
+| 3 | Burgenbau | Ansicht 35 (Kartenwahl) | `{"menue": 41}` |
+| 4 | Mehrspieler | Ansicht 19 (Verbindung) | `{"menue": 41}` |
+| 5 | Beenden (Tor) | Ja/Nein-Dialog | Knopf 23 (Nein) |
+| 8 | Einstellungen (Schlüssel) | Spieloptionen | Knopf 17 |
+
+**`{"menue": 41}` führt von jeder Ansicht zurück ins Hauptmenü** — viermal
+geprüft, kein Fehlschlag. Das ist der verlässlichste Rückweg; die
+knopf-eigenen Zurück-Wege funktionieren zwar auch, sind aber je Dialog anders.
+
+---
+
+## Ein Spiel als feste Ausgangslage einfrieren
+
+**Die Reihenfolge ist entscheidend, und sie ist nicht die naheliegende.**
+
+```json
+1. { "befehle": [ {"poke": 17983016, "wert": 0},
+                  {"poke": 17983012, "wert": 2},
+                  {"laden": 2} ] }
+2. (warten, bis die Spielzeit steht)
+3. { "befehle": [ { "pause": true } ] }
+```
+
+**Das Laden hebt die Pause auf.** Wer das Pausieren in denselben Auftrag
+schreibt, pausiert *vor* dem Ladevorgang — und der setzt das Flag danach
+zurück. Am 02.09.2026 gemessen: Flag stand auf 0, die Spielzeit lief weiter,
+und ein Einheitentausch traf ins Leere, weil sich der Bestand inzwischen
+geändert hatte.
+
+**Prüfen, nicht annehmen:** Pause-Flag `0x01FEA054` muss 1 sein, und die
+Spielzeit `0x0117CADC` muss bei zwei Messungen im Abstand **gleich** bleiben.
+
+---
+
+## Änderungen prüfen: der zweistufige Nachweis
+
+Ein **pausiertes Spiel zeichnet nicht neu**. Eine Änderung steht dann im
+Speicher, ist im Bild aber unsichtbar.
+
+Beispiel, gemessen am 02.09.2026 (49 Bogenschützen zu Speerträgern):
+
+| Stufe | Bildänderung | Zahlen |
+|---|---|---|
+| in der Pause | 0,005 % | Typ 24 steigt von 29 auf 78 |
+| nach dem Fortsetzen | 4,3 % | dieselbe Änderung, jetzt sichtbar |
+
+**Der Zahlenweg ist der schnellere und der sicherere.** Das Bild braucht ein
+laufendes Spiel; der Einheitenbericht wirkt sofort. Wer nur das Bild prüft,
+hält eine gelungene Änderung für gescheitert.
+
+---
+
 ## Der schnellste Weg von Null in ein laufendes Spiel
 
 Rund **neun Sekunden**, ohne einen Klick:
