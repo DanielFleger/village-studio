@@ -40,6 +40,20 @@ gesichert halten.
 | Mauerwerk trägt in 2004 mal 0, mal 1 — die Regel dahinter ist unbekannt | **offen** | Zwei Hypothesen gemessen und beide widerlegt: es hängt weder an der Länge des Mauerzugs noch an der Position darin (37,7 % Treffer). Über 128 Dateien überwiegt die 1. Bedeutungslos ist der Wert nicht — `applyAIV`, `rotateAIV` und `computeAIVPlacementFit` lesen ihn. Die Umriss-Prüfung im Werkzeug lässt hier deshalb beides gelten |
 | Gräben und Baufläche folgen in 2004/2005 einer eigenen Logik | **offen** | Gräben tragen 2 oder 3 und haben einen Umriss |
 
+## 1b. Das Kartenformat (.map)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `.map` beginnt mit `FFFFFFFF`, dann u32 Größe der Vorschau, dann die Vorschau als gepackter Abschnitt (entpackt, gepackt, CRC32, Daten) | **belegt** | Sourcehold `structure/map_structure.h`, an 113 Spielkarten nachgelesen |
+| Die Packung ist dieselbe PKWare-DCL-Implode wie bei `.aiv` — `lib/blast.js` liest sie unverändert | **gemessen** | alle 113 Karten des Spiels entpackt, entpackte Länge stimmt jedes Mal mit der angekündigten überein |
+| Die Vorschau ist **200×200 Punkte senkrecht von oben**: 512 Byte Farbtafel (256 Einträge zu 16 Bit, 5-5-5) und danach 40.000 Byte Punktnummern | **gemessen** | 40.512 Byte entpackt bei allen 113 Karten; das Bild ist im Werkzeug sichtbar richtig (Sand, Gras, Fels, Oasen an plausibler Stelle) |
+| Danach folgen Beschreibung, vier einfache Abschnitte und ein Verzeichnis mit 150 Plätzen | **abgelesen** | `map_structure.h`; selbst noch nicht durchgelesen — meine eigene Abtastung der Kette bricht nach der Vorschau ab |
+| Wie das 100×100-Dorfraster auf der Karte liegt | **offen** | Das Werkzeug startet mit „Vorschau deckt 400 Felder" und lässt von Hand ausrichten. Der Wert ist **geraten**, nicht gemessen. Ansatzpunkt: der Bergfried steht im Dorfraster fest auf (43,43)–(49,49) |
+
+Nutzbar gemacht in `lib/karte.js` (`leseVorschau`, `vorschauAlsPng`) und in der
+Oberfläche unter *Vorlage → Karte des Spiels wählen*. Der Server findet 189
+Karten, die des Spiels und die der Plugins.
+
 ## 2. Die drei Nummernsätze
 
 Die häufigste Fehlerquelle. Dasselbe Bauwerk hat drei verschiedene Nummern.
