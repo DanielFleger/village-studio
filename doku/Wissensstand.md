@@ -775,6 +775,44 @@ minus 0x618), `currentAIArray` +0x714, `SEC_AIVariationArray` +0x738,
 `numberOfPlayers` +0xc, `player2AI` +0x14; die Missions-Arrays liegen in
 `SkirmishDefinedData` (+0x114 Skirmish-, +0x2e14 Extreme-Pfad).
 
+## 5i. Der Live-Swap erzeugt einen nicht baubaren Plan (03.09.2026)
+
+*gemessen im laufenden Gefecht (Pfad 2) ueber den `peek`-Befehl, mit dem
+Vanilla-Nachbarn als Kontrolle.*
+
+Frage 1 (warum bleiben nach einem Umbau Bauschritte ungebaut) hat eine
+handfeste, aber unerwartete Teilantwort. Nach einem **Live-Swap mitten im
+Gefecht** (`{ "player": 2, "file": "Burg_left_2.aiv" }`) ist der neue Plan
+nicht funktionsfaehig -- und zwar KEIN Schritt, nicht nur die fruehen.
+
+Wichtig zur Adressierung, sonst misst man den falschen Spieler:
+**`AIVState.aivs[]` ist nach aktiver Reihenfolge gepackt, NICHT nach playerID.**
+Gemessen: aivs[1].playerID = 2, aivs[2].playerID = 3, aivs[3].playerID = 4,
+aivs[4] = neutral. Der Swap "player 2" landet in aivs-Slot 1. `PlayerData`
+dagegen ist nach playerID indiziert (`0x0115BDF8 + playerID*0x39F4`).
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Nach dem Swap: totalSteps korrekt (451 fuer Burg_left_2), currentStepGoal steigt normal (81 -> 148), aivPoorCounter 0, Gold 9975 | **gemessen** | Header von aivs[1] ueber ~60 s verfolgt |
+| Aber JEDER Schritt: buildStatus 0 (aus), buildingType 0, quantity 0; nur `location` traegt kleine Rohwerte (309, 333, 357 ...) | **gemessen** | Detail-Dump aivs[1], Schritte 1-30 |
+| Die KI baut deshalb nichts -- buildStatus bleibt ueber den ganzen Lauf 0 | **gemessen** | 9 Messpunkte, "000...0" unveraendert |
+| Der Vanilla-Nachbar (aivs[2], Spieler 3) baut zeitgleich normal: buildStatus 3, buildingType 50-80, quantity 1, location 74289 (echte Kachel) | **gemessen** | Kontrolle, gleiche Ausleseroutine -- das Layout stimmt, der Fehler ist swap-spezifisch |
+| Es liegt NICHT an den drei vermuteten Ursachen aus Frage 1 (Schritt aus / Ziel zu klein / Armutsbremse) | **gemessen** | Ziel steigt, poorCounter 0, Gold ueber 5001 |
+
+**Vermutlicher Grund (ungeprueft):** Der Live-Swap (`swapLive` -> `applyAIV`)
+schreibt Gebaeudetyp/Menge/Status nicht in das Layout, das der Spielcode liest.
+Massgeblich ist `aivs[slot].aivBuildingSteps[step]` (Stride 0x6D98, Schritt
++0x00 Status, +0x02 Typ) -- so liest es `aiPlaceAIVBuilding` (0x4ED410) Tick
+fuer Tick, und so zeigt es der Vanilla-Nachbar. Der Kommentar in init.lua
+beschreibt applyAIV dagegen mit dem ALTEN Layout (Stride 0x922, +0x38 Status,
++0x3a Typ). Schreibt der Swap dorthin, sieht der Spielcode 0. Zu pruefen im
+Swap-Code (gehoert SVS).
+
+**Abgrenzung:** Das betrifft den Live-Swap. Der normale Startweg
+(Dateiumleitung + Neustart -> `LaunchSkirmishGame` -> `applyAIV`) ist davon
+nicht zwingend betroffen -- der frueher gemessene Erfolg "Burg_left_1 baut
+445/450" (Frage 5, 29.08.) lief ueber diesen Weg, nicht ueber den Live-Swap.
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
@@ -796,7 +834,7 @@ Damit die Irrtümer nicht wiederkommen.
 
 ## 7. Offene Fragen
 
-1. **Warum bleiben nach dem Umbau frühe Schritte ungebaut?** Die Bauschleife startet nachweislich bei 1, überspringt also nichts. Bleiben drei Erklärungen: der Schritt steht auf `disabled` (Mapper-Typ 0), `currentStepGoal` ist zu klein, oder die Armutsbremse greift. Messung: `currentStepGoal`, `aivPoorCounter` und der `buildStatus` der ersten Schritte.
+1. **Warum bleiben nach dem Umbau frühe Schritte ungebaut?** Die Bauschleife startet nachweislich bei 1, überspringt also nichts. Bleiben drei Erklärungen: der Schritt steht auf `disabled` (Mapper-Typ 0), `currentStepGoal` ist zu klein, oder die Armutsbremse greift. Messung: `currentStepGoal`, `aivPoorCounter` und der `buildStatus` der ersten Schritte. **Teilweise beantwortet (03.09.2026), siehe 5i:** Beim Live-Swap bleiben ALLE Schritte ungebaut, weil der Swap den Plan nicht baubar macht (buildStatus/Typ/Menge = 0); keine der drei Erklaerungen trifft. Ob der Startweg dasselbe Bild zeigt, ist offen.
 2. ~~**Wie viele Ticks braucht ein Bauschritt?**~~ **Beantwortet** am 29.08.2026: genau 50 Ticks, also ein Spieltag. Siehe Abschnitt *Bautempo*.
 3. ~~**Wie viele Ticks hat eine Sekunde?**~~ **Beantwortet** am 29.08.2026: Ticks pro Sekunde = Tempowert, siehe Abschnitt *Spieltempo*. Ein Jahr sind 9.600 Ticks.
 4. ~~**Gibt es einen Anlaufpuffer am Anfang?**~~ **Beantwortet** am 29.08.2026: nein. Der erste Abstand ist wie alle anderen 50 Ticks.
