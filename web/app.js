@@ -521,6 +521,36 @@ window.addEventListener('keydown', ev => {
 
 window.addEventListener('beforeunload', ev => { if (geaendert) { ev.preventDefault(); ev.returnValue = ''; } });
 // ---------- Vorlage bedienen ----------
+// Die Karten des Spiels bringen ihre eigene Vorschau mit: 200x200 Punkte,
+// senkrecht von oben. Startgroesse 4 heisst: die Vorschau deckt 400 Felder ab,
+// also viermal die Kantenlaenge des Dorfrasters. Das ist der Anfangswert,
+// nicht gemessen - mit „Größe" nachziehen.
+async function ladeKarten() {
+  const sel = $('#karteWahl');
+  try {
+    const r = await fetch('/api/karten').then(r => r.json());
+    for (const k of r.karten) {
+      const o = document.createElement('option');
+      o.value = k.pfad; o.textContent = k.name;
+      sel.appendChild(o);
+    }
+    sel.firstChild.textContent = `Karte des Spiels wählen … (${r.karten.length})`;
+  } catch { sel.firstChild.textContent = 'keine Karten gefunden'; }
+}
+
+$('#karteWahl').onchange = async ev => {
+  const kartePfad = ev.target.value;
+  if (!kartePfad || !dorf) return;
+  $('#status').textContent = 'lese Karte …';
+  const a = await fetch('/api/vorlage', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pfad: dorf.pfad, kartePfad, x: 0, y: 0, skala: 4, deckkraft: .75, sichtbar: true }),
+  }).then(r => r.json());
+  if (a.fehler) { $('#status').textContent = 'Fehler: ' + a.fehler; return; }
+  await ladeVorlage();
+  $('#status').textContent = 'Karte als Vorlage gesetzt — mit „Verschieben" und „Größe" auf das Dorf ausrichten';
+};
+
 $('#vorlageWaehlen').onclick = () => $('#vorlageDatei').click();
 $('#vorlageDatei').onchange = ev => {
   const f = ev.target.files[0];
@@ -573,5 +603,6 @@ $('#vorlageWeg').onclick = async () => {
 };
 
 window.addEventListener('resize', groesseAnpassen);
+ladeKarten();
 groesseAnpassen();
 ladeGebaeude().then(ladeListe);

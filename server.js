@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { decode } = require('./lib/aiv');
 const { writeAivMit } = require('./lib/aivwrite');
+const { vorschauAlsPng } = require('./lib/karte');
 
 const PORT = 8790;
 const HIER = __dirname;
@@ -103,6 +104,31 @@ function vorlageName(dorfPfad) {
 function vorlagePng(dorfPfad) { return path.join(VORLAGEN, vorlageName(dorfPfad) + '.png'); }
 function vorlageJson(dorfPfad) { return path.join(VORLAGEN, vorlageName(dorfPfad) + '.json'); }
 
+// Karten des Spiels und der Plugins
+function listeKarten() {
+  const spiel = spielOrdner();
+  if (!spiel) return [];
+  const ordner = [path.join(spiel, 'maps')];
+  const pluginDir = path.join(spiel, 'ucp', 'plugins');
+  try {
+    for (const pl of fs.readdirSync(pluginDir)) {
+      const m = path.join(pluginDir, pl, 'resources', 'maps');
+      if (fs.existsSync(m)) ordner.push(m);
+    }
+  } catch { }
+  const treffer = [];
+  for (const o of ordner) {
+    let namen; try { namen = fs.readdirSync(o); } catch { continue; }
+    for (const n of namen) {
+      if (!n.toLowerCase().endsWith('.map')) continue;
+      treffer.push({ name: n.replace(/\.map$/i, ''), pfad: path.join(o, n),
+                     quelle: path.basename(path.dirname(o)) });
+    }
+  }
+  treffer.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  return treffer;
+}
+
 function darfSchreiben(p) {
   const norm = path.resolve(p).toLowerCase();
   if (DORF_ORDNER.some(o => norm.startsWith(path.resolve(o).toLowerCase() + path.sep))) return true;
@@ -189,6 +215,21 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // ---- Karten des Spiels ----
+  if (u.pathname === '/api/karten') return sendeJson(res, 200, { karten: listeKarten() });
+
+  if (u.pathname === '/api/karte') {
+    const p = u.searchParams.get('pfad');
+    if (!listeKarten().some(k => k.pfad === p)) return sendeJson(res, 400, { fehler: 'Karte unbekannt' });
+    try {
+      const png = vorschauAlsPng(fs.readFileSync(p));
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' });
+      return res.end(png);
+    } catch (e) {
+      return sendeJson(res, 500, { fehler: e.message });
+    }
+  }
+
   // ---- Vorlage: ein Kartenbild, das unter dem Raster liegt ----
   if (u.pathname === '/api/vorlage' && req.method === 'GET') {
     const p = u.searchParams.get('pfad');
@@ -216,6 +257,10 @@ const server = http.createServer(async (req, res) => {
       if (k.bildBase64) {
         const roh = k.bildBase64.replace(/^data:image\/\w+;base64,/, '');
         fs.writeFileSync(vorlagePng(k.pfad), Buffer.from(roh, 'base64'));
+      } else if (k.kartePfad) {
+        if (!listeKarten().some(x => x.pfad === k.kartePfad))
+          return sendeJson(res, 400, { fehler: 'Karte unbekannt' });
+        fs.writeFileSync(vorlagePng(k.pfad), vorschauAlsPng(fs.readFileSync(k.kartePfad)));
       }
       const stand = {
         vorhanden: true,
