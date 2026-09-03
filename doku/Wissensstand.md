@@ -791,6 +791,8 @@ Damit die Irrtümer nicht wiederkommen.
 | Die frühen Bauschritte werden nach einem Umbau strukturell übersprungen | Die Schleife startet in jedem Durchgang bei Schritt 1. Was aussieht wie Überspringen, ist entweder ein deaktivierter Schritt, ein zu kleines `currentStepGoal` oder die Armutsbremse |
 | Bergfried und Vorratslager kann man überbauen | Beide sind eigene Gebäude und lassen sich nicht überbauen. Das Startlager steht nicht in der AIV, ist im Bauplan also unsichtbar |
 | Es reicht, die Bauten (2007) und Bauschritte (2008) zu schreiben | Es reicht nicht. Ohne passende 2004 und 2005 zerfällt jedes Gebäude in Einzelfelder, und ohne 2010 zeigt der Editor die Schrittzahl der Vorlage. Alle vor dem 29.08. mit diesem Werkzeug erzeugten AIVs waren davon betroffen |
+| Ein verdecktes Fenster laesst sich mit PrintWindow oder der DWM-Vorschau abfotografieren | Nein, **bei aktivem `graphicsApiReplacer`**: beide liefern durchgehend Schwarz (gemessen, 3720 Proben, genau 1 Farbe). Der Ersatztreiber praesentiert nicht in einen von aussen abgreifbaren Puffer -- fuer ein Bild ohne Vordergrund taugt nur der Speicher-Weg aus 5f |
+| `CopyFromScreen` des Fensterbereichs liefert das Spielbild | Nur wenn das Fenster obenauf liegt. Im Hintergrund oder verdeckt greift es das **darueberliegende** Fenster ab (gemessen: statt SHC ein fremdes Programm im Bild) |
 
 ## 7. Offene Fragen
 
