@@ -702,6 +702,42 @@ nicht der Gefechtsstart.
 Zweimal ausgefuehrt (30 -> 41), beide Male sauber: das Spiel stand danach im
 Hauptmenue und nahm einen neuen Gefechtsbefehl an.
 
+## 5g. Der aiSwapper: was beim Einbau einer KI still scheitert (03.09.2026)
+
+*belegt — im Quelltext von `ucp/modules/aiSwapper-1.2.1.zip` gelesen, danach an
+Karl und Franz in der Team-Liga nachgeprueft.*
+
+Wer eine eigene KI in einen Vanilla-Platz haengt, merkt Fehler nicht im Spiel,
+sondern gar nicht. Der Swapper laesst den Eintrag weg und schreibt eine Warnung
+ins Log. Vier Stellen, an denen das passiert:
+
+**Burgen (`aiv/mapping.json`).** `scripts/aiv.lua` geht `CASTLE_1` bis
+`CASTLE_8` durch. Fehlt ein Eintrag, setzt es `castlesToSet[i] = ""` — im
+Quelltext steht dahinter der Kommentar `disables castle`. Die Burg faellt also
+**nicht** auf die Vorlage des ersetzten Charakters zurueck, sie ist weg. Wer nur
+`castle_1` eintraegt, hat auf sieben von acht Plaetzen keine Burg. Dasselbe
+passiert, wenn die genannte .aiv-Datei fehlt.
+
+**Sprache (`speech/mapping.json`).** `scripts/sfx.lua` prueft jede genannte
+Datei einzeln und setzt den Eintrag auf `nil`, wenn sie fehlt. Es wird **keine**
+Endung ersetzt: Ein Verweis auf `Held_plead.wav` findet die daneben liegende
+`Held_plead.mp3` nicht. Genau das kostete bei Franz 33 von 34 Spruechen — im
+Spiel hoert man dann die Vanilla-Stimme des ersetzten Charakters und sucht den
+Fehler im Charakter statt im Dateinamen. Zielformat ist echtes WAV; die
+uebrigen Liga-KIs liegen alle als `pcm_s16le`, 44100 Hz, mono vor.
+
+**Videos (`binks/mapping.json`).** Hier gibt es einen ausdruecklichen Sonderweg:
+Der Wert `null.bik` wird gesetzt, **ohne** dass die Datei existieren muss
+(`bink.lua`, Zeile 41). Das ist der vorgesehene Weg fuer "diese KI hat kein
+Video" — besser als der Eintrag wegzulassen.
+
+**Bilder.** `portrait.lua` laedt `portrait.png` und `portrait_small.png` aus dem
+KI-Ordner. Die Groessen sind 72x72 und 36x36; alle 18 Liga-KIs halten sich
+daran. Fehlt eine Datei, steht `<Name> has no portrait` im Log.
+
+Merksatz: Nach jedem Einbau einmal `ucp3.log` nach `Problems with` und
+`has no portrait` durchsehen. Das ist billiger als jede Sichtpruefung im Spiel.
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
