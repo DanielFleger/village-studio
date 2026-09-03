@@ -69,6 +69,20 @@
     </div>
 
     <div class="abschnitt">
+      <h2>Vorlage</h2>
+      <div class="hinweisklein">Ein Bild unter das Raster legen — Kartenausschnitt oder Spielbild. Wird je Dorf gespeichert.</div>
+      <button id="vorlageWaehlen" class="breit">Bild wählen …</button>
+      <input type="file" id="vorlageDatei" accept="image/*" hidden>
+      <div id="vorlageRegler" hidden>
+        <label class="kleinlabel"><input type="checkbox" id="vorlageAn" checked> anzeigen</label>
+        <div class="feldzeile"><label for="vorlageDeck">Deckkraft</label><input type="range" id="vorlageDeck" min="5" max="100" value="60"><span id="vorlageDeckWert">60</span></div>
+        <div class="feldzeile"><label for="vorlageSkala">Größe</label><input type="range" id="vorlageSkala" min="10" max="400" value="100"><span id="vorlageSkalaWert">100</span></div>
+        <button id="vorlageSchieben" class="breit">Verschieben: aus</button>
+        <button id="vorlageWeg" class="breit">Vorlage entfernen</button>
+      </div>
+    </div>
+
+    <div class="abschnitt">
       <h2>Ebenen</h2>
       <label><input type="checkbox" id="ebBauten" checked> Bauten</label>
       <label><input type="checkbox" id="ebSchritte"> Bauschritte</label>

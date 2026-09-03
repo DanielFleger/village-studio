@@ -95,6 +95,14 @@ function spielZiele() {
   return ziele;
 }
 
+// Vorlagen (Kartenbilder unter dem Raster) liegen gesammelt neben den Doerfern
+const VORLAGEN = path.join(VILLAGE_DIR, '_vorlagen');
+function vorlageName(dorfPfad) {
+  return path.basename(dorfPfad, '.aiv').replace(/[^A-Za-z0-9_. -]/g, '_');
+}
+function vorlagePng(dorfPfad) { return path.join(VORLAGEN, vorlageName(dorfPfad) + '.png'); }
+function vorlageJson(dorfPfad) { return path.join(VORLAGEN, vorlageName(dorfPfad) + '.json'); }
+
 function darfSchreiben(p) {
   const norm = path.resolve(p).toLowerCase();
   if (DORF_ORDNER.some(o => norm.startsWith(path.resolve(o).toLowerCase() + path.sep))) return true;
@@ -179,6 +187,56 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       return sendeJson(res, 500, { fehler: e.message });
     }
+  }
+
+  // ---- Vorlage: ein Kartenbild, das unter dem Raster liegt ----
+  if (u.pathname === '/api/vorlage' && req.method === 'GET') {
+    const p = u.searchParams.get('pfad');
+    if (!p) return sendeJson(res, 400, { fehler: 'Pfad fehlt' });
+    try {
+      const j = JSON.parse(fs.readFileSync(vorlageJson(p), 'utf8'));
+      j.bild = '/vorlage/' + encodeURIComponent(vorlageName(p)) + '.png?t=' + Date.now();
+      return sendeJson(res, 200, j);
+    } catch {
+      return sendeJson(res, 200, { vorhanden: false });
+    }
+  }
+
+  if (u.pathname === '/api/vorlage' && req.method === 'POST') {
+    let k;
+    try { k = await leseKoerper(req); } catch { return sendeJson(res, 400, { fehler: 'ungueltige Anfrage' }); }
+    if (!k.pfad) return sendeJson(res, 400, { fehler: 'Pfad fehlt' });
+    try {
+      fs.mkdirSync(VORLAGEN, { recursive: true });
+      if (k.entfernen) {
+        for (const f of [vorlageJson(k.pfad), vorlagePng(k.pfad)])
+          if (fs.existsSync(f)) fs.unlinkSync(f);
+        return sendeJson(res, 200, { ok: true, entfernt: true });
+      }
+      if (k.bildBase64) {
+        const roh = k.bildBase64.replace(/^data:image\/\w+;base64,/, '');
+        fs.writeFileSync(vorlagePng(k.pfad), Buffer.from(roh, 'base64'));
+      }
+      const stand = {
+        vorhanden: true,
+        x: k.x || 0, y: k.y || 0,
+        skala: k.skala || 1,
+        deckkraft: k.deckkraft === undefined ? 0.6 : k.deckkraft,
+        sichtbar: k.sichtbar !== false,
+      };
+      fs.writeFileSync(vorlageJson(k.pfad), JSON.stringify(stand, null, 1));
+      return sendeJson(res, 200, Object.assign({ ok: true }, stand));
+    } catch (e) {
+      return sendeJson(res, 500, { fehler: e.message });
+    }
+  }
+
+  if (u.pathname.startsWith('/vorlage/')) {
+    const name = decodeURIComponent(u.pathname.slice('/vorlage/'.length));
+    const f = path.join(VORLAGEN, path.basename(name));
+    if (!fs.existsSync(f)) { res.writeHead(404); return res.end('keine Vorlage'); }
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' });
+    return res.end(fs.readFileSync(f));
   }
 
   let rel = u.pathname === '/' ? '/index.html' : u.pathname;

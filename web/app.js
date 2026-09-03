@@ -126,7 +126,7 @@ async function ladeDorf(pfad, name) {
   $('#speichern').disabled = false;
   $('#speichernAls').disabled = false;
   $('#insSpiel').disabled = ziele.length === 0;
-  zeichneListe(); zeigeKennzahlen(); zeigeLegende(); zeigeAbschnitte(); einpassen();
+  zeichneListe(); zeigeKennzahlen(); zeigeLegende(); zeigeAbschnitte(); einpassen(); ladeVorlage();
   $('#status').textContent = `${r.datei} · ${(r.dateigroesse / 1024).toFixed(1)} KB · Version ${r.header.version}`;
 }
 
@@ -195,6 +195,8 @@ function groesseAnpassen() {
 
 function einpassen() {
   const r = cv.parentElement.getBoundingClientRect();
+  // Beim ersten Laden steht die Bühne noch nicht — sonst käme ein 2-Pixel-Raster heraus
+  if (r.width < 120 || r.height < 120) { requestAnimationFrame(einpassen); return; }
   zelle = Math.max(2, Math.floor(Math.min(r.width - 40, r.height - 40) / N));
   zoom = 1;
   offX = (r.width - N * zelle) / 2;
@@ -210,6 +212,23 @@ function malen_() {
 
   ctx.fillStyle = '#1a1d16';
   ctx.fillRect(x0, y0, N * z, N * z);
+
+  // Vorlage liegt unter allem anderen
+  if (vorlage.bild && vorlage.sichtbar) {
+    const bw = N * vorlage.skala * z;
+    const bh = bw * (vorlage.bild.naturalHeight / vorlage.bild.naturalWidth);
+    ctx.save();
+    ctx.globalAlpha = vorlage.deckkraft;
+    ctx.imageSmoothingEnabled = z < 8;
+    ctx.drawImage(vorlage.bild, x0 + vorlage.x * z, y0 + vorlage.y * z, bw, bh);
+    ctx.restore();
+    if (vorlageSchiebt) {
+      ctx.strokeStyle = 'rgba(214,184,122,.9)';
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(x0 + vorlage.x * z, y0 + vorlage.y * z, bw, bh);
+      ctx.setLineDash([]);
+    }
+  }
 
   const an = id => $(id).checked;
   let maxSchritt = 1;
@@ -253,6 +272,50 @@ function malen_() {
   ctx.lineWidth = 1;
   ctx.strokeRect(x0 + .5, y0 + .5, N * z, N * z);
   $('#zoomWert').textContent = Math.round(zoom * 100) + ' %';
+}
+
+// ---------- Vorlage ----------
+// x, y und Größe zählen in Rasterfeldern, damit die Vorlage beim Zoomen sitzen bleibt.
+const vorlage = { bild: null, x: 0, y: 0, skala: 1, deckkraft: .6, sichtbar: true };
+let vorlageSchiebt = false;
+let vorlageMerkZeit = null;
+
+function vorlageReglerAn(sichtbar) {
+  $('#vorlageRegler').hidden = !sichtbar;
+  $('#vorlageWaehlen').textContent = sichtbar ? 'Anderes Bild wählen …' : 'Bild wählen …';
+}
+
+async function ladeVorlage() {
+  vorlage.bild = null; vorlageSchiebt = false;
+  $('#vorlageSchieben').textContent = 'Verschieben: aus';
+  vorlageReglerAn(false);
+  if (!dorf) return malen_();
+  const v = await fetch('/api/vorlage?pfad=' + encodeURIComponent(dorf.pfad)).then(r => r.json());
+  if (!v.vorhanden) return malen_();
+  Object.assign(vorlage, { x: v.x, y: v.y, skala: v.skala, deckkraft: v.deckkraft, sichtbar: v.sichtbar });
+  $('#vorlageAn').checked = vorlage.sichtbar;
+  $('#vorlageDeck').value = Math.round(vorlage.deckkraft * 100);
+  $('#vorlageDeckWert').textContent = Math.round(vorlage.deckkraft * 100);
+  $('#vorlageSkala').value = Math.round(vorlage.skala * 100);
+  $('#vorlageSkalaWert').textContent = Math.round(vorlage.skala * 100);
+  const bild = new Image();
+  bild.onload = () => { vorlage.bild = bild; vorlageReglerAn(true); malen_(); };
+  bild.onerror = () => malen_();
+  bild.src = v.bild;
+}
+
+function merkeVorlage(bildBase64) {
+  if (!dorf) return;
+  clearTimeout(vorlageMerkZeit);
+  const senden = () => fetch('/api/vorlage', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pfad: dorf.pfad, bildBase64,
+      x: vorlage.x, y: vorlage.y, skala: vorlage.skala,
+      deckkraft: vorlage.deckkraft, sichtbar: vorlage.sichtbar,
+    }),
+  });
+  if (bildBase64) senden(); else vorlageMerkZeit = setTimeout(senden, 400);
 }
 
 // ---------- Bearbeiten ----------
@@ -315,6 +378,11 @@ function zelleAn(ev) {
 cv.addEventListener('mousedown', ev => {
   if (!dorf) return;
   const c = zelleAn(ev);
+  if (vorlageSchiebt && vorlage.bild && ev.button === 0) {
+    ziehen = { vorlage: true, mx: ev.clientX, my: ev.clientY, vx: vorlage.x, vy: vorlage.y };
+    cv.style.cursor = 'grabbing';
+    return;
+  }
   const schieben = ev.button === 1 || ev.button === 2 || werkzeug === 'zeigen';
   if (schieben) {
     ziehen = { mx: ev.clientX, my: ev.clientY, ox: offX, oy: offY };
@@ -336,6 +404,12 @@ cv.addEventListener('mousedown', ev => {
 cv.addEventListener('contextmenu', ev => ev.preventDefault());
 
 cv.addEventListener('mousemove', ev => {
+  if (ziehen && ziehen.vorlage) {
+    const z = zelle * zoom;
+    vorlage.x = ziehen.vx + (ev.clientX - ziehen.mx) / z;
+    vorlage.y = ziehen.vy + (ev.clientY - ziehen.my) / z;
+    malen_(); return;
+  }
   if (ziehen) {
     offX = ziehen.ox + (ev.clientX - ziehen.mx);
     offY = ziehen.oy + (ev.clientY - ziehen.my);
@@ -366,6 +440,7 @@ cv.addEventListener('mousemove', ev => {
 
 cv.addEventListener('mouseleave', () => { $('#tooltip').hidden = true; });
 window.addEventListener('mouseup', () => {
+  if (ziehen && ziehen.vorlage) merkeVorlage();
   ziehen = null; malt = false;
   cv.style.cursor = werkzeug === 'zeigen' ? 'grab' : 'crosshair';
   if (geaendert) { zeigeKennzahlen(); zeigeLegende(); }
@@ -445,6 +520,58 @@ window.addEventListener('keydown', ev => {
 });
 
 window.addEventListener('beforeunload', ev => { if (geaendert) { ev.preventDefault(); ev.returnValue = ''; } });
+// ---------- Vorlage bedienen ----------
+$('#vorlageWaehlen').onclick = () => $('#vorlageDatei').click();
+$('#vorlageDatei').onchange = ev => {
+  const f = ev.target.files[0];
+  if (!f || !dorf) return;
+  const leser = new FileReader();
+  leser.onload = () => {
+    const bild = new Image();
+    bild.onload = () => {
+      vorlage.bild = bild;
+      // erstmal so legen, dass die Vorlage das Raster ausfüllt
+      vorlage.x = 0; vorlage.y = 0; vorlage.skala = 1; vorlage.sichtbar = true;
+      $('#vorlageSkala').value = 100; $('#vorlageSkalaWert').textContent = 100;
+      $('#vorlageAn').checked = true;
+      vorlageReglerAn(true);
+      malen_();
+      merkeVorlage(leser.result);
+      $('#status').textContent = 'Vorlage gesetzt — mit „Verschieben" ausrichten, mit „Größe" anpassen';
+    };
+    bild.src = leser.result;
+  };
+  leser.readAsDataURL(f);
+  ev.target.value = '';
+};
+$('#vorlageAn').onchange = () => { vorlage.sichtbar = $('#vorlageAn').checked; malen_(); merkeVorlage(); };
+$('#vorlageDeck').oninput = () => {
+  vorlage.deckkraft = +$('#vorlageDeck').value / 100;
+  $('#vorlageDeckWert').textContent = $('#vorlageDeck').value;
+  malen_(); merkeVorlage();
+};
+$('#vorlageSkala').oninput = () => {
+  vorlage.skala = +$('#vorlageSkala').value / 100;
+  $('#vorlageSkalaWert').textContent = $('#vorlageSkala').value;
+  malen_(); merkeVorlage();
+};
+$('#vorlageSchieben').onclick = () => {
+  vorlageSchiebt = !vorlageSchiebt;
+  $('#vorlageSchieben').textContent = 'Verschieben: ' + (vorlageSchiebt ? 'an' : 'aus');
+  malen_();
+};
+$('#vorlageWeg').onclick = async () => {
+  if (!dorf || !confirm('Vorlage für dieses Dorf entfernen?')) return;
+  await fetch('/api/vorlage', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pfad: dorf.pfad, entfernen: true }),
+  });
+  vorlage.bild = null; vorlageSchiebt = false;
+  $('#vorlageSchieben').textContent = 'Verschieben: aus';
+  vorlageReglerAn(false);
+  malen_();
+};
+
 window.addEventListener('resize', groesseAnpassen);
 groesseAnpassen();
 ladeGebaeude().then(ladeListe);
