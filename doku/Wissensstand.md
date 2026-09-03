@@ -738,6 +738,43 @@ daran. Fehlt eine Datei, steht `<Name> has no portrait` im Log.
 Merksatz: Nach jedem Einbau einmal `ucp3.log` nach `Problems with` und
 `has no portrait` durchsehen. Das ist billiger als jede Sichtpruefung im Spiel.
 
+## 5h. Spielerbesetzung: warum ein Gefecht frueh endet, und wie es lange laeuft (03.09.2026)
+
+*gemessen -- im laufenden Spiel ueber den `peek`-Befehl des Moduls.*
+
+Abschnitt 5f schloss aus dem ~4010-Tick-Stopp, `SetupSkirmishMode` besetze die
+Spielerplaetze nicht. Die Messung verfeinert das: **die KI-Gegner stehen sehr
+wohl im Array -- der fruehe Abbruch haengt an der Zahl der aktiven Spieler.**
+
+`currentAIArray` (int[9], `0x0191DE7C`, in `GameSynchronyState+0x714`) traegt je
+Platz die KI-Art: Platz 0 = neutral, Platz 1 = Mensch (Wert 0, also keine KI),
+Platz 2..8 = KI-Gegner. Nach `{ "gefecht": N }` gemessen:
+
+| Missionspfad N | currentAIArray[0..8] | KI-Gegner |
+|---|---|---|
+| 0, 1, 3 | z. B. `[0,0,7,0,0,0,0,0,0]` | **1** (Platz 2) |
+| 2, 4 | `[0,0,8,6,6,0,0,0,0]` bzw. `[0,0,2,2,2,0,0,0,0]` | **3** (Plaetze 2-4) |
+| 5 | `[0,0,8,4,0,0,0,0,0]` | 2 (Plaetze 2-3) |
+
+Der Abbruch haengt an der Gegnerzahl, nicht an fehlender Besetzung:
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Pfad 0 (1 Gegner) friert bei ~4010 Ticks ein, `currentMenuViewType` = 30 (verloren) | **gemessen** | deckt sich mit 5f |
+| Pfad 2 (3 Gegner) laeuft bis **22066 Ticks / 654 Einheiten**, dann ebenfalls `currentMenuViewType` = 30 | **gemessen** | 75 s beobachtet, Uhr 0 -> 672 -> 8665 -> 22066 |
+| Der Mensch (Platz 1) hat keinen Bergfried, wir verlieren deshalb immer -- nur spaeter, je mehr KIs sich gegenseitig beschaeftigen | **vermutet** | erklaert beide Endzustaende (view 30); die fehlende Bergfried-Setzung des Menschen ist nicht direkt gemessen |
+
+**Rezept fuer einen Messlauf**, der lange genug laeuft (ein voller 450-Schritt-Bau
+braucht 22500 Ticks): `{ "id": <neu>, "gefecht": 2 }` (oder 4) -- drei KI-Gegner,
+rund 22000 Ticks echtes Spiel statt der ~4010 bei Pfad 0. Zwischen Laeufen mit
+`{ "menue": 41 }` ins Hauptmenue zurueck.
+
+Adressen: `GameSynchronyState`-Basis `0x0191D768` (aus `currentGameMode` 0x0191DD80
+minus 0x618), `currentAIArray` +0x714, `SEC_AIVariationArray` +0x738,
+`DAT_PlayerSlotArraySomeValue` +0x106db0. `CampaignTrailMission` (0x90 Byte):
+`numberOfPlayers` +0xc, `player2AI` +0x14; die Missions-Arrays liegen in
+`SkirmishDefinedData` (+0x114 Skirmish-, +0x2e14 Extreme-Pfad).
+
 ## 6. Widerlegtes
 
 Damit die Irrtümer nicht wiederkommen.
