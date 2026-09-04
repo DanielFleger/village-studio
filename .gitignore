@@ -2,3 +2,5 @@ _backup/
 node_modules/
 config.json
 *.aiv
+/dorf.png
+/beispieldorf_*.png

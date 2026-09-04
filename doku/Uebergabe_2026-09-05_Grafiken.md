@@ -40,15 +40,23 @@ aus: Steinmauer, Hütte, Bäckerei, Lanzenmacher, Rüstungsschmied, Lagerplatz.
 
 ## Der nächste Handgriff
 
-**Die Bilder einzeln ausgeben, mit der Nummer im Dateinamen.** Daniel hat den
-4×4-Bogen vollständig durchgesprochen (steht wörtlich in
-`lib/gebaeude_bilder.json` unter `von_daniel_4x4`), aber seine Zählung läuft
-über die Zeilengrenzen des Bogens hinweg und ließ sich nicht sicher auf
-Positionen abbilden. Mit Einzelbildern wird daraus in einem Durchgang eine
-Tabelle, ohne dass jemand rät.
+**Die Einzelbilder gibt es schon.** Drei Werkzeuge sind fertig und geprüft:
 
-Danach: seine Beschreibung Zeile für Zeile eintragen, dann die schräge Ansicht
-auf die Bilder umstellen.
+```
+node _baue_einzelbilder.js     jedes Bild als eigene PNG, Position im Namen
+node _baue_montage.js          Übersichtsblätter
+lib/bildvorrat.js              EINE Reihenfolge für Bögen, Einzelbilder, Kandidaten
+```
+
+Der letzte Punkt ist der wichtige: Bögen, Einzelbilder und die Kandidatenliste
+holen ihre Reihenfolge jetzt aus derselben Quelle. Vorher konnte Position 7 auf
+dem Bogen etwas anderes meinen als Position 7 in der Liste — genau daran ist
+Daniels 4×4-Durchgang gescheitert.
+
+**Also direkt anfangen:** Daniels Beschreibung des 4×4-Bogens steht wörtlich in
+`lib/gebaeude_bilder.json` unter `von_daniel_4x4`. Mit den Einzelbildern lässt
+sie sich Zeile für Zeile eintragen, ohne zu raten. Danach die übrigen Größen
+selbst durchgehen, dann die schräge Ansicht auf die Bilder umstellen.
 
 ---
 
