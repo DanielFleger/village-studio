@@ -605,4 +605,13 @@ $('#vorlageWeg').onclick = async () => {
 window.addEventListener('resize', groesseAnpassen);
 ladeKarten();
 groesseAnpassen();
-ladeGebaeude().then(ladeListe);
+
+// Direktlink auf ein Dorf: /?dorf=Emir3 öffnet es gleich beim Laden.
+// Nützlich zum Verlinken, und die Bildaufnahme für das Handbuch braucht es.
+ladeGebaeude().then(ladeListe).then(() => {
+  const wunsch = new URLSearchParams(location.search).get('dorf');
+  if (!wunsch) return;
+  const d = doerfer.find(x => x.name.toLowerCase() === wunsch.toLowerCase());
+  if (d) return ladeDorf(d.pfad, d.name);
+  $('#status').textContent = `Dorf „${wunsch}" nicht gefunden`;
+});
