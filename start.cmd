@@ -1,0 +1,5 @@
+@echo off
+title Village Studio
+cd /d "%~dp0"
+start "" http://localhost:8790
+node server.js
