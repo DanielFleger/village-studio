@@ -22,6 +22,13 @@ funktioniert bei mir, aber es ist jung und wenig erprobt.
 
 ---
 
+![Village Studio mit dem geladenen Dorf Emir3, darunter das Gelände der Karte](bilder/oberflaeche.png)
+
+*Das Original-KI-Dorf `Emir3`, darunter das Gelände einer echten Karte des Spiels.
+Links die gefundenen Dörfer, rechts Werkzeuge, Speicherziele und Ebenen.*
+
+---
+
 ## Starten
 
 Node muss installiert sein ([nodejs.org](https://nodejs.org)).
