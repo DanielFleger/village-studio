@@ -511,6 +511,23 @@ Die Balance-JSON (Ascension, Team-Liga) bildet ihre Felder so auf die Spielwerte
 
 Die Kostenliste ist ein Feld mit fuenf Zahlen, deren Bedeutung nirgends in der Datei steht. Reihenfolge ueber Abgleich mit bekannten Werten ermittelt, **213 Treffer gegen 2**: **Holz, Stein, Eisen, Pech, Gold**. Deckt sich mit der Reihenfolge der Laufzeit-Kostentabelle aus Abschnitt 3 - zwei unabhaengige Quellen.
 
+### Einheiten befehligen: Ziel-Felder reichen nicht, die Funktion muss gerufen werden (04.09.2026)
+
+*gemessen im laufenden Gefecht (Pfad 2, 266 Einheiten) ueber peek/poke.*
+
+Die Bewegungsfelder einer Einheit sind bestaetigt (Einheit i = 0x0138854C + i*1168):
+`+0xC4/0xC6` Position x/y, `+0xC8/0xCA` Zielkoordinaten, `+0xD4` Kachel, `+0xD8` Zielkachel (int), `+0xFA` Wegplan-Index, `+0xFC` Wegplan-Laenge, `+0xFE` Wegplan (byte[400]), `+0x374` destinationNeeded (short).
+
+An einer laufenden KI-Einheit abgelesen (Holzfaeller, Spieler 3): Position (199,361), Zielkoordinaten (168,318), Kachel 78878 -> Zielkachel 73644, Wegplan-Laenge 59, Index 13. So sieht "laeuft zu fernem Ziel" aus.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **Das Schreiben der Ziel-Felder (Zielkachel, Zielkoordinaten, destinationNeeded) bewegt eine Einheit NICHT** | **gemessen** | Poke kam an (Zielkachel wechselte auf den neuen Wert), aber: ein ruhendes Tier blieb stehen, und eine laufende Einheit behielt ihren ALTEN Wegplan (Index/Laenge unveraendert 13/59) statt umzuleiten. destinationNeeded 1/2/4 durchprobiert, kein Effekt |
+| destinationNeeded ist ein fluechtiger Ausloeser, kein stehendes Flag | **gemessen** | bei Laeufern wie Ruhenden immer 0 - der Wegfinder verbraucht ihn sofort |
+| Der Wegplan (+0xFE) wird in `setDestinationForUnit` berechnet, der Tick-Update FOLGT ihm nur | **abgelesen** | Dekompilat von 0x0053D3D0: teleportUnitToUnitXAndY, dann Pfadberechnung ueber PathConnectionLayer/translationMatrix inline. Kein deferred-Flag |
+
+**Folge fuer das Modul (gehoert SVS):** Einheiten befehligen braucht einen Aufruf von `setDestinationForUnit` (0x0053D3D0). Signatur laut Dekompilat: `BOOLEnum setDestinationForUnit(UnitsState *this, int unitID, uint x, uint y, int reusePathingInfo)` - thiscall, `this` = UnitsState 0x01387F38 (die Funktion nutzt ohnehin die Globale). Also `core.exposeCode(0x0053D3D0, 5, 1)` (this + 4 Argumente), Aufrufart wie bei tryPlaceAIV am ret-imm gegenpruefen. Dann ein Befehl der Art `{ "einheit_ziel": { "nr": N, "x": X, "y": Y } }`. Koordinaten 0..399; ist die Zielkachel kein Spielfeld, liefert die Funktion FALSE (Gueltigkeitskarte 0x21AEC98).
+
 ## 4. Verhalten
 
 | Aussage | Marke | Beleg |
