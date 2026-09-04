@@ -17,6 +17,16 @@
    "bild": "tile_churches#0",
    "name": "Kathedrale",
    "beleg": "13x13, im Bild erkannt: grosse goldene Kuppel, zwei Tuerme"
+  },
+  "33": {
+   "bild": "tile_castle#135",
+   "name": "Eckiger Turm",
+   "beleg": "6x6, quadratischer Turm mit Holzdach. Unter allen vierzehn 6x6-Bildern gibt es genau EINEN eckigen und EINEN runden Turm, und die Tabelle kennt genau diese zwei. Daneben liegen ihre Ruine und ihr Fundament."
+  },
+  "34": {
+   "bild": "tile_castle#243",
+   "name": "Runder Turm",
+   "beleg": "6x6, runder Turm mit Zinnen - siehe 33"
   }
  },
  "kandidaten": {
@@ -8308,6 +8318,21 @@
    "bild": "tile_castle#713",
    "name": "Bergfried",
    "beleg": "7x7, quadratischer Turm mit Zinnen und flachem Dach, ohne Torbogen. Das einzige 7x7-Bauwerk, das kein Tor und kein Bauzustand ist. Nicht am Spiel gegengeprueft."
+  },
+  "62": {
+   "bild": "tile_buildings2#173",
+   "name": "Steinbruch",
+   "beleg": "6x6, Holzgeruest mit Flaschenzug ueber behauenen Steinen. Passt, ist aber nicht gegengeprueft."
+  },
+  "59": {
+   "bild": "tile_buildings2#568",
+   "name": "Stall",
+   "beleg": "6x6, offener Schuppen mit Strohdach. Unsicher - koennte auch etwas anderes Landwirtschaftliches sein."
+  },
+  "84": {
+   "bild": "tile_buildings2#663",
+   "name": "Apotheke",
+   "beleg": "6x6, zweistoeckig mit Toepfen und Kraeutern. Unsicher; #1113 sieht fast gleich aus."
   }
  },
  "_ausschuss": "In den Kandidatenlisten stehen auch Dinge, die keine Gebaeude sind: Geroellflaechen, halbfertige Bauzustaende und mindestens ein Entwickler-Platzhalter (weisses Gitterbild mit gelbem Smiley, tile_buildings2#86). Beim Zuordnen zuerst aussortieren."
