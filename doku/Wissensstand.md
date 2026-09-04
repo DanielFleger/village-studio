@@ -544,6 +544,20 @@ Frage aus der Wunschliste: kostet das Nachbauen einer halbkaputten Mauer so viel
 
 **Einschraenkung:** Gemessen am Endstand des Gefechts (Uhr eingefroren); die Wirkung (Hoehenschreiben aendert Stein nicht) ist aber phasenunabhaengig. Der Menue-Bau eines Menschen ueber die Bauleiste zahlt Stein - das ist aber nicht der reaktive Nachbau-Weg.
 
+### Lord-Tod erkennen: der Ausloeser fuer die Kettenreaktion (05.09.2026)
+
+*gemessen im Gefecht (Pfad 2).*
+
+Die Erkennungsregel aus Abschnitt 3 ist bestaetigt: Der Lord ist die Einheit mit unitType == 55, und jeder AKTIVE Spieler hat genau einen. Gemessen: Spieler 2 (Einheit 5, 165000 Leben), Spieler 3 (Einheit 17, 150000), Spieler 4 (Einheit 19, 150000); Spieler 1 (Mensch) hat keinen - in diesem Aufbau nicht besetzt.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Ein Lord je aktivem Spieler, Typ 55, Leben bei +0x3C8 | **gemessen** | 3 Lords, je genau einer, Leben 165000/150000 (voll) |
+| Der Ausloeser ist das Leben, nicht der logicalState | **gemessen** | Lord-Leben 165000 -> 0 gepoked: Leben=0, aber logicalState blieb 2 (Einheit noch da). Wie bei Gebaeuden entfernt das Spiel die Einheit erst beim toedlichen Treffer, nicht beim Erreichen von 0 |
+| Robuster Trigger: je Tick das Lord-Leben lesen; faellt es auf <=0 (oder Einheit verschwindet, logicalState 0), ist der Lord tot | **abgeleitet** | folgt aus dem Obigen |
+
+**Fuer die Kettenreaktion:** Der Trigger steht. Die Reaktion selbst (alles abreissen ausser Lager/Markt, Ressourcen verkaufen, Geld an den Verbuendeten) baut auf schon belegten Bausteinen auf (Abriss mit Gruppenschutz, Geld/Waren verschicken) und ist der naechste Schritt.
+
 ## 4. Verhalten
 
 | Aussage | Marke | Beleg |
