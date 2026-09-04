@@ -8336,5 +8336,13 @@
   }
  },
  "_ausschuss": "In den Kandidatenlisten stehen auch Dinge, die keine Gebaeude sind: Geroellflaechen, halbfertige Bauzustaende und mindestens ein Entwickler-Platzhalter (weisses Gitterbild mit gelbem Smiley, tile_buildings2#86). Beim Zuordnen zuerst aussortieren.",
- "_varianten": "Von Daniel am 05.09.2026 an den Baeckereien erkannt: Jedes Gebaeude liegt MEHRFACH vor - je Ausrichtung (Himmelsrichtung) und je Zustand (offen, wenn ein Arbeiter darin arbeitet; geschlossen, wenn keiner da ist). Das erklaert die Zahlen: 154 Bilder bei 4x4 fuer 16 Werkstaetten sind rund zehn Fassungen je Gebaeude. Eine Bau-Nummer zeigt also nicht auf EIN Bild, sondern auf eine GRUPPE. Fuer die Anzeige genuegt eine Fassung; welche, ist Geschmackssache - sinnvoll ist die besetzte in einer festen Ausrichtung."
+ "_varianten": "Von Daniel am 05.09.2026 an den Baeckereien erkannt: Jedes Gebaeude liegt MEHRFACH vor - je Ausrichtung (Himmelsrichtung) und je Zustand (offen, wenn ein Arbeiter darin arbeitet; geschlossen, wenn keiner da ist). Das erklaert die Zahlen: 154 Bilder bei 4x4 fuer 16 Werkstaetten sind rund zehn Fassungen je Gebaeude. Eine Bau-Nummer zeigt also nicht auf EIN Bild, sondern auf eine GRUPPE. Fuer die Anzeige genuegt eine Fassung; welche, ist Geschmackssache - sinnvoll ist die besetzte in einer festen Ausrichtung.",
+ "von_daniel": {
+  "_stand": "05.09.2026, aus Bildausschnitten - noch OHNE Zeile und Spalte im Bogen",
+  "Baeckerei": "Strohdach mit Backofen und weissem Tisch. Je Ausrichtung eine Fassung, dazu offen (Arbeiter da) und geschlossen.",
+  "Huette": "Sandfarbene Flachdachhaeuser, ein- und zweistoeckig. In einem Ausschnitt an den Stellen 1, 2, 4, 5, 6 und den letzten zweien.",
+  "Mauer": "Drei Saeulenbilder: die grosse Mauer und als drittes die kleine Mauer. WELCHES genau welches ist, muss noch geklaert werden - die mittlere ist sichtbar niedriger.",
+  "Ruestungsschmied": "Palmwedeldach ueber Gestellen mit silbernen Ruestungen und rotem Zeichen.",
+  "Lanzenmacher": "Palmwedeldach ueber Drehbaenken mit hellen Holzstangen. Frueher hier faelschlich 'Stangendreher' genannt."
+ }
 }

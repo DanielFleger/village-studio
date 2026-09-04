@@ -330,15 +330,16 @@
    "laufzeitName": "BT_DRAWBRIDGE"
   },
   "50": {
-   "name": "Stangendreher",
-   "kurz": "Stangen",
+   "name": "Lanzenmacher",
+   "kurz": "Lanzen",
    "gruppe": "waffen",
    "b": 4,
    "h": 4,
    "mapper": 82,
    "mapperName": "M_MAPPER_POLETURNER",
    "laufzeit": 14,
-   "laufzeitName": "BT_POLETURNER"
+   "laufzeitName": "BT_POLETURNER",
+   "hinweis": "Hiess hier bisher 'Stangendreher' - das war die woertliche Uebersetzung von 'Poleturner' und kennt im Spiel niemand. Daniel nennt ihn Pikenier- oder Lanzenmacher (05.09.2026)."
   },
   "51": {
    "name": "Bogenmacher",
