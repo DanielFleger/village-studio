@@ -26,7 +26,8 @@ const HALB_B = 16, HALB_H = 8;          // ein Feld: 32 breit, 16 hoch
 // ---- Vorrat an Gebaeudebildern, nach Grundflaeche sortiert ----
 function sammleBilder() {
   const nach = {};
-  for (const datei of ['tile_buildings1', 'tile_buildings2', 'tile_workshops', 'tile_castle', 'tile_churches']) {
+  for (const datei of ['tile_buildings1', 'tile_buildings2', 'tile_workshops', 'tile_castle', 'tile_churches',
+  'tile_farmland', 'tile_flatties', 'tile_ruins', 'killing_pits', 'pitch_ditches']) {
     const g = leseGm1(fs.readFileSync(path.join(GM, datei + '.gm1')));
     for (const s of g.bilder.filter(b => b.teil === 0)) {
       let bild;
