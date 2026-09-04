@@ -559,6 +559,35 @@ Die Erkennungsregel aus Abschnitt 3 ist bestaetigt: Der Lord ist die Einheit mit
 
 **Fuer die Kettenreaktion:** Der Trigger steht. Die Reaktion selbst (alles abreissen ausser Lager/Markt, Ressourcen verkaufen, Geld an den Verbuendeten) baut auf schon belegten Bausteinen auf (Abriss mit Gruppenschutz, Geld/Waren verschicken) und ist der naechste Schritt.
 
+### Einheiten befehligen: GELOEST - eine Einheit gehorcht (05.09.2026)
+
+*Befehl ins Modul eingebaut (logik.lua, Lua-Sitzung) und live getestet.*
+
+Der Aufruf von `setDestinationForUnit` (0x0053D3D0) ueber den Befehlskanal bewegt eine Einheit zuverlaessig auf eine Kachel - das blosse Schreiben der Ziel-Felder reichte nicht.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `{ "einheit_ziel": { "nr": N, "x": X, "y": Y } }` schickt Einheit N auf (X,Y) | **belegt** | Einheit 6 von (240,209) auf die befohlene (235,283) gelaufen, Rueckgabe 1 (TRUE) |
+| Signatur | **belegt** | `core.exposeCode(0x0053D3D0, 5, 1)` - thiscall, dreimal RET 0x10 = 4 Argumente; Aufruf `(this=0x01387F38, nr, x, y, reusePathing=0)` |
+| Koordinaten 0..399; ungueltiges Ziel -> FALSE | **abgelesen** | Gueltigkeitskarte 0x21AEC98 |
+
+Handler in logik.lua:
+
+```lua
+if cmd.einheit_ziel ~= nil then
+  local z = cmd.einheit_ziel
+  local nr, x, y = tonumber(z.nr), tonumber(z.x), tonumber(z.y)
+  if nr == nil or x == nil or y == nil then log(WARNING, "EINHEIT: nr/x/y fehlt.") return false end
+  _setDest = _setDest or core.exposeCode(0x0053D3D0, 5, 1)  -- lazy
+  local ok, r = pcall(_setDest, 0x01387F38, nr, x, y, 0)
+  -- r vorzeichenlos zuruecknehmen, dann loggen
+end
+```
+
+**Schaltet Platz 2 auf** (mehrere Einheiten + Ausweichen): mehrere `einheit_ziel` in einem `befehle`-Batch; fuers Ausweichen Geschosse je Tick lesen und die bedrohte Einheit versetzen.
+
+**Hinweis zur Repo-Angleichung:** Die Aenderung liegt in der deployten logik.lua (getestet). Der Repo-Zweig sgm-lua (24e54f6) ist weit hinter dem deployten Stand; ein Committen der ganzen Datei wuerde fremde Zeilen mitnehmen. Der isolierte Handler oben ist der Patch; die Angleichung des deployten Moduls in den Zweig ist eine eigene Aufgabe.
+
 ## 4. Verhalten
 
 | Aussage | Marke | Beleg |
