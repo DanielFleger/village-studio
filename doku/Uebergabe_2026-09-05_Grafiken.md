@@ -22,6 +22,22 @@ welches Bild bekommt.
 
 ---
 
+## Daniels Freigabe — der Auftrag steht schon
+
+Daniel am 05.09.2026, 00:51, wörtlich sinngemäß: **„Du kannst die Bilder selbst
+zuordnen, und wenn was falsch ist, gebe ich dir Bescheid."**
+
+Das ist die Erlaubnis, ohne Rückfrage durchzugehen. Nicht raten heißt hier
+trotzdem: was erkennbar ist, kommt unter `sicher` mit Begründung; was nur
+plausibel ist, unter `vermutet`. Der Unterschied bleibt sichtbar, damit Daniels
+Korrektur weiß, wo sie ansetzen muss. Er korrigiert gern — aber nur, was als
+unsicher gekennzeichnet ist, kann er auch gezielt prüfen.
+
+Fang mit den häufigen an, dann sieht das Werkzeug am schnellsten nach Spiel
+aus: Steinmauer, Hütte, Bäckerei, Lanzenmacher, Rüstungsschmied, Lagerplatz.
+
+---
+
 ## Der nächste Handgriff
 
 **Die Bilder einzeln ausgeben, mit der Nummer im Dateinamen.** Daniel hat den
