@@ -8335,5 +8335,6 @@
    "beleg": "6x6, zweistoeckig mit Toepfen und Kraeutern. Unsicher; #1113 sieht fast gleich aus."
   }
  },
- "_ausschuss": "In den Kandidatenlisten stehen auch Dinge, die keine Gebaeude sind: Geroellflaechen, halbfertige Bauzustaende und mindestens ein Entwickler-Platzhalter (weisses Gitterbild mit gelbem Smiley, tile_buildings2#86). Beim Zuordnen zuerst aussortieren."
+ "_ausschuss": "In den Kandidatenlisten stehen auch Dinge, die keine Gebaeude sind: Geroellflaechen, halbfertige Bauzustaende und mindestens ein Entwickler-Platzhalter (weisses Gitterbild mit gelbem Smiley, tile_buildings2#86). Beim Zuordnen zuerst aussortieren.",
+ "_varianten": "Von Daniel am 05.09.2026 an den Baeckereien erkannt: Jedes Gebaeude liegt MEHRFACH vor - je Ausrichtung (Himmelsrichtung) und je Zustand (offen, wenn ein Arbeiter darin arbeitet; geschlossen, wenn keiner da ist). Das erklaert die Zahlen: 154 Bilder bei 4x4 fuer 16 Werkstaetten sind rund zehn Fassungen je Gebaeude. Eine Bau-Nummer zeigt also nicht auf EIN Bild, sondern auf eine GRUPPE. Fuer die Anzeige genuegt eine Fassung; welche, ist Geschmackssache - sinnvoll ist die besetzte in einer festen Ausrichtung."
 }

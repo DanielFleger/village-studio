@@ -71,6 +71,7 @@ Karten, die des Spiels und die der Plugins.
 | `versatzX`/`versatzY` sind für den Zusammenbau **nicht** zu gebrauchen — wer sie als Lage im Gebäude liest, bekommt bei der Kapelle eine senkrechte Spanne von 192 statt 96 | **widerlegt** | eigener Fehlversuch, an der Kapelle gemessen |
 | Dass `teile` die Grundfläche nennt: `n = √teile` | **belegt** | Die Rechenvorschrift des fremden Werkzeugs kommt über ihre Eckenzählung auf denselben Wert; Gegenprobe an den drei Kirchen |
 | **Die gm1-Dateien enthalten Altbestand aus Stronghold 1**, den Crusader nicht benutzt — etwa Holzpalisaden statt Steinmauern. Wer nach Grundfläche filtert, zieht ihn mit | **belegt** | Von Daniel im gerenderten Beispieldorf erkannt: die 1×1-Bauten kamen als Holzwälle heraus, die es in Crusader nicht gibt |
+| **Jedes Gebaeude liegt mehrfach vor: je Ausrichtung und je Zustand** (offen mit Arbeiter, geschlossen ohne). Eine Bau-Nummer zeigt darum auf eine Gruppe von Bildern, nicht auf eines | **belegt** | Von Daniel an den Baeckereien im 4x4-Bogen erkannt. Erklaert die Zahl: 154 Bilder fuer 16 Werkstaetten sind rund zehn Fassungen je Gebaeude |
 | Welche Bau-Nummer welches Bild hat | **offen** | Keine Liste bekannt. Die Grundfläche aus `teile` ist der Filter: sie schneidet die Kandidaten je Nummer auf wenige zusammen |
 
 Leser: `lib/gm1.js` (`leseGm1`, `bildVon`, `ganzesGebaeude`).
