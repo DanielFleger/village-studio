@@ -56,6 +56,21 @@ Nutzbar gemacht in `lib/karte.js` (`leseVorschau`, `vorschauAlsPng`) und in der
 Oberfläche unter *Vorlage → Karte des Spiels wählen*. Der Server findet 189
 Karten, die des Spiels und die der Plugins.
 
+## 1c. Die Bildersammlungen (.gm1)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Kopf 88 Byte; @12 Anzahl Bilder, @20 Datenart, @80 Datengröße. Danach 10 Farbtafeln zu 256 Farben (je 2 Byte, 5-5-5), dann je Bild Offset, Größe und ein 16-Byte-Kopf | **belegt** | Stronghold-Wiki und die Umsetzung von LordVonAdel; alle 199 `.gm1` im `gm`-Ordner lesen ihren Kopf fehlerfrei |
+| Datenart 3 sind Gebäude und Kacheln. Davon gibt es 20 Dateien | **gemessen** | 118 Bewegtbilder, 33 gepackte, 20 Oberflächen, 20 der Art 3, 4 ungepackte, 3 Schriften |
+| **Ein Eintrag ist immer genau eine Kachel breit (30 Punkte).** Ein Gebäude besteht aus mehreren | **gemessen** | In allen vier Gebäude-Dateien ist jede Breite 30 |
+| **`teile` ist eine Quadratzahl und nennt die Grundfläche: `teile = n·n` bei n×n Kacheln** | **belegt** | Nur Quadratzahlen kommen vor (1, 4, 9, 16, 25, 36, 49, 81, 121, 169). Summe über alle Bauten ergibt genau die Bildanzahl der Datei. Gegenprobe `tile_churches`: 36, 81, 169 — und die Tabelle sagt Kapelle 6×6, Kirche 9×9, Kathedrale 13×13 |
+| `versatzX`/`versatzY` sind Punkte auf einer gemeinsamen Fläche der ganzen Datei, nicht im Gebäude — je Bau den kleinsten Wert abziehen | **gemessen** | Ohne Abzug wachsen die Bildbreiten monoton über die Datei |
+| Das Feld bei +14 (früher „Baubreite" genannt) sagt über die Größe nichts | **widerlegt** | Es trägt in allen 20 Dateien nur 0 oder 30 |
+| Der senkrechte Versatz zwischen Boden und Aufbau | **offen** | Die Dächer schweben über ihrem Grundriss. Alles andere stimmt: Kathedrale, Kirche, Kapelle und die zerstörte Kathedrale sind im Bild eindeutig zu erkennen |
+| Welche Bau-Nummer welches Bild hat | **offen** | Keine Liste bekannt. Die Grundfläche aus `teile` ist der Filter: sie schneidet die Kandidaten je Nummer auf wenige zusammen |
+
+Leser: `lib/gm1.js` (`leseGm1`, `bildVon`, `ganzesGebaeude`).
+
 ## 2. Die drei Nummernsätze
 
 Die häufigste Fehlerquelle. Dasselbe Bauwerk hat drei verschiedene Nummern.
