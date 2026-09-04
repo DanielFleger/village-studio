@@ -11,27 +11,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const { leseGm1, ganzesGebaeude, pngRgba } = require('./lib/gm1');
+const { pngRgba } = require('./lib/gm1');
+const { sammle } = require('./lib/bildvorrat');   // EINE Reihenfolge fuer Boegen, Einzelbilder, Kandidaten
 
-const SPIEL = 'C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme';
-const GM = path.join(SPIEL, 'gm');
 const ZIEL = path.join(__dirname, 'lib', 'gebaeude_bilder.json');
 const BOGEN_ORDNER = path.resolve(__dirname, '..', 'VillageStudio-bogen');
-const DATEIEN = ['tile_buildings1', 'tile_buildings2', 'tile_workshops', 'tile_castle', 'tile_churches',
-  'tile_farmland', 'tile_flatties', 'tile_ruins', 'killing_pits', 'pitch_ditches'];
-
-function sammle() {
-  const nach = {};
-  for (const datei of DATEIEN) {
-    const g = leseGm1(fs.readFileSync(path.join(GM, datei + '.gm1')));
-    for (const s of g.bilder.filter(b => b.teil === 0)) {
-      let bild; try { bild = ganzesGebaeude(g, s.nr); } catch { continue; }
-      if (!bild) continue;
-      (nach[bild.kacheln] = nach[bild.kacheln] || []).push({ datei, nr: s.nr, bild });
-    }
-  }
-  return nach;
-}
 
 function main() {
   const schreibe = process.argv.includes('--schreibe');

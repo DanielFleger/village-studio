@@ -16,29 +16,11 @@
 const fs = require('fs');
 const path = require('path');
 const { decode } = require('./lib/aiv');
-const { leseGm1, ganzesGebaeude, pngRgba } = require('./lib/gm1');
+const { pngRgba } = require('./lib/gm1');
+const { SPIEL, sammle: sammleBilder } = require('./lib/bildvorrat');
 
-const SPIEL = 'C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme';
-const GM = path.join(SPIEL, 'gm');
 const N = 100;
 const HALB_B = 16, HALB_H = 8;          // ein Feld: 32 breit, 16 hoch
-
-// ---- Vorrat an Gebaeudebildern, nach Grundflaeche sortiert ----
-function sammleBilder() {
-  const nach = {};
-  for (const datei of ['tile_buildings1', 'tile_buildings2', 'tile_workshops', 'tile_castle', 'tile_churches',
-  'tile_farmland', 'tile_flatties', 'tile_ruins', 'killing_pits', 'pitch_ditches']) {
-    const g = leseGm1(fs.readFileSync(path.join(GM, datei + '.gm1')));
-    for (const s of g.bilder.filter(b => b.teil === 0)) {
-      let bild;
-      try { bild = ganzesGebaeude(g, s.nr); } catch { continue; }
-      if (!bild) continue;
-      const n = bild.kacheln;
-      (nach[n] = nach[n] || []).push({ datei, nr: s.nr, bild });
-    }
-  }
-  return nach;
-}
 
 function ankerX(n) { return Math.floor(n / 2) * 30 + (n - 1) - (n % 2 === 0 ? 15 : 0); }
 
