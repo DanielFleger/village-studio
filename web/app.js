@@ -608,8 +608,12 @@ groesseAnpassen();
 
 // Direktlink auf ein Dorf: /?dorf=Emir3 öffnet es gleich beim Laden.
 // Nützlich zum Verlinken, und die Bildaufnahme für das Handbuch braucht es.
+const suchparam = new URLSearchParams(location.search);
+// ?anonym=1 zeichnet die Dorfnamen weich - fuer Bildschirmfotos, die man teilt
+if (suchparam.has('anonym')) $('#liste').classList.add('anonym');
+
 ladeGebaeude().then(ladeListe).then(() => {
-  const wunsch = new URLSearchParams(location.search).get('dorf');
+  const wunsch = suchparam.get('dorf');
   if (!wunsch) return;
   const d = doerfer.find(x => x.name.toLowerCase() === wunsch.toLowerCase());
   if (d) return ladeDorf(d.pfad, d.name);
