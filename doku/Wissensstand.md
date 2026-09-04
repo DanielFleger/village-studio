@@ -48,7 +48,9 @@ gesichert halten.
 | Die Packung ist dieselbe PKWare-DCL-Implode wie bei `.aiv` — `lib/blast.js` liest sie unverändert | **gemessen** | alle 113 Karten des Spiels entpackt, entpackte Länge stimmt jedes Mal mit der angekündigten überein |
 | Die Vorschau ist **200×200 Punkte senkrecht von oben**: 512 Byte Farbtafel (256 Einträge zu 16 Bit, 5-5-5) und danach 40.000 Byte Punktnummern | **gemessen** | 40.512 Byte entpackt bei allen 113 Karten; das Bild ist im Werkzeug sichtbar richtig (Sand, Gras, Fels, Oasen an plausibler Stelle) |
 | Danach folgen Beschreibung, vier einfache Abschnitte und ein Verzeichnis mit 150 Plätzen | **abgelesen** | `map_structure.h`; selbst noch nicht durchgelesen — meine eigene Abtastung der Kette bricht nach der Vorschau ab |
-| Wie das 100×100-Dorfraster auf der Karte liegt | **offen** | Das Werkzeug startet mit „Vorschau deckt 400 Felder" und lässt von Hand ausrichten. Der Wert ist **geraten**, nicht gemessen. Ansatzpunkt: der Bergfried steht im Dorfraster fest auf (43,43)–(49,49) |
+| Eine Karte hat **114 Abschnitte**, IDs 1001–1118, im Verzeichnis mit 150 Plätzen (4 Byte Verwaltung mehr als in `map_structure.h` steht: 3036 statt 3032) | **gemessen** | `A Friend Indeed.map` durchgezählt |
+| Das Kachelgitter der Karte hat **80.400 Felder**, nicht 400×400. Die Abschnitte sind genau 80.400 · 1, · 2 oder · 4 Byte groß | **gemessen** | Alle Abschnittslängen sind 80.400, 160.800 oder 321.600. 80.400 = 400 · 201 |
+| Wie das 100×100-Dorfraster auf der Karte liegt | **offen** | Das Werkzeug startet mit „Vorschau deckt 400 Felder" und lässt von Hand ausrichten. Der Wert ist **geraten**, nicht gemessen. Erschwerend: das Kachelgitter ist keine Quadratfläche (80.400 Felder), die Vorschau dagegen schon (200×200). Der Zusammenhang zwischen beiden ist **nicht gemessen**. Ansatzpunkt: der Bergfried steht im Dorfraster fest auf (43,43)–(49,49) |
 
 Nutzbar gemacht in `lib/karte.js` (`leseVorschau`, `vorschauAlsPng`) und in der
 Oberfläche unter *Vorlage → Karte des Spiels wählen*. Der Server findet 189
