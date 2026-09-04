@@ -8344,5 +8344,30 @@
   "Mauer": "Drei Saeulenbilder: die grosse Mauer und als drittes die kleine Mauer. WELCHES genau welches ist, muss noch geklaert werden - die mittlere ist sichtbar niedriger.",
   "Ruestungsschmied": "Palmwedeldach ueber Gestellen mit silbernen Ruestungen und rotem Zeichen.",
   "Lanzenmacher": "Palmwedeldach ueber Drehbaenken mit hellen Holzstangen. Frueher hier faelschlich 'Stangendreher' genannt."
+ },
+ "von_daniel_4x4": {
+  "_stand": "05.09.2026, Durchgang durch den 4x4-Bogen (8 Spalten je Zeile)",
+  "_wichtig": "18 FASSUNGEN JE WERKSTATT. Daniel: 'das geht 18 gebaeude weiter'. Bei 154 Bildern im 4x4-Bogen sind das rund acht Werkstattarten plus Einzelstuecke. Die Fassungen sind Ausrichtungen und Zustaende (offen mit Arbeiter, geschlossen).",
+  "_woertlich": "Zeile 1: die ersten 3 sind gute Dinge - Blumen. Dann ein leeres Feld, dann ein Zelt, dann der Kornspeicher offen, dann die Waffenkammer zu, dann offen. Dann Eisenmine, dann Pechgrube, dann Feuerkessel zweimal, dann leerer Grund, dann Haus 1, Haus 2. Zeile 3: Haus 3, Haus 4, Wasserpot, Haus 5, Haus 6, Haus 7, dann Bogen-/Armbrustmacher 1 und 2. Zeile 4 und 5: Bogenmacher aus verschiedenen Perspektiven. 6/7: Brot. 8: die ersten 2 auch Brot, dann kommen Poleturners. 9, 10, 11: dann zweite Haelfte, 10 ist Brauerei - das geht 18 Gebaeude weiter. Dann Schwert-/Streitkolbenmacher, auch 18. Dann Ruestungen 18. Dann Lederharnische 18. Die letzten drei Bilder sind Turm 3, Turm 3 kaputt und Turm 3 Grundansicht (flach).",
+  "_vorkommen": [
+   "gute Dinge (Blumen)",
+   "Zelt",
+   "Kornspeicher",
+   "Waffenkammer",
+   "Eisenmine",
+   "Pechgrube",
+   "Feuerkessel",
+   "Haus 1 bis 7",
+   "Wasserpot",
+   "Bogen-/Armbrustmacher",
+   "Baeckerei (Brot)",
+   "Lanzenmacher (Poleturner)",
+   "Brauerei",
+   "Schwert-/Streitkolbenmacher",
+   "Ruestungsschmied",
+   "Lederharnischmacher",
+   "Turm 3 (ganz, kaputt, flach)"
+  ],
+  "_offen": "Die genauen Zeilen und Spalten fehlen noch. Daniels Zaehlung laeuft ueber Zeilengrenzen hinweg und laesst sich nicht sicher auf Positionen abbilden - dafuer muessen die Bilder einzeln mit Nummer im Dateinamen ausgegeben werden."
  }
 }
