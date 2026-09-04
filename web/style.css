@@ -146,3 +146,8 @@ select.breit {
   border-radius: 5px; font: inherit; font-size: 12px;
 }
 .geaendert { color: #e0b070; font-size: 12px; }
+
+/* Fuer Bildschirmfotos: die eigenen Dorfnamen unkenntlich machen (?anonym=1).
+   Der Weichzeichner sitzt auf dem Namen, nicht auf der Zeile - so bleibt die
+   Liste als Liste erkennbar. */
+.liste.anonym li span { filter: blur(5px); user-select: none; }
