@@ -223,13 +223,21 @@ alten Stand.
 | | Village Studio (diese Sitzung) | Lua-Sitzung |
 |---|---|---|
 | **Arbeitet an** | AIV-Dateien, Ghidra, Tabellen | laufendes Spiel, Speicherzugriff |
-| **Schreibt** | `lib/`, `doku/`, Werkzeuge | `logik.lua`, Modul |
+| **Schreibt** | `lib/`, `doku/Betriebsregeln.md`, Werkzeuge | `logik.lua`, Modul |
+| **`doku/Wissensstand.md`** | offen für **jeden, der misst** — je eigener Commit mit nur dieser Datei, vorher pullen ||
 | **Beantwortet** | „Wo steht das in der exe?" | „Was passiert wirklich?" |
 | **Fasst nicht an** | `logik.lua` | `lib/*.json` |
 
 **Der Kreislauf, der heute funktioniert hat:** Village Studio liefert Adresse
-plus Totschlagtest → die Lua-Sitzung misst im Spiel → das Ergebnis geht mit
-Marke zurück in `Wissensstand.md`. Beide Richtungen sind gleich wichtig; die
+plus Totschlagtest → die Lua-Sitzung misst im Spiel → **wer gemessen hat, trägt
+selbst ein**, mit eigener Marke.
+
+Der letzte Halbsatz ist die Schärfung vom 05.09.2026, gefunden von SGM: Die Tabelle
+schrieb `doku/` pauschal dem Village Studio zu, der Satz darüber sagte passiv „das
+Ergebnis geht zurück in den Wissensstand" — ohne zu sagen, wer. Gelebt wurde längst
+das Richtige. **Eine fremde Messung weiterzureichen kostet genau die Genauigkeit, die
+den Eintrag wertvoll macht:** Die Marken *gemessen*, *abgelesen*, *vermutet* kann nur
+setzen, wer dabei war. Wer weiterreicht, macht aus einer Messung eine Behauptung. Beide Richtungen sind gleich wichtig; die
 drei besten Funde am 30.08. kamen aus dem Spiel, nicht aus der Analyse.
 
 **Vor jedem Testlauf ansagen**, welche AIV geladen ist und welcher Spieler-Slot
