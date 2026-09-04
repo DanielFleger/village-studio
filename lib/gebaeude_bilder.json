@@ -8292,5 +8292,23 @@
    "tile_castle#1507"
   ]
  },
- "_warnung": "Die Kandidatenlisten enthalten Altbestand aus Stronghold 1 - zum Beispiel Holzpalisaden, die es in Crusader nicht gibt. Vor dem Zuordnen aussortieren."
+ "_warnung": "Die Kandidatenlisten enthalten Altbestand aus Stronghold 1 - zum Beispiel Holzpalisaden, die es in Crusader nicht gibt. Vor dem Zuordnen aussortieren.",
+ "vermutet": {
+  "42": {
+   "bild": "tile_castle#419",
+   "name": "Grosses Torhaus",
+   "beleg": "7x7, Torbogen mit Fallgitter und Zinnen. Bildet mit #468 ein Paar - dieselbe Form gespiegelt, also die beiden Ausrichtungen O-W und N-S. WELCHE von beiden welche ist, ist NICHT geprueft."
+  },
+  "43": {
+   "bild": "tile_castle#468",
+   "name": "Grosses Torhaus",
+   "beleg": "siehe 42 - die gespiegelte Fassung"
+  },
+  "38": {
+   "bild": "tile_castle#713",
+   "name": "Bergfried",
+   "beleg": "7x7, quadratischer Turm mit Zinnen und flachem Dach, ohne Torbogen. Das einzige 7x7-Bauwerk, das kein Tor und kein Bauzustand ist. Nicht am Spiel gegengeprueft."
+  }
+ },
+ "_ausschuss": "In den Kandidatenlisten stehen auch Dinge, die keine Gebaeude sind: Geroellflaechen, halbfertige Bauzustaende und mindestens ein Entwickler-Platzhalter (weisses Gitterbild mit gelbem Smiley, tile_buildings2#86). Beim Zuordnen zuerst aussortieren."
 }
