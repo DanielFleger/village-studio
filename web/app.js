@@ -8,6 +8,7 @@ let dorf = null;
 let zoom = 1, offX = 0, offY = 0, zelle = 8;
 let ziehen = null, malt = false;
 let werkzeug = 'zeigen';
+let ansicht = 'raster';      // 'raster' = senkrecht von oben, 'schraeg' = wie im Spiel
 let geaendert = false;
 const undoStapel = [];
 
@@ -183,6 +184,127 @@ function zeigeAbschnitte() {
   ).join('');
 }
 
+// ---------- Schräge Ansicht ----------
+// Ein Feld wird zur Raute: nach rechts die halbe Breite, nach unten die halbe
+// Höhe. Das ist dieselbe Projektion, die Stronghold benutzt (Kachel 30x16).
+// Wie hoch ein Bau aufragt, hängt an seiner Art - gemessen ist das nicht,
+// es ist eine Darstellungsentscheidung, damit man Mauern von Feldern trennt.
+const BAUHOEHE = {
+  burg: 2.6, turm: 3.2, mauer: 1.6, militaer: 1.4, waffen: 1.2,
+  wirtschaft: 1.2, nahrung: .5, wohnen: 1.1, religion: 2.0,
+  freude: .9, angst: .9, graben: -.35, sonstiges: .15,
+};
+function bauhoehe(id) {
+  const b = bau(id);
+  if (!b) return .8;
+  if (id === 1 || id === 2) return .05;         // Kartenrand und Baufläche liegen flach
+  return BAUHOEHE[b.gruppe] !== undefined ? BAUHOEHE[b.gruppe] : .8;
+}
+
+function isoMasse() {
+  const z = zelle * zoom;
+  return { hb: z, hh: z / 2 };                  // halbe Breite, halbe Höhe einer Raute
+}
+function isoPunkt(x, y) {
+  const { hb, hh } = isoMasse();
+  return [offX + (x - y) * hb, offY + (x + y) * hh];
+}
+function isoFeldAn(sx, sy) {
+  const { hb, hh } = isoMasse();
+  const a = (sx - offX) / hb, b = (sy - offY) / hh;
+  return [Math.floor((a + b) / 2), Math.floor((b - a) / 2)];
+}
+
+function raute(g, px, py, hb, hh) {
+  g.beginPath();
+  g.moveTo(px, py); g.lineTo(px + hb, py + hh);
+  g.lineTo(px, py + 2 * hh); g.lineTo(px - hb, py + hh);
+  g.closePath();
+}
+
+function dunkler(hex, teil) {
+  const c = hex.startsWith('#') ? hex : '#888888';
+  const n = parseInt(c.slice(1), 16);
+  const k = v => Math.max(0, Math.round(v * teil));
+  return `rgb(${k(n >> 16)},${k((n >> 8) & 255)},${k(n & 255)})`;
+}
+
+function maleSchraeg() {
+  const r = cv.parentElement.getBoundingClientRect();
+  const { hb, hh } = isoMasse();
+  ctx.clearRect(0, 0, r.width, r.height);
+
+  // Boden
+  ctx.fillStyle = '#232a1c';
+  ctx.beginPath();
+  let [ax, ay] = isoPunkt(0, 0); ctx.moveTo(ax, ay);
+  [ax, ay] = isoPunkt(N, 0); ctx.lineTo(ax, ay);
+  [ax, ay] = isoPunkt(N, N); ctx.lineTo(ax, ay);
+  [ax, ay] = isoPunkt(0, N); ctx.lineTo(ax, ay);
+  ctx.closePath(); ctx.fill();
+
+  if ($('#ebRaster').checked && hb >= 4) {
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= N; i += 10) {
+      ctx.beginPath();
+      let [x1, y1] = isoPunkt(i, 0); let [x2, y2] = isoPunkt(i, N);
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+      [x1, y1] = isoPunkt(0, i); [x2, y2] = isoPunkt(N, i);
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+  }
+
+  // Von hinten nach vorn, sonst decken die vorderen Bauten die hinteren nicht ab
+  let maxSchritt = 1;
+  if (dorf.schritte) for (const v of dorf.schritte) if (v > maxSchritt) maxSchritt = v;
+  const nachSchritt = $('#ebSchritte').checked;
+
+  for (let s = 0; s <= 2 * (N - 1); s++) {
+    for (let x = Math.max(0, s - N + 1); x <= Math.min(s, N - 1); x++) {
+      const y = s - x;
+      const i = y * N + x;
+      const id = dorf.bauten ? dorf.bauten[i] : 0;
+      if (!id) continue;
+
+      const grund = nachSchritt && dorf.schritte && dorf.schritte[i]
+        ? schritteFarbe(dorf.schritte[i], maxSchritt) : farbeFuer(id);
+      const [px, py] = isoPunkt(x, y);
+      const hoehe = bauhoehe(id) * hh * 2;
+
+      if (hoehe > 0.5) {
+        // linke und rechte Wand
+        ctx.fillStyle = dunkler(grund, .55);
+        ctx.beginPath();
+        ctx.moveTo(px - hb, py + hh - hoehe); ctx.lineTo(px, py + 2 * hh - hoehe);
+        ctx.lineTo(px, py + 2 * hh); ctx.lineTo(px - hb, py + hh);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = dunkler(grund, .75);
+        ctx.beginPath();
+        ctx.moveTo(px + hb, py + hh - hoehe); ctx.lineTo(px, py + 2 * hh - hoehe);
+        ctx.lineTo(px, py + 2 * hh); ctx.lineTo(px + hb, py + hh);
+        ctx.closePath(); ctx.fill();
+      }
+      // Dach
+      ctx.fillStyle = grund;
+      raute(ctx, px, py - hoehe, hb, hh);
+      ctx.fill();
+    }
+  }
+
+  ctx.strokeStyle = 'rgba(214,184,122,.35)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  [ax, ay] = isoPunkt(0, 0); ctx.moveTo(ax, ay);
+  [ax, ay] = isoPunkt(N, 0); ctx.lineTo(ax, ay);
+  [ax, ay] = isoPunkt(N, N); ctx.lineTo(ax, ay);
+  [ax, ay] = isoPunkt(0, N); ctx.lineTo(ax, ay);
+  ctx.closePath(); ctx.stroke();
+
+  $('#zoomWert').textContent = Math.round(zoom * 100) + ' %';
+}
+
 // ---------- Zeichnen ----------
 function groesseAnpassen() {
   const r = cv.parentElement.getBoundingClientRect();
@@ -197,6 +319,15 @@ function einpassen() {
   const r = cv.parentElement.getBoundingClientRect();
   // Beim ersten Laden steht die Bühne noch nicht — sonst käme ein 2-Pixel-Raster heraus
   if (r.width < 120 || r.height < 120) { requestAnimationFrame(einpassen); return; }
+  if (ansicht === 'schraeg') {
+    // Die Raute ist doppelt so breit wie hoch: 2N halbe Breiten, N halbe Höhen
+    zelle = Math.max(1, Math.floor(Math.min((r.width - 40) / (2 * N), (r.height - 40) / N)));
+    zoom = 1;
+    offX = r.width / 2;
+    offY = (r.height - N * zelle) / 2;
+    malen_();
+    return;
+  }
   zelle = Math.max(2, Math.floor(Math.min(r.width - 40, r.height - 40) / N));
   zoom = 1;
   offX = (r.width - N * zelle) / 2;
@@ -208,6 +339,7 @@ function malen_() {
   const r = cv.parentElement.getBoundingClientRect();
   ctx.clearRect(0, 0, r.width, r.height);
   if (!dorf) return;
+  if (ansicht === 'schraeg') return maleSchraeg();
   const z = zelle * zoom, x0 = offX, y0 = offY;
 
   ctx.fillStyle = '#1a1d16';
@@ -369,8 +501,13 @@ function setzeWerkzeug(w) {
 function zelleAn(ev) {
   const r = cv.getBoundingClientRect();
   const z = zelle * zoom;
-  const x = Math.floor((ev.clientX - r.left - offX) / z);
-  const y = Math.floor((ev.clientY - r.top - offY) / z);
+  let x, y;
+  if (ansicht === 'schraeg') {
+    [x, y] = isoFeldAn(ev.clientX - r.left, ev.clientY - r.top);
+  } else {
+    x = Math.floor((ev.clientX - r.left - offX) / z);
+    y = Math.floor((ev.clientY - r.top - offY) / z);
+  }
   if (x < 0 || y < 0 || x >= N || y >= N) return null;
   return { x, y, i: y * N + x };
 }
@@ -383,7 +520,11 @@ cv.addEventListener('mousedown', ev => {
     cv.style.cursor = 'grabbing';
     return;
   }
-  const schieben = ev.button === 1 || ev.button === 2 || werkzeug === 'zeigen';
+  // In der schrägen Ansicht wird nur geschaut und geschoben - Malen dort wäre
+  // eine Falle: die Raute unter dem Zeiger ist nicht das Feld, das man meint,
+  // sobald ein Bau aufragt.
+  const schieben = ev.button === 1 || ev.button === 2 || werkzeug === 'zeigen'
+                   || ansicht === 'schraeg';
   if (schieben) {
     ziehen = { mx: ev.clientX, my: ev.clientY, ox: offX, oy: offY };
     cv.style.cursor = 'grabbing';
@@ -504,6 +645,12 @@ $('#suche').addEventListener('input', zeichneListe);
 $('#zoomRein').onclick = () => { zoom = Math.min(8, zoom * 1.25); malen_(); };
 $('#zoomRaus').onclick = () => { zoom = Math.max(0.25, zoom / 1.25); malen_(); };
 $('#zoomFit').onclick = einpassen;
+$('#ansichtWechsel').onclick = () => {
+  ansicht = ansicht === 'raster' ? 'schraeg' : 'raster';
+  $('#ansichtWechsel').textContent = 'Ansicht: ' + (ansicht === 'raster' ? 'Raster' : 'Schräg');
+  $('#hinweisSchraeg').hidden = ansicht !== 'schraeg';
+  einpassen();
+};
 $('#rueckgaengig').onclick = rueckgaengig;
 $('#pinsel').addEventListener('input', () => $('#pinselWert').textContent = $('#pinsel').value);
 for (const b of document.querySelectorAll('.wz')) b.onclick = () => setzeWerkzeug(b.dataset.wz);
