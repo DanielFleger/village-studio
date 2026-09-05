@@ -935,68 +935,13 @@
     "tile_flatties#39"
    ],
    "zweifel": "Daniel erkennt dieses Bild NICHT als \"Treppe 4\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "20": {
-   "bild": "tile_sea8#0",
-   "name": "Wassergraben a",
-   "kacheln": 1,
-   "pos": 257,
-   "beleg": "Tuerkise Wasserkachel aus tile_sea8. Von Daniel am 05.09.2026 berichtigt: sein erstes Bild zeigte die BAUVORSCHAU (der Graben, den man setzen will), nicht den fertigen Graben - der ist eine ausgehobene Mulde voll Wasser. In den zehn Gebaeude-Dateien gibt es kein einziges blaugruenes 1x1-Bild, das Wasser liegt in tile_sea8. NICHT bestaetigt: Daniel warnt, dass See- und Flusstexturen etwas anderes sind. Gemessen wurde, dass es im ganzen gm-Ordner nur zwei Dateien mit tuerkisen Kacheln gibt - tile_sea8 (ruhige Flaeche) und tile_sea_new_01 (dunkel mit Schaumkronen, offene See). Vergleichsbild: ToolsVillageStudio-bogenWasser_Vergleich.png",
-   "gruppe": [
-    "tile_sea8#0",
-    "tile_sea8#1",
-    "tile_sea8#2",
-    "tile_sea8#3"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben a\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "21": {
-   "bild": "tile_sea8#1",
-   "name": "Wassergraben b",
-   "kacheln": 1,
-   "pos": 258,
-   "beleg": "siehe Nr. 20",
-   "gruppe": [
-    "tile_sea8#0",
-    "tile_sea8#1",
-    "tile_sea8#2",
-    "tile_sea8#3"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben b\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "22": {
-   "bild": "tile_sea8#2",
-   "name": "Wassergraben c",
-   "kacheln": 1,
-   "pos": 259,
-   "beleg": "siehe Nr. 20",
-   "gruppe": [
-    "tile_sea8#0",
-    "tile_sea8#1",
-    "tile_sea8#2",
-    "tile_sea8#3"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben c\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "23": {
-   "bild": "tile_sea8#3",
-   "name": "Wassergraben d",
-   "kacheln": 1,
-   "pos": 260,
-   "beleg": "siehe Nr. 20",
-   "gruppe": [
-    "tile_sea8#0",
-    "tile_sea8#1",
-    "tile_sea8#2",
-    "tile_sea8#3"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben d\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
   }
  },
  "_offen": {
   "71 Apfelplantage, 72 Milchviehhof": "Kein einziges 10x10-Bild in den 20 Gebaeude-Dateien. Das Hofgebaeude muss anderswo liegen.",
   "73 Getreidefarm, 75 Hopfenfarm": "Von den drei 9x9-Bildern sind zwei ein europaeischer Bergfried aus Stronghold 1 samt Fundament, das dritte die Kirche. Kein Farmgebaeude.",
   "96 Teich": "Kein Wasserbild in 3x3. Die einzigen Teiche liegen in 5x5 (Grosser Teich) und in 6x6, wo die Tabelle gar keinen Teich kennt.",
+  "20-23 Wassergraben": "KEIN Bild - und zwar nicht, weil ich es nicht gefunden haette, sondern weil es keines gibt. Alle 53 blaugruenen Farbtoene des gm-Ordners sind durchgezaehlt; das gesaettigte Tuerkis von Daniels Spielbild ist nicht darunter. Das Spiel malt die Wasserflaeche selbst. Im Werkzeug wird der Graben darum als flache Flaeche in fester Farbe gezeichnet (#2f9c90 in lib/gebaeude.json).",
   "14-17 Treppen": "Von Daniel widerlegt. Auf seinem Spielbild sind es steinerne Stufen, die an der Mauer hochlaufen - die gestuften Steinplatten aus tile_flatties sind es nicht. Wo sie liegen, ist offen; naechster Ort zum Nachsehen ist anim_castle, wo auch die Mauer-Seitenflaechen liegen.",
   "18, 19 Treppe 5 und 6": "Es gibt nur vier gestufte Steinplatten (195-198) fuer sechs Treppen-Nummern.",
   "25 unbenutzt": "Laut Tabelle unbenutzt - kein Bild noetig.",

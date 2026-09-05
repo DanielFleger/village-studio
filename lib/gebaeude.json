@@ -1,6 +1,6 @@
 {
  "_quelle": "Nummern aus sourcehold/tool/convert/aiv/info.py (BUILDING_TYPE_AIV_FILES_KV), gegengeprueft an den gemessenen Grundflaechen aller 18 AIV-Dateien auf diesem Rechner.",
- "_stand": "2026-08-28",
+ "_stand": "2026-09-05",
  "gebaeude": {
   "1": {
    "name": "Kartenrand",
@@ -117,7 +117,10 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "farbe": "#2f9c90",
+   "flach": true,
+   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
   },
   "21": {
    "name": "Wassergraben b",
@@ -126,7 +129,10 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "farbe": "#2f9c90",
+   "flach": true,
+   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
   },
   "22": {
    "name": "Wassergraben c",
@@ -135,7 +141,10 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "farbe": "#2f9c90",
+   "flach": true,
+   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
   },
   "23": {
    "name": "Wassergraben d",
@@ -144,7 +153,10 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "farbe": "#2f9c90",
+   "flach": true,
+   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
   },
   "24": {
    "name": "Pechgraben",

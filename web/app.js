@@ -263,9 +263,13 @@ function isoFeldAn(sx, sy) {
 //   'grundriss' – alles flach, wie im Raster, nur schräg
 const FLACH_GRUPPEN = new Set(['mauer', 'turm', 'burg', 'graben']);
 function flachGezeichnet(id, stil) {
+  const b = bau(id);
+  // Der Wassergraben wird IMMER flach gezeichnet - er hat kein Bild in den
+  // Spieldateien (das Spiel malt die Wasserflaeche selbst), und ein Klotz
+  // waere schlicht falsch. Die Farbe steht in lib/gebaeude.json.
+  if (b && b.flach) return true;
   if (stil === 'grundriss') return true;
   if (stil !== 'flach') return false;
-  const b = bau(id);
   return !!b && FLACH_GRUPPEN.has(b.gruppe);
 }
 
