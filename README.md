@@ -6,6 +6,39 @@ von Lord Reza (Stronghold-Engine von 2001).
 Node ohne Fremdpakete, Oberflaeche als HTML/Canvas. Kein Bauschritt noetig:
 `start.cmd` startet den Server auf http://localhost:8790 und oeffnet den Browser.
 
+## Loslegen
+
+1. **Node.js** installieren (LTS von [nodejs.org](https://nodejs.org) — sonst nichts,
+   das Werkzeug benutzt kein einziges Fremdpaket).
+2. Dieses Verzeichnis herunterladen: gruener Knopf *Code → Download ZIP*, oder
+   `git clone https://github.com/DanielFleger/village-studio`.
+3. **`start.cmd`** doppelklicken. Der Server laeuft auf
+   <http://localhost:8790>, der Browser geht von selbst auf.
+   Unter Linux/Mac stattdessen `node server.js`.
+
+Zwei Dinge holt sich das Werkzeug von aussen:
+
+**Die AIV-Dateien.** Gesucht wird an diesen Orten:
+
+| Ort | gedacht fuer |
+|---|---|
+| `..\Village\villages`, `..\Village\aiv`, `..\Village` | neben dem alten Editor von Lord Reza |
+| `aiv\` **in diesem Ordner** | der einfachste Weg: eigene .aiv einfach hier hineinlegen |
+| `<Stronghold>\aiv` | die mitgelieferten KI-Doerfer des Spiels |
+
+**Die Spielgrafiken.** Fuer die schraege Ansicht liest das Werkzeug die
+`.gm1`-Dateien der Installation — nur lesend, es wird nichts veraendert.
+Gesucht wird unter
+`C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme`.
+Liegt das Spiel woanders, eine Datei `config.json` daneben legen:
+
+```json
+{ "stronghold": "D:\Spiele\Stronghold Crusader Extreme" }
+```
+
+Ohne Spielordner laeuft alles ausser den Spielgrafiken; die Rasteransicht
+und das Bearbeiten funktionieren.
+
 ## Was drin ist
 
 | Datei | Zweck |

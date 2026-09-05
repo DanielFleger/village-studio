@@ -227,7 +227,11 @@ function zeichneListe() {
   for (const d of doerfer) {
     if (f && !d.name.toLowerCase().includes(f)) continue;
     const li = document.createElement('li');
-    li.innerHTML = `<span></span><small>${(d.groesse / 1024).toFixed(0)} KB</small>`;
+    // Woher die Datei kommt: die eigenen liegen neben dem alten Editor oder
+    // im Ordner "aiv" dieses Werkzeugs, die anderen sind die 128 KI-Doerfer,
+    // die Stronghold mitbringt. Ohne Vermerk waere die Liste nicht zu lesen.
+    const ausSpiel = /steamapps|Stronghold Crusader/i.test(d.pfad) ? ' aus dem Spiel' : '';
+    li.innerHTML = `<span></span><small>${(d.groesse / 1024).toFixed(0)} KB${ausSpiel}</small>`;
     li.firstChild.textContent = d.name;
     li.title = d.pfad;
     if (dorf && dorf.pfad === d.pfad) li.className = 'aktiv';

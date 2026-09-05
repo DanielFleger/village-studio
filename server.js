@@ -13,11 +13,23 @@ const PORT = 8790;
 const HIER = __dirname;
 
 const VILLAGE_DIR = path.resolve(HIER, '..', 'Village');
-const DORF_ORDNER = [
-  path.join(VILLAGE_DIR, 'villages'),
-  path.join(VILLAGE_DIR, 'aiv'),
-  VILLAGE_DIR,
-];
+
+// Wo AIV-Dateien gesucht werden. Die ersten drei sind der Ordner des alten
+// Editors neben diesem hier - so liegt es auf dem Entwicklungsrechner. Wer
+// das Werkzeug irgendwohin klont, hat den nicht: darum sucht es auch im
+// eigenen Ordner "aiv" und im aiv-Ordner der Stronghold-Installation.
+// Die Reihenfolge entscheidet nur, was zuerst in der Liste steht.
+function dorfOrdner() {
+  const o = [
+    path.join(VILLAGE_DIR, 'villages'),
+    path.join(VILLAGE_DIR, 'aiv'),
+    VILLAGE_DIR,
+    path.join(HIER, 'aiv'),
+  ];
+  const spiel = spielOrdner();
+  if (spiel) o.push(path.join(spiel, 'aiv'));
+  return o;
+}
 
 // Stronghold-Installation: aus config.json, sonst der uebliche Steam-Pfad
 function spielOrdner() {
@@ -43,7 +55,7 @@ const MIME = {
 
 function listeDoerfer() {
   const treffer = [];
-  for (const ordner of DORF_ORDNER) {
+  for (const ordner of dorfOrdner()) {
     let namen;
     try { namen = fs.readdirSync(ordner); } catch { continue; }
     for (const n of namen) {
@@ -137,7 +149,7 @@ function listeKarten() {
 
 function darfSchreiben(p) {
   const norm = path.resolve(p).toLowerCase();
-  if (DORF_ORDNER.some(o => norm.startsWith(path.resolve(o).toLowerCase() + path.sep))) return true;
+  if (dorfOrdner().some(o => norm.startsWith(path.resolve(o).toLowerCase() + path.sep))) return true;
   const spiel = spielOrdner();
   if (spiel && norm.startsWith(path.resolve(spiel).toLowerCase() + path.sep)) return true;
   return false;
@@ -172,7 +184,7 @@ const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
 
   if (u.pathname === '/api/doerfer')
-    return sendeJson(res, 200, { ordner: DORF_ORDNER, doerfer: listeDoerfer(), spiel: spielOrdner() });
+    return sendeJson(res, 200, { ordner: dorfOrdner(), doerfer: listeDoerfer(), spiel: spielOrdner() });
 
   if (u.pathname === '/api/gebaeude') {
     try {
@@ -376,7 +388,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   console.log('Village Studio laeuft auf http://localhost:' + PORT);
   console.log('Doerfer aus:');
-  for (const o of DORF_ORDNER) console.log('  ' + o + (fs.existsSync(o) ? '' : '   (fehlt)'));
+  for (const o of dorfOrdner()) console.log('  ' + o + (fs.existsSync(o) ? '' : '   (fehlt)'));
   const s = spielOrdner();
   console.log('Stronghold: ' + (s || 'nicht gefunden - config.json anlegen mit {"stronghold":"...pfad..."}'));
 });
