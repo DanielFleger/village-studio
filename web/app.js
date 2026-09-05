@@ -449,11 +449,17 @@ function maleSchraeg() {
       const b = flach ? null : (mitBildern ? (id === 44 ? bildFuerBruecke(x, y, n) : fassungFuer(id, x, y)) : null);
       if (!flach && (!b || b.kacheln !== n)) continue;
       (flach ? flache : bilder).push({ x, y, n, b, id, i, tiefe: x + y + 2 * (n - 1) });
-      // Bodenplatten daneben - sie liegen flach und gehören vor das Gebäude
+      // Bodenplatten daneben - sie liegen flach und gehören vor das Gebäude.
+      // Gezeichnet wird nur, was auch in der Datei steht: die Platte kommt
+      // nur auf ein Feld, das dort als Baufläche (2) eingetragen ist. Sonst
+      // läge sie in den paar Dörfern, die ihren Bergfried ohne Hof gesetzt
+      // haben, auf blankem Gras.
       for (const t of (VORPLAETZE[id] || [])) {
         if (!t.fertig) continue;
-        platten.push({ x: x + t.dx, y: y + t.dy, n: t.kacheln, b: t,
-                       tiefe: (x + t.dx) + (y + t.dy) + 2 * (t.kacheln - 1) });
+        const px = x + t.dx, py = y + t.dy;
+        if (px >= N || py >= N || dorf.bauten[py * N + px] !== 2) continue;
+        platten.push({ x: px, y: py, n: t.kacheln, b: t,
+                       tiefe: px + py + 2 * (t.kacheln - 1) });
       }
       for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++)
         if (x + dx < N && y + dy < N) abgedeckt[(y + dy) * N + x + dx] = 1;
