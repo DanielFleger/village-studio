@@ -50,11 +50,31 @@ async function ladeBilder() {
   for (const [id, e] of Object.entries(idx)) {
     const img = new Image();
     img.onload = () => { e.fertig = true; if (ansicht === 'schraeg') malen_(); };
-    img.src = '/bilder/' + id + '.png';
+    img.src = '/bilder/' + id + '.png';       // auch '44x' und '44y', die Ausrichtungen der Zugbruecke
     BILDER[id] = Object.assign(e, { img });
   }
 }
 function bildFuer(id) { const b = BILDER[String(id)]; return b && b.fertig ? b : null; }
+
+// Die Zugbrücke (44) liegt in vier Ausrichtungen vor, in der AIV steht keine.
+// Darum wird die Fassung nach dem Torhaus daneben gewählt: 41 und 43 lassen
+// längs x durch, 40 und 42 längs y. Findet sich kein Tor, bleibt es beim
+// Standardbild. Welche Bohlenrichtung zu welcher Durchfahrt gehört, ist eine
+// erste Zuordnung und gehört noch geprüft.
+const TOR_LAENGS_X = new Set([41, 43]);
+const TOR_LAENGS_Y = new Set([40, 42]);
+function bildFuerBruecke(x, y, n) {
+  if (!dorf || !dorf.bauten) return bildFuer(44);
+  for (let d = -1; d <= n; d++) {
+    for (const [px, py] of [[x + d, y - 1], [x + d, y + n], [x - 1, y + d], [x + n, y + d]]) {
+      if (px < 0 || py < 0 || px >= N || py >= N) continue;
+      const id = dorf.bauten[py * N + px];
+      if (TOR_LAENGS_X.has(id)) return bildFuer('44x') || bildFuer(44);
+      if (TOR_LAENGS_Y.has(id)) return bildFuer('44y') || bildFuer(44);
+    }
+  }
+  return bildFuer(44);
+}
 
 function bau(id) { return GEB[String(id)] || null; }
 function bauName(id) {
@@ -148,6 +168,7 @@ async function ladeDorf(pfad, name) {
   $('#insSpiel').disabled = ziele.length === 0;
   zeichneListe(); zeigeKennzahlen(); zeigeLegende(); zeigeAbschnitte(); einpassen(); ladeVorlage();
   $('#status').textContent = `${r.datei} · ${(r.dateigroesse / 1024).toFixed(1)} KB · Version ${r.header.version}`;
+  merkeStand();
 }
 
 function setzeGeaendert(v) {
@@ -326,7 +347,7 @@ function maleSchraeg() {
       const i = y * N + x, id = dorf.bauten[i], n = dorf.gruppen[i];
       if (!id || n < 2 || dorf.mauern[i] !== 1) continue;      // nur die Ecke oben links eines Bauwerks
       const flach = flachGezeichnet(id, stil);
-      const b = flach ? null : (mitBildern ? bildFuer(id) : null);
+      const b = flach ? null : (mitBildern ? (id === 44 ? bildFuerBruecke(x, y, n) : bildFuer(id)) : null);
       if (!flach && (!b || b.kacheln !== n)) continue;
       (flach ? flache : bilder).push({ x, y, n, b, id, i, tiefe: x + y + 2 * (n - 1) });
       for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++)
@@ -630,6 +651,7 @@ function setzeWerkzeug(w) {
   werkzeug = w;
   for (const b of document.querySelectorAll('.wz')) b.classList.toggle('aktiv', b.dataset.wz === w);
   cv.style.cursor = w === 'zeigen' ? 'grab' : 'crosshair';
+  merkeStand();
 }
 
 // ---------- Maus ----------
@@ -778,14 +800,14 @@ $('#insSpiel').onclick = () => {
 
 // ---------- Bedienung ----------
 $('#suche').addEventListener('input', zeichneListe);
-$('#zoomRein').onclick = () => { zoom = Math.min(8, zoom * 1.25); malen_(); };
-$('#zoomRaus').onclick = () => { zoom = Math.max(0.25, zoom / 1.25); malen_(); };
+$('#zoomRein').onclick = () => { zoom = Math.min(8, zoom * 1.25); malen_(); merkeStand(); };
+$('#zoomRaus').onclick = () => { zoom = Math.max(0.25, zoom / 1.25); malen_(); merkeStand(); };
 $('#zoomFit').onclick = einpassen;
 $('#ansichtWechsel').onclick = () => {
   ansicht = ansicht === 'raster' ? 'schraeg' : 'raster';
   $('#ansichtWechsel').textContent = 'Ansicht: ' + (ansicht === 'raster' ? 'Raster' : 'Schräg');
   $('#hinweisSchraeg').hidden = ansicht !== 'schraeg';
-  einpassen();
+  einpassen(); merkeStand();
 };
 $('#rueckgaengig').onclick = rueckgaengig;
 $('#pinsel').addEventListener('input', () => $('#pinselWert').textContent = $('#pinsel').value);
@@ -896,11 +918,72 @@ const suchparam = new URLSearchParams(location.search);
 // ?anonym=1 zeichnet die Dorfnamen weich - fuer Bildschirmfotos, die man teilt
 if (suchparam.has('anonym')) $('#liste').classList.add('anonym');
 
+// ---------- Einstellungen merken ----------
+// Alles, was Daniel einstellt, überlebt das Neuladen der Seite: Ansicht,
+// Darstellung, Ebenen, Werkzeug, Zoom und das zuletzt geöffnete Dorf.
+// Liegt im Browser (localStorage), nicht auf der Platte - es ist reine
+// Bedienung, kein Arbeitsergebnis.
+const MERK_SCHLUESSEL = 'villagestudio.stand.v1';
+const MERK_SCHALTER = ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebUmriss', 'ebSonst', 'ebRaster'];
+const MERK_FELDER = ['baunr', 'schrittnr', 'pinsel', 'stilWahl', 'suche'];
+let merkenAn = false;                 // erst nach dem Wiederherstellen scharf
+
+function merkeStand() {
+  if (!merkenAn) return;
+  try {
+    const stand = { ansicht, werkzeug, zoom, offX, offY, schalter: {}, felder: {} };
+    for (const id of MERK_SCHALTER) { const e = $('#' + id); if (e) stand.schalter[id] = e.checked; }
+    for (const id of MERK_FELDER) { const e = $('#' + id); if (e) stand.felder[id] = e.value; }
+    const sm = $('#schrittMit'); if (sm) stand.schalter.schrittMit = sm.checked;
+    const sz = $('#spielziel'); if (sz) stand.felder.spielziel = sz.value;
+    if (dorf && dorf.pfad) stand.dorf = dorf.pfad;
+    localStorage.setItem(MERK_SCHLUESSEL, JSON.stringify(stand));
+  } catch { /* privates Fenster, voller Speicher - dann eben nicht */ }
+}
+
+function holeStand() {
+  try { return JSON.parse(localStorage.getItem(MERK_SCHLUESSEL) || 'null'); } catch { return null; }
+}
+
+// Alles außer Zoom und Dorf - die brauchen ein geladenes Dorf und eine Bühne
+function stelleBedienungHer(stand) {
+  if (!stand) return;
+  for (const [id, an] of Object.entries(stand.schalter || {})) { const e = $('#' + id); if (e) e.checked = an; }
+  for (const [id, wert] of Object.entries(stand.felder || {})) { const e = $('#' + id); if (e && wert !== undefined) e.value = wert; }
+  $('#pinselWert').textContent = $('#pinsel').value;
+  if (stand.ansicht === 'schraeg') {
+    ansicht = 'schraeg';
+    $('#ansichtWechsel').textContent = 'Ansicht: Schräg';
+    $('#hinweisSchraeg').hidden = false;
+  }
+  if (stand.werkzeug) setzeWerkzeug(stand.werkzeug);
+}
+
+// Merken an jeder Bedienstelle anhängen
+for (const id of MERK_SCHALTER.concat(MERK_FELDER, ['schrittMit', 'spielziel']))
+  if ($('#' + id)) $('#' + id).addEventListener('change', merkeStand);
+$('#pinsel').addEventListener('input', merkeStand);
+$('#suche').addEventListener('input', merkeStand);
+window.addEventListener('beforeunload', merkeStand);
+
+// ---------- Start ----------
+const gemerkt = holeStand();
+stelleBedienungHer(gemerkt);
 ladeBilder();                       // laeuft nebenher, jedes Bild zeichnet sich beim Eintreffen selbst
 ladeGebaeude().then(ladeListe).then(() => {
+  merkenAn = true;
   const wunsch = suchparam.get('dorf');
-  if (!wunsch) return;
-  const d = doerfer.find(x => x.name.toLowerCase() === wunsch.toLowerCase());
-  if (d) return ladeDorf(d.pfad, d.name);
-  $('#status').textContent = `Dorf „${wunsch}" nicht gefunden`;
+  if (wunsch) {
+    const d = doerfer.find(x => x.name.toLowerCase() === wunsch.toLowerCase());
+    if (d) return ladeDorf(d.pfad, d.name);
+    $('#status').textContent = `Dorf „${wunsch}" nicht gefunden`;
+    return;
+  }
+  // Kein Dorf in der Adresse: das zuletzt geöffnete wieder aufmachen
+  if (gemerkt && gemerkt.dorf) {
+    const d = doerfer.find(x => x.pfad === gemerkt.dorf);
+    if (d) return ladeDorf(d.pfad, d.name).then(() => {
+      if (gemerkt.zoom) { zoom = gemerkt.zoom; offX = gemerkt.offX; offY = gemerkt.offY; malen_(); }
+    });
+  }
 });

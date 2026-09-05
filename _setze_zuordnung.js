@@ -32,6 +32,10 @@ const Z = {
   15: [1, 196, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
   16: [1, 197, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
   17: [1, 198, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
+  20: [1, 257, 'vermutet', 'Tuerkise Wasserkachel aus tile_sea8. Von Daniel am 05.09.2026 berichtigt: sein erstes Bild zeigte die BAUVORSCHAU (der Graben, den man setzen will), nicht den fertigen Graben - der ist eine ausgehobene Mulde voll Wasser. In den zehn Gebaeude-Dateien gibt es kein einziges blaugruenes 1x1-Bild, das Wasser liegt in tile_sea8. NICHT bestaetigt: Daniel warnt, dass See- und Flusstexturen etwas anderes sind. Gemessen wurde, dass es im ganzen gm-Ordner nur zwei Dateien mit tuerkisen Kacheln gibt - tile_sea8 (ruhige Flaeche) und tile_sea_new_01 (dunkel mit Schaumkronen, offene See). Vergleichsbild: Tools\VillageStudio-bogen\Wasser_Vergleich.png', [257, 258, 259, 260]],
+  21: [1, 258, 'sicher', 'siehe Nr. 20', [257, 258, 259, 260]],
+  22: [1, 259, 'sicher', 'siehe Nr. 20', [257, 258, 259, 260]],
+  23: [1, 260, 'sicher', 'siehe Nr. 20', [257, 258, 259, 260]],
   24: [1, 249, 'sicher', 'Schwarze Pechflaeche mit Schilf, aus pitch_ditches. Acht Fassungen (249-256).', [249, 250, 251, 252, 253, 254, 255, 256]],
   37: [1, 233, 'sicher', 'Grube mit Sandrand und Holzpfaehlen, aus killing_pits. 16 Fassungen: 233-240 offen, 241-248 mit Deckung.', [233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248]],
 
@@ -116,7 +120,6 @@ const OFFEN = {
   '71 Apfelplantage, 72 Milchviehhof': 'Kein einziges 10x10-Bild in den 20 Gebaeude-Dateien. Das Hofgebaeude muss anderswo liegen.',
   '73 Getreidefarm, 75 Hopfenfarm': 'Von den drei 9x9-Bildern sind zwei ein europaeischer Bergfried aus Stronghold 1 samt Fundament, das dritte die Kirche. Kein Farmgebaeude.',
   '96 Teich': 'Kein Wasserbild in 3x3. Die einzigen Teiche liegen in 5x5 (Grosser Teich) und in 6x6, wo die Tabelle gar keinen Teich kennt.',
-  '20-23 Wassergraben': 'KEIN Bild. Gemessen am 05.09.2026: kein einziges 1x1-Bild der zehn Gebaeude-Dateien hat nennenswert blaugruene Punkte (Schwelle 10 Prozent, einziger Treffer ueberhaupt ist der 6x6-Teich). Auf Daniels Spielbild ist der Graben eine ausgehobene Mulde voll tuerkisem Wasser - das malt das Spiel als Gelaende, nicht als Gebaeudebild. Meine vorherige Zuordnung auf die braunen Erdkacheln war falsch und ist entfernt.',
   '14-17 Treppen': 'Von Daniel widerlegt. Auf seinem Spielbild sind es steinerne Stufen, die an der Mauer hochlaufen - die gestuften Steinplatten aus tile_flatties sind es nicht. Wo sie liegen, ist offen; naechster Ort zum Nachsehen ist anim_castle, wo auch die Mauer-Seitenflaechen liegen.',
   '18, 19 Treppe 5 und 6': 'Es gibt nur vier gestufte Steinplatten (195-198) fuer sechs Treppen-Nummern.',
   '25 unbenutzt': 'Laut Tabelle unbenutzt - kein Bild noetig.',
