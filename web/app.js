@@ -67,6 +67,25 @@ async function ladeBilder() {
 }
 function bildFuer(id) { const b = BILDER[String(id)]; return b && b.fertig ? b : null; }
 
+// Häuser, Gärten und Teiche liegen im Spiel in mehreren Fassungen vor, und
+// beim Bauen wird eine ausgewürfelt. Damit ein Dorf so bunt aussieht wie im
+// Spiel, bekommt hier jedes Feld eine eigene Fassung - aber IMMER dieselbe,
+// aus seiner Lage gerechnet. Ein echter Zufall würde bei jedem Neuzeichnen
+// springen.
+function fassungFuer(id, x, y) {
+  const b = BILDER[String(id)];
+  if (!b || !b.fertig) return null;
+  if (!b.varianten || b.varianten.length < 2) return b;
+  const h = ((x * 73856093) ^ (y * 19349663) ^ (id * 83492791)) >>> 0;
+  const v = b.varianten[h % b.varianten.length];
+  if (!v.img) {                              // erst beim ersten Gebrauch holen
+    v.img = new Image();
+    v.img.onload = () => { v.fertig = true; if (ansicht === 'schraeg') malen_(); };
+    v.img.src = '/bild/' + v.bild.replace('#', '/') + '.png';
+  }
+  return v.fertig ? v : b;
+}
+
 // Die Zugbrücke (44) liegt in vier Ausrichtungen vor, in der AIV steht keine.
 // Welche gilt, sagt die Lage zum Torhaus daneben — Daniels Regel vom
 // 05.09.2026, auf dem Schirm liegt Norden oben rechts:
@@ -374,7 +393,7 @@ function maleSchraeg() {
       const i = y * N + x, id = dorf.bauten[i], n = dorf.gruppen[i];
       if (!id || n < 2 || dorf.mauern[i] !== 1) continue;      // nur die Ecke oben links eines Bauwerks
       const flach = flachGezeichnet(id, stil);
-      const b = flach ? null : (mitBildern ? (id === 44 ? bildFuerBruecke(x, y, n) : bildFuer(id)) : null);
+      const b = flach ? null : (mitBildern ? (id === 44 ? bildFuerBruecke(x, y, n) : fassungFuer(id, x, y)) : null);
       if (!flach && (!b || b.kacheln !== n)) continue;
       (flach ? flache : bilder).push({ x, y, n, b, id, i, tiefe: x + y + 2 * (n - 1) });
       // Bodenplatten daneben - sie liegen flach und gehören vor das Gebäude
@@ -397,7 +416,7 @@ function maleSchraeg() {
     // dort schon seine Platte, und der Rest hat noch keine Textur.
     if ((id === 1 || id === 2) && (stil === 'bilder' || stil === 'flach')) continue;
     if (flachGezeichnet(id, stil)) { flache.push({ x, y, n: 1, id, i, tiefe: x + y }); continue; }
-    const b = mitBildern ? bildFuer(id) : null;
+    const b = mitBildern ? fassungFuer(id, x, y) : null;
     const kante = dorf.gruppen ? dorf.gruppen[i] : 0;
     if (b && b.kacheln === 1 && kante <= 1) bilder.push({ x, y, n: 1, b, id, i, tiefe: x + y });
     else bloecke.push({ x, y, id, i, tiefe: x + y });
