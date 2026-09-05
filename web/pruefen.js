@@ -47,7 +47,7 @@ function kachelnVon(bild) {
 function karteHtml(e) {
   const u = urteile[e.id] || {};
   const bild = u.bild || e.bild;
-  const klasse = u.bild ? 'gesetzt' : (e.stand === 'sicher' ? 'sicher' : 'vermutet');
+  const klasse = u.bild ? 'gesetzt' : (e.stand === 'sicher' ? 'sicher' : (bild ? 'vermutet' : 'leer'));
   const an = w => u.urteil === w ? ' an' : '';
   const nBild = kachelnVon(bild);
   const warnung = nBild && nBild !== e.kacheln
@@ -55,10 +55,11 @@ function karteHtml(e) {
   const shots = (u.bilder || []).map(n =>
     `<a class="shot" href="/pruefbild/${n}" target="_blank" title="${n}"><img src="/pruefbild/${n}" loading="lazy" alt="Screenshot"></a>`).join('');
   return `<div class="karte ${klasse}" data-id="${e.id}" data-n="${e.kacheln}" tabindex="0">
-  <div class="bild"><img src="${bildUrl(bild)}" alt="Nr ${e.id}" loading="lazy"></div>
+  <div class="bild">${bild ? `<img src="${bildUrl(bild)}" alt="Nr ${e.id}" loading="lazy">`
+    : '<span class="leerbild">kein Bild<br>Kachel herziehen</span>'}</div>
   <div class="rechts">
     <div class="kopf"><span class="nr">${e.id}</span> <b>${e.name}</b></div>
-    <div class="meta">${e.kacheln}×${e.kacheln} Kacheln · ${bild}${e.gruppe > 1 ? ` · ${e.gruppe} Fassungen` : ''}</div>
+    <div class="meta">${e.kacheln}×${e.kacheln} Kacheln · ${bild || 'noch nichts zugeordnet'}${e.gruppe > 1 ? ` · ${e.gruppe} Fassungen` : ''}</div>
     <p class="beleg">${e.beleg || ''}</p>
     ${u.bild && u.bild !== e.bild ? `<div class="getauscht">von dir umgehängt — vorher ${e.bild}</div>` : ''}
     ${warnung}
@@ -134,8 +135,11 @@ function zeigeSammlung(id) {
     liste = (stand.pool[e.kacheln] || []).map(p => Object.assign({ n: e.kacheln }, p));
   }
 
+  const such = ($('#sammlungSuche').value || '').trim().toLowerCase();
+  if (such) liste = liste.filter(p => p.bild.toLowerCase().includes(such));
   $('#sammlungInfo').textContent = `Nr ${e.id} ${e.name} · ${liste.length} Bilder`
-    + (alleGroessen ? ' (alle Größen)' : ` mit ${e.kacheln}×${e.kacheln}`);
+    + (alleGroessen ? ' (alle Größen)' : ` mit ${e.kacheln}×${e.kacheln}`)
+    + (such ? ` · gefiltert nach „${such}"` : '');
   $('#alleGroessen').classList.toggle('an', alleGroessen);
   $('#sammlungRaster').innerHTML = liste.map(p => `
     <div class="kachel${p.bild === jetzt ? ' aktuell' : ''}" draggable="true" data-bild="${p.bild}">
@@ -222,6 +226,7 @@ $('#sammlungAuf').onclick = () => {
 };
 $('#sammlungZu').onclick = () => $('#sammlung').classList.add('zu');
 $('#alleGroessen').onclick = () => { alleGroessen = !alleGroessen; if (offen) zeigeSammlung(offen.id); };
+$('#sammlungSuche').addEventListener('input', () => { if (offen) zeigeSammlung(offen.id); });
 $('#alsText').onclick = () => {
   const zeilen = stand.eintraege.map(e => {
     const u = urteile[e.id] || {};

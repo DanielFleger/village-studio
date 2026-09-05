@@ -6,21 +6,17 @@
    "name": "Kartenrand",
    "kurz": "Rand",
    "gruppe": "sonstiges",
-   "farbe": "#3b4232",
    "b": 0,
    "h": 0,
-   "hinweis": "kein Gebaeude: Ring um die ganze 100x100-Karte, 396 Felder je Dorf",
-   "flach": true
+   "hinweis": "kein Gebaeude: Ring um die ganze 100x100-Karte, 396 Felder je Dorf"
   },
   "2": {
    "name": "Bauflaeche",
    "kurz": "Flaeche",
    "gruppe": "sonstiges",
-   "farbe": "#ab9770",
    "b": 0,
    "h": 0,
-   "hinweis": "kein Gebaeude, sondern der freigeraeumte Platz: die Vorplaetze und Hoefe, die im Spiel zu den Gebaeuden gehoeren (Pennerhof am Bergfried, Trainingslager an Kaserne und Soeldnerposten, Versammlungsplatz an den Gilden). Steht Feld fuer Feld in der AIV, nicht als Block - darum flach gezeichnet und in Sandfarbe, nicht als Kloetzchen.",
-   "flach": true
+   "hinweis": "kein Gebaeude, sondern der freigeraeumte Platz um die Bauten: Pennerhof am Bergfried, Trainingslager an Kaserne und Soeldnerposten, Versammlungsplatz an den Gilden. Steht Feld fuer Feld in der AIV. Die Bodentextur dafuer ist noch nicht zugeordnet."
   },
   "10": {
    "name": "Steinmauer",
@@ -120,9 +116,7 @@
    "h": 1,
    "mapper": 106,
    "mapperName": "M_MAPPER_MOAT",
-   "farbe": "#2f9c90",
-   "flach": true,
-   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "21": {
    "name": "Wassergraben b",
@@ -132,9 +126,7 @@
    "h": 1,
    "mapper": 106,
    "mapperName": "M_MAPPER_MOAT",
-   "farbe": "#2f9c90",
-   "flach": true,
-   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "22": {
    "name": "Wassergraben c",
@@ -144,9 +136,7 @@
    "h": 1,
    "mapper": 106,
    "mapperName": "M_MAPPER_MOAT",
-   "farbe": "#2f9c90",
-   "flach": true,
-   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "23": {
    "name": "Wassergraben d",
@@ -156,9 +146,7 @@
    "h": 1,
    "mapper": 106,
    "mapperName": "M_MAPPER_MOAT",
-   "farbe": "#2f9c90",
-   "flach": true,
-   "hinweis": "Das Grabenwasser gibt es in keiner .gm1 als Kachel - im ganzen gm-Ordner kommt kein Bild mit dieser gesaettigten Tuerkisfarbe vor (53 Blaugruen-Toene durchgezaehlt, alle grauer oder dunkler). Das Spiel malt die Wasserflaeche selbst. Darum hier eine feste Farbe statt eines Bildes."
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "24": {
    "name": "Pechgraben",

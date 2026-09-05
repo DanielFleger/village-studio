@@ -90,3 +90,9 @@ textarea{width:100%;background:#12140f;color:var(--schrift);border:1px solid var
 .shot img{height:64px;border-radius:4px;border:1px solid var(--linie);display:block}
 .shot:hover img{border-color:var(--gelb)}
 #alleGroessen.an{background:var(--gelb);color:#15180f;border-color:var(--gelb);font-weight:600}
+
+.karte.leer{border-left-color:#6b7361}
+.karte.leer .nr{color:#9aa48c}
+.leerbild{color:var(--leise);font-size:12px;text-align:center;line-height:1.4}
+#sammlungSuche{background:#1b1f16;color:var(--schrift);border:1px solid var(--linie);
+  border-radius:5px;padding:5px 8px;font:inherit;font-size:12px;width:150px}
