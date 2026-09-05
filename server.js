@@ -35,6 +35,10 @@ const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
 };
 
 function listeDoerfer() {
@@ -194,6 +198,54 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
     return res.end(png);
   }
+
+  // Jedes einzelne Gebaeudebild, angesprochen wie in der Zuordnung: /bild/tile_castle/713.png
+  const mRoh = u.pathname.match(/^\/bild\/([a-z0-9_]+)\/(\d+)\.png$/i);
+  if (mRoh) {
+    let png = null;
+    try { png = webbilder.pngVon(mRoh[1] + '#' + mRoh[2]); } catch (e) { res.writeHead(500); return res.end(e.message); }
+    if (!png) { res.writeHead(404); return res.end('kein Bild ' + mRoh[1] + '#' + mRoh[2]); }
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'max-age=86400' });
+    return res.end(png);
+  }
+
+  // Die Pruefseite: Zuordnung, ganzer Bildervorrat, bisherige Urteile
+  if (u.pathname === '/api/pruefstand') {
+    try { return sendeJson(res, 200, webbilder.pruefstand()); }
+    catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+  // Urteil speichern. Zwei Formen: { id, eintrag } aendert genau einen Eintrag
+  // (so koennen zwei offene Seiten sich nicht ueberschreiben), { urteile }
+  // ersetzt alles - das kann noch eine alte, nicht neu geladene Seite schicken.
+  if (u.pathname === '/api/urteil' && req.method === 'POST') {
+    let k;
+    try { k = await leseKoerper(req); } catch { return sendeJson(res, 400, { fehler: 'ungueltige Anfrage' }); }
+    try {
+      if (k.id !== undefined) return sendeJson(res, 200, webbilder.speichereUrteil(String(k.id), k.eintrag));
+      return sendeJson(res, 200, webbilder.speichereUrteile(k.urteile || {}));
+    } catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+
+  // Screenshot aus dem Spiel an eine Bau-Nummer heften
+  if (u.pathname === '/api/pruefbild' && req.method === 'POST') {
+    let k;
+    try { k = await leseKoerper(req); } catch { return sendeJson(res, 400, { fehler: 'ungueltige Anfrage' }); }
+    try {
+      const m = String(k.daten || '').match(/^data:image\/([a-z]+);base64,(.+)$/i);
+      if (!m) return sendeJson(res, 400, { fehler: 'kein Bild erkannt' });
+      const endung = m[1].toLowerCase() === 'jpeg' ? 'jpg' : m[1].toLowerCase();
+      const name = webbilder.speicherePruefbild(String(k.id), endung, Buffer.from(m[2], 'base64'));
+      return sendeJson(res, 200, { name });
+    } catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+  const mPruef = u.pathname.match(/^\/pruefbild\/([A-Za-z0-9_.]+)$/);
+  if (mPruef) {
+    const buf = webbilder.lesePruefbild(mPruef[1]);
+    if (!buf) { res.writeHead(404); return res.end('kein Bild'); }
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(mPruef[1])] || 'image/png' });
+    return res.end(buf);
+  }
+  if (u.pathname === '/pruefen') { res.writeHead(302, { Location: '/pruefen.html' }); return res.end(); }
 
   if (u.pathname === '/api/dorf') {
     const p = u.searchParams.get('pfad');

@@ -136,6 +136,10 @@ function main() {
   const sicher = {}, vermutet = {};
   const fehler = [];
 
+  const umgekehrt = new Map();
+  for (const [n, liste] of Object.entries(vorrat))
+    for (const p of liste) umgekehrt.set(p.datei + '#' + p.nr, { n: +n, pos: p.pos });
+
   const schluessel = (n, pos) => {
     const pool = vorrat[n];
     const p = pool && pool.find(x => x.pos === pos);
@@ -162,11 +166,47 @@ function main() {
     (stand === 'sicher' ? sicher : vermutet)[id] = e;
   }
 
+  // Daniels Urteile aus der Pruefseite darueberlegen. Sie sind die staerkste
+  // Quelle, die es gibt - er kennt die Gebaeude aus dem Spiel. Abgetippt wird
+  // nichts: die Seite schreibt lib/zuordnung_urteil.json, das hier gelesen wird.
+  let urteile = {};
+  try { urteile = JSON.parse(fs.readFileSync(path.join(__dirname, 'lib', 'zuordnung_urteil.json'), 'utf8')).urteile || {}; } catch { }
+  let bestaetigt = 0, unvollstaendig = 0, verworfen = 0;
+  for (const [id, u] of Object.entries(urteile)) {
+    const e = sicher[id] || vermutet[id];
+    if (!e) continue;
+    if (u.bild && u.bild !== e.bild) {
+      const t = umgekehrt.get(u.bild);
+      e.bild = u.bild;
+      if (t) { e.pos = t.pos; e.kacheln = t.n; }
+      e.beleg = 'Von Daniel selbst gewaehlt (05.09.2026). Vorher: ' + e.beleg;
+    }
+    if (u.notiz) e.notiz_daniel = u.notiz;
+    delete sicher[id]; delete vermutet[id];
+    if (u.urteil === 'passt') {
+      e.beleg = 'Von Daniel am Bild bestaetigt (05.09.2026). ' + e.beleg;
+      sicher[id] = e; bestaetigt++;
+    } else if (u.urteil === 'unvollstaendig') {
+      e.fehlt = u.notiz || 'Daniel: Grafik nicht vollstaendig - es fehlt ein Teil, den das Spiel getrennt zeichnet.';
+      e.beleg = 'Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). ' + e.beleg;
+      sicher[id] = e; unvollstaendig++;
+    } else if (u.urteil === 'unsichtbar') {
+      e.zweifel = 'Daniel erkennt dieses Bild NICHT als "' + e.name + '"'
+        + (u.notiz ? ' - ' + u.notiz : '') + '. Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden.';
+      vermutet[id] = e; verworfen++;
+    } else {
+      vermutet[id] = e;
+    }
+  }
+  console.log('Daniels Durchgang: ' + bestaetigt + ' bestaetigt, ' + unvollstaendig
+    + ' richtig aber unvollstaendig, ' + verworfen + ' widerlegt');
+
   const neu = {
     _zweck: alt._zweck,
     _stand: '2026-09-05',
     _erklaerung: 'sicher = am Bild ein eindeutiges Merkmal erkannt, im Beleg genannt. vermutet = plausibel oder durch Ausschluss; genau diese Zeilen sind zu pruefen. pos = Nummer im Einzelbild-Ordner und im Bogen der jeweiligen Grundflaeche. gruppe = alle Bilder desselben Gebaeudes (Ausrichtungen, Dachzustaende, Fuellstufen).',
-    _quelle: 'Sichtung der Boegen und Einzelbilder am 05.09.2026, dazu Daniels Durchgang durch den 4x4-Bogen (siehe von_daniel_4x4).',
+    _quelle: 'Sichtung der Boegen und Einzelbilder am 05.09.2026, dann Daniels vollstaendiger Durchgang durch alle 74 Nummern in der Pruefseite (lib/zuordnung_urteil.json).',
+    _marken: 'sicher = von Daniel am Bild bestaetigt, oder von mir an einem eindeutigen Merkmal erkannt. Ein Eintrag mit "fehlt" zeigt das richtige Gebaeude, aber ohne einen Teil, den das Spiel getrennt zeichnet (Aussenbereich, Bewegtbild). Ein Eintrag mit "zweifel" ist von Daniel widerlegt.',
     sicher,
     vermutet,
     _offen: OFFEN,
