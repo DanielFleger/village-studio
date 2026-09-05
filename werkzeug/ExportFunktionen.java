@@ -8,7 +8,7 @@ public class ExportFunktionen extends GhidraScript {
     @Override
     public void run() throws Exception {
         String ziel = System.getenv("SHC_EXPORT");
-        if (ziel == null) ziel = "C:/Users/danie/funktionen.csv";
+        if (ziel == null) ziel = "%USERPROFILE%/funktionen.csv";
         PrintWriter w = new PrintWriter(ziel, "UTF-8");
         w.println("adresse;name;signatur");
         int n = 0;

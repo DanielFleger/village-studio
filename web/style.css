@@ -151,3 +151,18 @@ select.breit {
    Der Weichzeichner sitzt auf dem Namen, nicht auf der Zeile - so bleibt die
    Liste als Liste erkennbar. */
 .liste.anonym li span { filter: blur(5px); user-select: none; }
+
+/* Auswahl und Suche bleiben beim Scrollen der Dörfer erreichbar. */
+aside.links { display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+.ordnerkopf { flex:none; }
+.ordnerkopf > button { margin-bottom:6px; }
+.ordnerkopf h2 { margin:14px 0 8px; font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--gold-schwach); }
+#dorfAnzahl { color:var(--schwach); }
+#ordnerDetails { font-size:11.5px; color:var(--schwach); }
+#ordnerDetails summary { cursor:pointer; }
+#ordnerDetails[open] { max-height:220px; overflow-y:auto; }
+#ordnerPfad { width:100%; margin:8px 0; padding:6px 9px; background:var(--bg3); color:var(--text); border:1px solid var(--linie); border-radius:5px; }
+.dorfscroll { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; }
+#liste li { display:block; }
+#liste li > span { display:block; overflow-wrap:anywhere; }
+#liste li small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

@@ -261,6 +261,7 @@ async function ordnerSenden(pfad, entfernen) {
   zeichneListe();
   zeigeSuchorte([]);
   $('#ordnerPfad').value = '';
+  if (!entfernen) { $('#suche').value = ''; zeichneListe(); merkeStand(); }
   $('#status').textContent = `${doerfer.length} Dörfer gefunden`;
 }
 
@@ -280,22 +281,21 @@ function zeigeSuchorte(orte) {
   const zeilen = orte.map(o =>
     `<div style="margin:4px 0"><span style="color:${o.da ? '#8fbf6a' : '#c06a6a'}">${o.da ? '✓' : '✗'}</span> ${o.pfad}</div>`).join('');
   box.innerHTML = '<b>Keine .aiv gefunden.</b> Gesucht wurde in:' + zeilen +
-    '<div style="margin-top:6px">Lege deine Dateien in einen der Ordner mit ✓, oder trage eigene Ordner in der <code>config.json</code> unter <code>"doerfer"</code> ein.</div>';
+    '<div style="margin-top:6px">Wähle oben mit „AIV Ordner auswählen“ deinen Stronghold-Ordner oder einen anderen Ordner mit AIV-Dateien.</div>';
 }
 
 function zeichneListe() {
+  $('#dorfAnzahl').textContent = `(${doerfer.length})`;
   const f = $('#suche').value.trim().toLowerCase();
   const ul = $('#liste');
   ul.innerHTML = '';
   for (const d of doerfer) {
-    if (f && !d.name.toLowerCase().includes(f)) continue;
+    if (f && !`${d.name} ${d.herkunft || d.ordner}`.toLowerCase().includes(f)) continue;
     const li = document.createElement('li');
-    // Woher die Datei kommt: die eigenen liegen neben dem alten Editor oder
-    // im Ordner "aiv" dieses Werkzeugs, die anderen sind die 128 KI-Doerfer,
-    // die Stronghold mitbringt. Ohne Vermerk waere die Liste nicht zu lesen.
-    const ausSpiel = /steamapps|Stronghold Crusader/i.test(d.pfad) ? ' aus dem Spiel' : '';
-    li.innerHTML = `<span></span><small>${(d.groesse / 1024).toFixed(0)} KB${ausSpiel}</small>`;
+    li.innerHTML = '<span></span><small></small>';
     li.firstChild.textContent = d.name;
+    li.lastChild.textContent = (d.herkunft || d.ordner).replace(/^.*[\\/]plugins[\\/]/, '').replace(/[\\/]resources[\\/]ai[\\/]/, ' · ').replace(/[\\/]aiv$/i, '');
+    li.lastChild.title = d.pfad;
     li.title = d.pfad;
     if (dorf && dorf.pfad === d.pfad) li.className = 'aktiv';
     li.onclick = () => { if (!warnenWennUngespeichert()) return; ladeDorf(d.pfad, d.name); };
@@ -1219,7 +1219,10 @@ ladeGebaeude().then(ladeListe).then(() => {
 });
 
 // ---------- Eigene AIV-Ordner ----------
-$('#ordnerDazu').onclick = () => ordnerSenden($('#ordnerPfad').value.trim(), false);
+$('#ordnerDazu').onclick = async () => {
+  try { await ordnerSenden($('#ordnerPfad').value.trim(), false); }
+  catch { $('#status').textContent = 'Ordner konnte nicht eingelesen werden. Bitte erneut versuchen.'; }
+};
 $('#ordnerPfad').onkeydown = (ev) => { if (ev.key === 'Enter') $('#ordnerDazu').click(); };
 $('#ordnerWaehlen').onclick = async () => {
   const knopf = $('#ordnerWaehlen');
@@ -1228,8 +1231,10 @@ $('#ordnerWaehlen').onclick = async () => {
   try {
     const r = await fetch('/api/ordnerwaehlen').then(r => r.json());
     if (r.pfad) await ordnerSenden(r.pfad, false);
+  } catch {
+    $('#status').textContent = 'Ordner konnte nicht eingelesen werden. Bitte erneut versuchen.';
   } finally {
     knopf.disabled = false;
-    knopf.textContent = 'Ordner wählen …';
+    knopf.textContent = 'AIV Ordner auswählen';
   }
 };

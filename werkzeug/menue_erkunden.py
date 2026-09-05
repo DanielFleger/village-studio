@@ -29,7 +29,7 @@ import time
 SPIEL  = r"C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme"
 BEFEHL = os.path.join(SPIEL, "ucp", "villagestudio", "befehl.json")
 LOG    = os.path.join(SPIEL, "ucp3.log")
-BILDER = r"C:\Users\danie\AppData\Local\Temp\claude\C--Users-danie\904277fa-cdd6-418f-bde7-0c6d7e053a73\scratchpad"
+BILDER = r"%USERPROFILE%\AppData\Local\Temp\shc-menue"   # wohin die Bildschirmfotos gehen
 
 ANSICHT = 0x01FE7D1C      # currentMenuViewType
 TICKS   = 0x0117CADC      # Spielzeit

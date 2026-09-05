@@ -25,12 +25,12 @@ Zwei Dinge holt sich das Werkzeug von aussen:
 | `..\Village\villages`, `..\Village\aiv`, `..\Village` | neben dem alten Editor von Lord Reza |
 | `aiv\` **in diesem Ordner** | der einfachste Weg: eigene .aiv einfach hier hineinlegen |
 | `<Stronghold>\aiv` | die mitgelieferten KI-Doerfer des Spiels |
-| jeder Ordner, den man im Werkzeug unter **Eigene Ordner** hinzufuegt | alles andere - der Ordner wird samt Unterordnern durchsucht |
+| jeder Ordner, den man im Werkzeug unter **AIV Ordner auswählen** hinzufuegt | alles andere - der Ordner wird samt Unterordnern durchsucht |
 
 Der Knopf **Ordner wählen …** oeffnet den Windows-Ordnerdialog; wer lieber
 tippt, traegt den Pfad daneben ein. Beides landet in der `config.json`, der
 Ordner bleibt also auch nach einem Neustart dabei. Es reicht, den
-Stronghold-Ordner anzugeben - gesucht wird sechs Ebenen tief.
+Stronghold-Ordner anzugeben - gesucht wird in allen Unterordnern ohne feste Tiefen- oder Eintragsgrenze. Verzeichnisverknüpfungen werden nicht verfolgt.
 
 **Die Spielgrafiken.** Fuer die schraege Ansicht liest das Werkzeug die
 `.gm1`-Dateien der Installation — nur lesend, es wird nichts veraendert.

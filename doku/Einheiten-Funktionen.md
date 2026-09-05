@@ -83,7 +83,7 @@ grep -i "unit" lib/funktionen.csv | grep -i "set"
 Neu erzeugen lässt er sich mit `werkzeug/ExportFunktionen.java`:
 
 ```bash
-SHC_EXPORT=/pfad/funktionen.csv "C:/Users/danie/ghidra/ghidra_12.1.2_PUBLIC/support/analyzeHeadless.bat" "C:/Users/danie/ghidra-projects" OpenSHC-ref -process -noanalysis -readOnly -scriptPath /pfad -postScript ExportFunktionen.java
+SHC_EXPORT=/pfad/funktionen.csv "%USERPROFILE%/ghidra/ghidra_12.1.2_PUBLIC/support/analyzeHeadless.bat" "%USERPROFILE%/ghidra-projects" OpenSHC-ref -process -noanalysis -readOnly -scriptPath /pfad -postScript ExportFunktionen.java
 ```
 
 `-readOnly` ist Absicht: das Ghidra-Projekt wird dabei nicht verändert.

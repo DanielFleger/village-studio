@@ -210,13 +210,13 @@ Optional in der Bedingung: `"alle": 25` — nur jeden 25. Takt prüfen. Pflicht 
 ## Dateien
 
 ```bash
-explorer /select,"C:\Users\danie\Documents\PC_Affe\Games\Stronghold_Crusader\Stronghold Crusader Modding\Tools\VillageStudio\ucp\logik.lua"
+explorer /select,"%USERPROFILE%\Documents\PC_Affe\Games\Stronghold_Crusader\Stronghold Crusader Modding\Tools\VillageStudio\ucp\logik.lua"
 ```
 ```bash
-explorer /select,"C:\Users\danie\Documents\PC_Affe\Games\Stronghold_Crusader\Stronghold Crusader Modding\Tools\VillageStudio\doku\Wissensstand.md"
+explorer /select,"%USERPROFILE%\Documents\PC_Affe\Games\Stronghold_Crusader\Stronghold Crusader Modding\Tools\VillageStudio\doku\Wissensstand.md"
 ```
 ```bash
-explorer /select,"C:\Users\danie\Documents\PC_Affe\Games\Stronghold_Crusader\Stronghold Crusader Modding\Tools\VillageStudio\doku\Betriebsregeln.md"
+explorer /select,"%USERPROFILE%\Documents\PC_Affe\Games\Stronghold_Crusader\Stronghold Crusader Modding\Tools\VillageStudio\doku\Betriebsregeln.md"
 ```
 
 Weiter: `…\VillageStudio\lib\strukturen.txt` (PlayerData ab Zeile 4510, MapAndTimeState 4918, AICState 4047, Tribe 6587), `…\lib\funktionen.csv`, `…\werkzeug\` (befehl.py, gefecht.py, test.py, sperre.py, starte_spiel.py).

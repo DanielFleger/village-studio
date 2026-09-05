@@ -185,9 +185,9 @@ Ein Skript nach `~/ghidra-scripts` legen und ohne Oberfläche laufen lassen:
 
 ```
 ~/ghidra/ghidra_12.1.2_PUBLIC/support/analyzeHeadless.bat \
-  C:/Users/danie/ghidra-projects OpenSHC-ref \
+  %USERPROFILE%/ghidra-projects OpenSHC-ref \
   -process -noanalysis \
-  -scriptPath C:/Users/danie/ghidra-scripts \
+  -scriptPath %USERPROFILE%/ghidra-scripts \
   -postScript DumpAIVStruct.java
 ```
 

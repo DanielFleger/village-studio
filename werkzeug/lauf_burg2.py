@@ -95,7 +95,7 @@ print()
 # neu angelegt. Am 31.08. hat genau das einen Lauf zerstoert.
 SPERRE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sperre.py")
 if not os.path.exists(SPERRE):
-    SPERRE = (r"C:/Users/danie/Documents/PC_Affe/Games/Stronghold_Crusader/"
+    SPERRE = (r"%USERPROFILE%/Documents/PC_Affe/Games/Stronghold_Crusader/"
               r"Stronghold Crusader Modding/Tools/VillageStudio/werkzeug/sperre.py")
 NAME = "villagestudio"
 
