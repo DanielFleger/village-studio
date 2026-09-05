@@ -277,7 +277,7 @@
    "laufzeitName": "BT_MERCENARYPOST"
   },
   "40": {
-   "name": "Kleines Torhaus (O-W)",
+   "name": "Kleines Torhaus (Durchfahrt N-S)",
    "kurz": "Tor klein",
    "gruppe": "burg",
    "b": 5,
@@ -288,7 +288,7 @@
    "laufzeitName": "BT_GATEHOUSESMALL"
   },
   "41": {
-   "name": "Kleines Torhaus (N-S)",
+   "name": "Kleines Torhaus (Durchfahrt O-W)",
    "kurz": "Tor klein",
    "gruppe": "burg",
    "b": 5,
@@ -299,7 +299,7 @@
    "laufzeitName": "BT_GATEHOUSESMALL"
   },
   "42": {
-   "name": "Grosses Torhaus (O-W)",
+   "name": "Grosses Torhaus (Durchfahrt N-S)",
    "kurz": "Tor gross",
    "gruppe": "burg",
    "b": 7,
@@ -310,7 +310,7 @@
    "laufzeitName": "BT_GATEHOUSELARGE"
   },
   "43": {
-   "name": "Grosses Torhaus (N-S)",
+   "name": "Grosses Torhaus (Durchfahrt O-W)",
    "kurz": "Tor gross",
    "gruppe": "burg",
    "b": 7,

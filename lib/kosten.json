@@ -336,7 +336,7 @@
    "gold": 1000
   },
   "45": {
-   "name": "Grosses Torhaus (N-S)",
+   "name": "Grosses Torhaus (Durchfahrt O-W)",
    "aiv": 43,
    "holz": 0,
    "stein": 20,
@@ -345,7 +345,7 @@
    "gold": 0
   },
   "46": {
-   "name": "Kleines Torhaus (N-S)",
+   "name": "Kleines Torhaus (Durchfahrt O-W)",
    "aiv": 41,
    "holz": 0,
    "stein": 10,

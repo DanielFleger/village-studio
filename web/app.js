@@ -63,11 +63,14 @@ async function ladeBilder() {
     img.onload = () => { e.fertig = true; if (ansicht === 'schraeg') malen_(); };
     img.src = '/bilder/' + id + '.png';       // auch '44x' und '44y', die Ausrichtungen der Zugbruecke
     BILDER[id] = Object.assign(e, { img });
-    // Fertiges Bild aus Schlossgespensts AI-Toolkit, benannt nach der
-    // Mapper-Nummer. Wird geladen, sobald der Schalter es verlangt.
+    // Kachel aus Schlossgespensts AI-Toolkit, benannt nach der Mapper-Nummer.
+    // GEMESSEN am 05.09.2026: das sind KEINE Spielgrafiken, sondern
+    // beschriftete Farbquadrate in Draufsicht - deckend, quadratisch,
+    // Kantenlaenge n*64. Sie gehoeren darum in die Rasteransicht und nicht
+    // in die schraege.
     if (e.skin) {
       const s2 = new Image();
-      s2.onload = () => { e.skinFertig = true; if (ansicht === 'schraeg') malen_(); };
+      s2.onload = () => { e.skinFertig = true; if (ansicht === 'raster') malen_(); };
       s2.src = '/skin/' + e.skin + '.png';
       e.skinImg = s2;
     }
@@ -76,13 +79,14 @@ async function ladeBilder() {
 function bildFuer(id) {
   const b = BILDER[String(id)];
   if (!b) return null;
-  // Der Schalter entscheidet, ob das fertige Toolkit-Bild oder das selbst aus
-  // den .gm1 zusammengesetzte gilt. Beide liegen bereit.
-  const sk = $('#ebSkins');
-  if (sk && sk.checked && b.skinFertig)
-    return { img: b.skinImg, breite: b.skinImg.naturalWidth, hoehe: b.skinImg.naturalHeight,
-             kacheln: b.kacheln, bild: 'Toolkit ' + b.skin + '.png' };
   return b.fertig ? b : null;
+}
+
+// Die Toolkit-Kachel eines Baus, fuer die Rasteransicht. Null, solange sie
+// nicht geladen ist oder es zu dieser Nummer keine gibt.
+function toolkitKachel(id) {
+  const b = BILDER[String(id)];
+  return b && b.skinFertig ? b.skinImg : null;
 }
 
 // Häuser, Gärten und Teiche liegen im Spiel in mehreren Fassungen vor, und
@@ -572,6 +576,34 @@ function einpassen() {
   malen_();
 }
 
+// Die Kacheln aus Schlossgespensts AI-Toolkit ueber die Rasteransicht legen.
+// Jede Kachel ist ein deckendes Quadrat mit dem englischen Namen darauf und
+// deckt die ganze Grundflaeche ihres Baus ab - also n mal n Felder, verankert
+// an der Ecke oben links (Lage im Bauwerk = 1).
+function maleToolkit(x0, y0, z) {
+  if (!dorf || !dorf.bauten) return;
+  const belegt = new Uint8Array(N * N);
+  const glatt = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = true;
+  if (dorf.gruppen && dorf.mauern) {
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const i = y * N + x, id = dorf.bauten[i], n = dorf.gruppen[i];
+      if (!id || n < 2 || dorf.mauern[i] !== 1) continue;
+      const k = toolkitKachel(id);
+      for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++)
+        if (x + dx < N && y + dy < N) belegt[(y + dy) * N + x + dx] = 1;
+      if (k) ctx.drawImage(k, x0 + x * z, y0 + y * z, n * z, n * z);
+    }
+  }
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const i = y * N + x;
+    if (belegt[i] || !dorf.bauten[i]) continue;
+    const k = toolkitKachel(dorf.bauten[i]);
+    if (k) ctx.drawImage(k, x0 + x * z, y0 + y * z, z, z);
+  }
+  ctx.imageSmoothingEnabled = glatt;
+}
+
 function malen_() {
   const r = cv.parentElement.getBoundingClientRect();
   ctx.clearRect(0, 0, r.width, r.height);
@@ -626,6 +658,8 @@ function malen_() {
       }
     }
   }
+
+  if (an('#ebSkins')) maleToolkit(x0, y0, z);
 
   if (an('#ebRaster') && z >= 5) {
     ctx.lineWidth = 1;

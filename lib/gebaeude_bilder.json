@@ -30,6 +30,19 @@
     "tile_buildings1#315"
    ]
   },
+  "12": {
+   "bild": "tile_buildings1#2",
+   "name": "Zinnenmauer hoch",
+   "kacheln": 1,
+   "pos": 3,
+   "beleg": "Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). Die zweite, fast gleiche Fassung der hohen Mauer - siehe Nr. 10.",
+   "gruppe": [
+    "tile_buildings1#0",
+    "tile_buildings1#2"
+   ],
+   "notiz_daniel": "Das ist normalerweise die Steinmauer aber mit noch etwas oben drauf- Die flache version davon ist einer der 4: 195-198",
+   "fehlt": "Das ist normalerweise die Steinmauer aber mit noch etwas oben drauf- Die flache version davon ist einer der 4: 195-198"
+  },
   "13": {
    "bild": "tile_buildings1#1",
    "name": "Zinnenmauer niedrig",
@@ -39,8 +52,52 @@
    "gruppe": [
     "tile_buildings1#1"
    ],
-   "notiz_daniel": "gleiches hier auch",
-   "fehlt": "gleiches hier auch"
+   "notiz_daniel": "gleiches hier auch, Die flache version davon ist einer der 4: 195-198",
+   "fehlt": "gleiches hier auch, Die flache version davon ist einer der 4: 195-198"
+  },
+  "15": {
+   "bild": "tile_buildings1#1",
+   "name": "Treppe 2",
+   "kacheln": 1,
+   "pos": 2,
+   "beleg": "Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). Von Daniel selbst gewaehlt (05.09.2026). Vorher: siehe Nr. 14",
+   "gruppe": [
+    "tile_flatties#36",
+    "tile_flatties#37",
+    "tile_flatties#38",
+    "tile_flatties#39"
+   ],
+   "notiz_daniel": "Finde die nicht müsste aber eben höher sein als treppe 3, wichtig bei allen trefppen:  beim ziehen einer treppe bzw. anlegen werden die grafiken 390-393 draugelegt je nach perspektive, das sind die treppenstufen. Die flache version von egal welcher treppe ist 199 oder 201 je nach  ausrichtung",
+   "fehlt": "Finde die nicht müsste aber eben höher sein als treppe 3, wichtig bei allen trefppen:  beim ziehen einer treppe bzw. anlegen werden die grafiken 390-393 draugelegt je nach perspektive, das sind die treppenstufen. Die flache version von egal welcher treppe ist 199 oder 201 je nach  ausrichtung"
+  },
+  "16": {
+   "bild": "tile_land3#132",
+   "name": "Treppe 3",
+   "kacheln": 1,
+   "pos": 389,
+   "beleg": "Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). Von Daniel selbst gewaehlt (05.09.2026). Vorher: siehe Nr. 14",
+   "gruppe": [
+    "tile_flatties#36",
+    "tile_flatties#37",
+    "tile_flatties#38",
+    "tile_flatties#39"
+   ],
+   "fehlt": "Daniel: Grafik nicht vollstaendig - es fehlt ein Teil, den das Spiel getrennt zeichnet."
+  },
+  "17": {
+   "bild": "tile_land3#120",
+   "name": "Treppe 4",
+   "kacheln": 1,
+   "pos": 377,
+   "beleg": "Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). Von Daniel selbst gewaehlt (05.09.2026). Vorher: siehe Nr. 14",
+   "gruppe": [
+    "tile_flatties#36",
+    "tile_flatties#37",
+    "tile_flatties#38",
+    "tile_flatties#39"
+   ],
+   "notiz_daniel": "Varianten: 377-389",
+   "fehlt": "Varianten: 377-389"
   },
   "24": {
    "bild": "pitch_ditches#3",
@@ -186,7 +243,7 @@
   },
   "40": {
    "bild": "tile_castle#394",
-   "name": "Kleines Torhaus (O-W)",
+   "name": "Kleines Torhaus (Durchfahrt N-S)",
    "kacheln": 5,
    "pos": 30,
    "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). Kleines Torhaus mit Fallgitter. Von Daniel am 05.09.2026 im Editor korrigiert: die O-W-Fassung war um 90 Grad verdreht, die beiden Bilder sind getauscht. Dazu passt die Gegenprobe in den AIV-Dateien - das einzige dort verbaute Torhaus sitzt in einer Mauerlinie laengs x, seine Durchfahrt laeuft also laengs y.",
@@ -197,7 +254,7 @@
   },
   "41": {
    "bild": "tile_castle#369",
-   "name": "Kleines Torhaus (N-S)",
+   "name": "Kleines Torhaus (Durchfahrt O-W)",
    "kacheln": 5,
    "pos": 29,
    "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). siehe Nr. 40 - die gespiegelte Fassung.",
@@ -208,7 +265,7 @@
   },
   "42": {
    "bild": "tile_castle#468",
-   "name": "Grosses Torhaus (O-W)",
+   "name": "Grosses Torhaus (Durchfahrt N-S)",
    "kacheln": 7,
    "pos": 4,
    "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). Grosses Torhaus mit Fallgitter und Zinnen. Von Daniel am 05.09.2026 im Editor korrigiert: die O-W-Fassung war um 90 Grad verdreht, die beiden Bilder sind getauscht. Dazu passt die Gegenprobe in den AIV-Dateien - das einzige dort verbaute Torhaus (eine Nr. 42) sitzt in einer Mauerlinie laengs x, seine Durchfahrt laeuft also laengs y.",
@@ -219,7 +276,7 @@
   },
   "43": {
    "bild": "tile_castle#419",
-   "name": "Grosses Torhaus (N-S)",
+   "name": "Grosses Torhaus (Durchfahrt O-W)",
    "kacheln": 7,
    "pos": 3,
    "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). siehe Nr. 42 - dieselbe Form gespiegelt.",
@@ -867,25 +924,12 @@
   }
  },
  "vermutet": {
-  "12": {
-   "bild": "tile_buildings1#2",
-   "name": "Zinnenmauer hoch",
-   "kacheln": 1,
-   "pos": 3,
-   "beleg": "Die zweite, fast gleiche Fassung der hohen Mauer - siehe Nr. 10.",
-   "gruppe": [
-    "tile_buildings1#0",
-    "tile_buildings1#2"
-   ],
-   "notiz_daniel": "Das ist normalerweise die Steinmauer aber mit noch etwas oben drauf",
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Zinnenmauer hoch\" - Das ist normalerweise die Steinmauer aber mit noch etwas oben drauf. Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
   "14": {
-   "bild": "tile_flatties#36",
+   "bild": "tile_buildings1#1",
    "name": "Treppe 1",
    "kacheln": 1,
-   "pos": 195,
-   "beleg": "Gestufte Steinplattform, vier Ausrichtungen (195-198). Welche Nummer welche Ausrichtung ist, ist ungeprueft - hier steht schlicht die Reihenfolge der Datei. Fuer Treppe 5 und 6 gibt es kein fuenftes und sechstes Bild.",
+   "pos": 2,
+   "beleg": "Von Daniel selbst gewaehlt (05.09.2026). Vorher: Gestufte Steinplattform, vier Ausrichtungen (195-198). Welche Nummer welche Ausrichtung ist, ist ungeprueft - hier steht schlicht die Reihenfolge der Datei. Fuer Treppe 5 und 6 gibt es kein fuenftes und sechstes Bild.",
    "gruppe": [
     "tile_flatties#36",
     "tile_flatties#37",
@@ -893,48 +937,6 @@
     "tile_flatties#39"
    ],
    "zweifel": "Daniel erkennt dieses Bild NICHT als \"Treppe 1\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "15": {
-   "bild": "tile_flatties#37",
-   "name": "Treppe 2",
-   "kacheln": 1,
-   "pos": 196,
-   "beleg": "siehe Nr. 14",
-   "gruppe": [
-    "tile_flatties#36",
-    "tile_flatties#37",
-    "tile_flatties#38",
-    "tile_flatties#39"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Treppe 2\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "16": {
-   "bild": "tile_flatties#38",
-   "name": "Treppe 3",
-   "kacheln": 1,
-   "pos": 197,
-   "beleg": "siehe Nr. 14",
-   "gruppe": [
-    "tile_flatties#36",
-    "tile_flatties#37",
-    "tile_flatties#38",
-    "tile_flatties#39"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Treppe 3\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "17": {
-   "bild": "tile_flatties#39",
-   "name": "Treppe 4",
-   "kacheln": 1,
-   "pos": 198,
-   "beleg": "siehe Nr. 14",
-   "gruppe": [
-    "tile_flatties#36",
-    "tile_flatties#37",
-    "tile_flatties#38",
-    "tile_flatties#39"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Treppe 4\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
   }
  },
  "_offen": {
