@@ -210,6 +210,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Die Pruefseite: Zuordnung, ganzer Bildervorrat, bisherige Urteile
+  const mSkin = u.pathname.match(/^\/skin\/(\d+)\.png$/);
+  if (mSkin) {
+    const buf = webbilder.leseSkin(mSkin[1]);
+    if (!buf) { res.writeHead(404); return res.end('kein Skin ' + mSkin[1]); }
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'max-age=86400' });
+    return res.end(buf);
+  }
   if (u.pathname === '/api/vorplaetze') {
     try { return sendeJson(res, 200, webbilder.vorplaetze()); }
     catch (e) { return sendeJson(res, 500, { fehler: e.message }); }

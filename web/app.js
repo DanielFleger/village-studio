@@ -63,9 +63,27 @@ async function ladeBilder() {
     img.onload = () => { e.fertig = true; if (ansicht === 'schraeg') malen_(); };
     img.src = '/bilder/' + id + '.png';       // auch '44x' und '44y', die Ausrichtungen der Zugbruecke
     BILDER[id] = Object.assign(e, { img });
+    // Fertiges Bild aus Schlossgespensts AI-Toolkit, benannt nach der
+    // Mapper-Nummer. Wird geladen, sobald der Schalter es verlangt.
+    if (e.skin) {
+      const s2 = new Image();
+      s2.onload = () => { e.skinFertig = true; if (ansicht === 'schraeg') malen_(); };
+      s2.src = '/skin/' + e.skin + '.png';
+      e.skinImg = s2;
+    }
   }
 }
-function bildFuer(id) { const b = BILDER[String(id)]; return b && b.fertig ? b : null; }
+function bildFuer(id) {
+  const b = BILDER[String(id)];
+  if (!b) return null;
+  // Der Schalter entscheidet, ob das fertige Toolkit-Bild oder das selbst aus
+  // den .gm1 zusammengesetzte gilt. Beide liegen bereit.
+  const sk = $('#ebSkins');
+  if (sk && sk.checked && b.skinFertig)
+    return { img: b.skinImg, breite: b.skinImg.naturalWidth, hoehe: b.skinImg.naturalHeight,
+             kacheln: b.kacheln, bild: 'Toolkit ' + b.skin + '.png' };
+  return b.fertig ? b : null;
+}
 
 // Häuser, Gärten und Teiche liegen im Spiel in mehreren Fassungen vor, und
 // beim Bauen wird eine ausgewürfelt. Damit ein Dorf so bunt aussieht wie im
@@ -917,7 +935,7 @@ $('#ansichtWechsel').onclick = () => {
 $('#rueckgaengig').onclick = rueckgaengig;
 $('#pinsel').addEventListener('input', () => $('#pinselWert').textContent = $('#pinsel').value);
 for (const b of document.querySelectorAll('.wz')) b.onclick = () => setzeWerkzeug(b.dataset.wz);
-for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebUmriss', 'ebRaster', 'stilWahl'])
+for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebUmriss', 'ebRaster', 'ebSkins', 'stilWahl'])
   $('#' + id).addEventListener('change', malen_);
 
 window.addEventListener('keydown', ev => {
@@ -1029,7 +1047,7 @@ if (suchparam.has('anonym')) $('#liste').classList.add('anonym');
 // Liegt im Browser (localStorage), nicht auf der Platte - es ist reine
 // Bedienung, kein Arbeitsergebnis.
 const MERK_SCHLUESSEL = 'villagestudio.stand.v1';
-const MERK_SCHALTER = ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebUmriss', 'ebSonst', 'ebRaster'];
+const MERK_SCHALTER = ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebUmriss', 'ebSonst', 'ebRaster', 'ebSkins'];
 const MERK_FELDER = ['baunr', 'schrittnr', 'pinsel', 'stilWahl', 'suche'];
 let merkenAn = false;                 // erst nach dem Wiederherstellen scharf
 
