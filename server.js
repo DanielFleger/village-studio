@@ -4,6 +4,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { decode } = require('./lib/aiv');
 const { writeAivMit } = require('./lib/aivwrite');
 const { vorschauAlsPng } = require('./lib/karte');
@@ -59,26 +60,80 @@ const MIME = {
   '.webp': 'image/webp',
 };
 
+// Ein Ordner wird samt Unterordnern durchsucht - wer den Stronghold-Ordner
+// angibt, findet damit auch die AIV in ucp/plugins/<irgendwas>/aiv. Zwei
+// Bremsen, damit ein versehentlich gewaehltes "C:\\" nicht die ganze Platte
+// liest: hoechstens sechs Ebenen tief und hoechstens 6000 Eintraege je Ordner.
+function sucheAiv(wurzel, treffer, wurzelName, tiefe, budget) {
+  if (tiefe > 6 || budget.rest <= 0) return;
+  let eintraege;
+  try { eintraege = fs.readdirSync(wurzel, { withFileTypes: true }); } catch { return; }
+  for (const e of eintraege) {
+    if (--budget.rest <= 0) return;
+    const voll = path.join(wurzel, e.name);
+    if (e.isDirectory()) {
+      // Der Sicherungsordner bleibt draussen - sonst steht jede Fassung
+      // eines Dorfes mehrfach in der Liste.
+      if (e.name.startsWith('.') || e.name === 'node_modules' || e.name === '_backup') continue;
+      sucheAiv(voll, treffer, wurzelName, tiefe + 1, budget);
+      continue;
+    }
+    if (!e.name.toLowerCase().endsWith('.aiv')) continue;
+    if (treffer.some(t => t.pfad === voll)) continue;
+    let st; try { st = fs.statSync(voll); } catch { continue; }
+    treffer.push({
+      name: e.name.replace(/\.aiv$/i, ''), datei: e.name, pfad: voll,
+      ordner: path.basename(path.dirname(voll)), wurzel: wurzelName,
+      groesse: st.size, geaendert: st.mtime.toISOString(),
+    });
+  }
+}
+
 function listeDoerfer() {
   const treffer = [];
-  for (const ordner of dorfOrdner()) {
-    let namen;
-    try { namen = fs.readdirSync(ordner); } catch { continue; }
-    for (const n of namen) {
-      if (!n.toLowerCase().endsWith('.aiv')) continue;
-      const voll = path.join(ordner, n);
-      let st; try { st = fs.statSync(voll); } catch { continue; }
-      if (!st.isFile()) continue;
-      if (treffer.some(t => t.pfad === voll)) continue;
-      treffer.push({
-        name: n.replace(/\.aiv$/i, ''), datei: n, pfad: voll,
-        ordner: path.basename(ordner), groesse: st.size,
-        geaendert: st.mtime.toISOString(),
-      });
-    }
-  }
+  for (const ordner of dorfOrdner())
+    sucheAiv(ordner, treffer, path.basename(ordner), 0, { rest: 6000 });
   treffer.sort((a, b) => a.name.localeCompare(b.name, 'de'));
   return treffer;
+}
+
+// Einen eigenen Ordner merken oder wieder vergessen. Er landet in der
+// config.json neben dem Werkzeug, damit er den naechsten Start ueberlebt.
+function merkeOrdner(pfad, entfernen) {
+  const c = einstellungen();
+  const liste = Array.isArray(c.doerfer) ? c.doerfer.slice() : [];
+  const gleich = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+  const drin = liste.findIndex(o => gleich(o, pfad));
+  if (entfernen) { if (drin < 0) return { fehler: 'nicht in der Liste' }; liste.splice(drin, 1); }
+  else {
+    if (!fs.existsSync(pfad)) return { fehler: 'Diesen Ordner gibt es nicht: ' + pfad };
+    if (!fs.statSync(pfad).isDirectory()) return { fehler: 'Das ist kein Ordner: ' + pfad };
+    if (drin >= 0) return { fehler: 'Der Ordner ist schon dabei' };
+    liste.push(pfad);
+  }
+  c.doerfer = liste;
+  fs.writeFileSync(path.join(HIER, 'config.json'), JSON.stringify(c, null, 2) + '\n');
+  return { ordner: liste };
+}
+
+// Der Windows-Ordnerdialog. Der Server laeuft auf demselben Rechner wie der
+// Browser, darum darf er ihn oeffnen - im Browser selbst gibt es keinen Weg
+// an einen echten Pfad zu kommen.
+function ordnerDialog() {
+  const ps = [
+    'Add-Type -AssemblyName System.Windows.Forms',
+    '$oben = New-Object System.Windows.Forms.Form',
+    '$oben.TopMost = $true',
+    '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
+    "$d.Description = 'Ordner mit AIV-Dateien waehlen'",
+    '$d.ShowNewFolderButton = $false',
+    'if ($d.ShowDialog($oben) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.SelectedPath }',
+    '$oben.Dispose()',
+  ].join('; ');
+  try {
+    return execFileSync('powershell', ['-NoProfile', '-STA', '-Command', ps],
+      { encoding: 'utf8', timeout: 180000 }).trim();
+  } catch { return ''; }
 }
 
 // Wohin das Spiel schaut: die mapping.json der UCP3-KI-Ordner
@@ -189,8 +244,32 @@ function leseKoerper(req) {
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
 
+  // Einen eigenen AIV-Ordner hinzufuegen oder entfernen
+  if (u.pathname === '/api/ordner' && req.method === 'POST') {
+    let d;
+    try { d = await leseKoerper(req); } catch { return sendeJson(res, 400, { fehler: 'ungueltige Anfrage' }); }
+    if (!d.pfad) return sendeJson(res, 400, { fehler: 'kein Pfad angegeben' });
+    try {
+      const erg = merkeOrdner(String(d.pfad).trim(), !!d.entfernen);
+      if (erg.fehler) return sendeJson(res, 400, erg);
+      return sendeJson(res, 200, { eigene: erg.ordner, doerfer: listeDoerfer() });
+    } catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+
+  // Den Windows-Ordnerdialog oeffnen und den gewaehlten Pfad zurueckgeben
+  if (u.pathname === '/api/ordnerwaehlen') {
+    const p = ordnerDialog();
+    return sendeJson(res, 200, { pfad: p });
+  }
+
   if (u.pathname === '/api/doerfer')
-    return sendeJson(res, 200, { ordner: dorfOrdner(), doerfer: listeDoerfer(), spiel: spielOrdner() });
+    return sendeJson(res, 200, {
+      ordner: dorfOrdner(),
+      // fuer die Fehlersuche in der Oberflaeche: welcher Ordner ist da, welcher nicht
+      ordnerInfo: dorfOrdner().map(o => ({ pfad: o, da: fs.existsSync(o) })),
+      eigene: einstellungen().doerfer || [],
+      doerfer: listeDoerfer(), spiel: spielOrdner(),
+    });
 
   if (u.pathname === '/api/gebaeude') {
     try {
