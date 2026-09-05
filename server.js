@@ -119,21 +119,15 @@ function merkeOrdner(pfad, entfernen) {
 
 // Der Windows-Ordnerdialog. Der Server laeuft auf demselben Rechner wie der
 // Browser, darum darf er ihn oeffnen - im Browser selbst gibt es keinen Weg
-// an einen echten Pfad zu kommen.
-function ordnerDialog() {
-  const ps = [
-    'Add-Type -AssemblyName System.Windows.Forms',
-    '$oben = New-Object System.Windows.Forms.Form',
-    '$oben.TopMost = $true',
-    '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
-    "$d.Description = 'Ordner mit AIV-Dateien waehlen'",
-    '$d.ShowNewFolderButton = $false',
-    'if ($d.ShowDialog($oben) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.SelectedPath }',
-    '$oben.Dispose()',
-  ].join('; ');
+// an einen echten Pfad zu kommen. Das Skript daneben oeffnet den modernen
+// Dialog (denselben, den der Explorer zeigt) und faellt notfalls auf den
+// alten Baum zurueck.
+function ordnerDialog(start) {
+  const skript = path.join(HIER, 'lib', 'ordner_dialog.ps1');
   try {
-    return execFileSync('powershell', ['-NoProfile', '-STA', '-Command', ps],
-      { encoding: 'utf8', timeout: 180000 }).trim();
+    return execFileSync('powershell',
+      ['-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass', '-File', skript, start || ''],
+      { encoding: 'utf8', timeout: 300000, windowsHide: false }).trim();
   } catch { return ''; }
 }
 
