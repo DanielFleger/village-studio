@@ -1,6 +1,7 @@
 // Irgendeine .gm1-Datei ansehen - egal welcher Datenart.
 //
 // Aufruf:  node _zeige_gm1.js anim_buildings2 [ziel.png] [--faktor 2] [--spalten 9]
+//          node _zeige_gm1.js anim_castle a.png --von 48 --bis 74
 //          node _zeige_gm1.js --liste          alle Dateien mit Art und Anzahl
 //
 // Die Bogen-Werkzeuge zeigen nur die Gebaeude-Dateien (Datenart 3) und nur
@@ -39,11 +40,13 @@ function main() {
   const ziel = a[1] && !a[1].startsWith('--') ? a[1] : 'gm1_' + datei + '.png';
   const iF = a.indexOf('--faktor'); const F = iF >= 0 ? Number(a[iF + 1]) : 2;
   const iS = a.indexOf('--spalten'); const SP = iS >= 0 ? Number(a[iS + 1]) : 9;
+  const iV = a.indexOf('--von'); const VON = iV >= 0 ? Number(a[iV + 1]) : 0;
+  const iB = a.indexOf('--bis'); const BIS = iB >= 0 ? Number(a[iB + 1]) : Infinity;
 
   const g = leseGm1(fs.readFileSync(path.join(GM, datei + '.gm1')));
   console.log(datei, '· Art', g.art, ART[g.art] || '?', '·', g.anzahl, 'Bilder');
   const bilder = [];
-  for (let i = 0; i < g.anzahl; i++) {
+  for (let i = Math.max(0, VON); i < Math.min(g.anzahl, BIS + 1); i++) {
     let b; try { b = bildVon(g, i); } catch { b = null; }
     if (b && b.breite && b.hoehe) bilder.push({ nr: i, b });
   }

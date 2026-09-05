@@ -10,6 +10,7 @@ let ziehen = null, malt = false;
 let werkzeug = 'zeigen';
 let ansicht = 'raster';      // 'raster' = senkrecht von oben, 'schraeg' = wie im Spiel
 let geaendert = false;
+let letztesFeld = null;      // Feld unter dem Zeiger - dorthin wirkt die Taste R
 const undoStapel = [];
 
 const cv = $('#karte');
@@ -233,6 +234,39 @@ function isoFeldAn(sx, sy) {
   return [Math.floor((a + b) / 2), Math.floor((b - a) / 2)];
 }
 
+// Wer wird flach gezeichnet?
+//   'bilder'    – niemand, alles steht
+//   'flach'     – Mauern, Treppen, Türme, Torhäuser, Bergfried und Gräben legen
+//                 sich hin; der Rest bleibt stehen. So sieht man die Anlage,
+//                 ohne dass die Türme das Dorf dahinter verdecken.
+//   'grundriss' – alles flach, wie im Raster, nur schräg
+const FLACH_GRUPPEN = new Set(['mauer', 'turm', 'burg', 'graben']);
+function flachGezeichnet(id, stil) {
+  if (stil === 'grundriss') return true;
+  if (stil !== 'flach') return false;
+  const b = bau(id);
+  return !!b && FLACH_GRUPPEN.has(b.gruppe);
+}
+
+// Die Grundfläche eines n×n-Bauwerks als eine Raute, ohne Höhe.
+// Die vier Ecken sind die Außenecken der vier Eckkacheln.
+function maleGrundflaeche(x, y, n, farbe) {
+  const { hb, hh } = isoMasse();
+  const [tx, ty] = isoPunkt(x, y);                       // oben
+  const [rx, ry] = isoPunkt(x + n - 1, y);               // rechts
+  const [bx, by] = isoPunkt(x + n - 1, y + n - 1);       // unten
+  const [lx, ly] = isoPunkt(x, y + n - 1);               // links
+  ctx.beginPath();
+  ctx.moveTo(tx, ty);
+  ctx.lineTo(rx + hb, ry + hh);
+  ctx.lineTo(bx, by + 2 * hh);
+  ctx.lineTo(lx - hb, ly + hh);
+  ctx.closePath();
+  ctx.fillStyle = farbe;
+  ctx.fill();
+  if (hb >= 5) { ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 1; ctx.stroke(); }
+}
+
 function raute(g, px, py, hb, hh) {
   g.beginPath();
   g.moveTo(px, py); g.lineTo(px + hb, py + hh);
@@ -277,20 +311,24 @@ function maleSchraeg() {
   let maxSchritt = 1;
   if (dorf.schritte) for (const v of dorf.schritte) if (v > maxSchritt) maxSchritt = v;
   const nachSchritt = $('#ebSchritte').checked;
-  const mitBildern = $('#ebBilder').checked && !nachSchritt;   // Bauschritte kann nur der Klotz einfaerben
+  const stil = nachSchritt ? 'kloetze' : ($('#stilWahl') ? $('#stilWahl').value : 'bilder');
+  const mitBildern = stil === 'bilder' || stil === 'flach';
 
   // Erst einsammeln, dann von hinten nach vorn zeichnen. Ein Bild deckt alle
   // Felder seines Bauwerks ab und gehoert an die Tiefe seiner untersten Ecke;
   // ein Klotz ist genau ein Feld. Was kein Bild hat, bleibt ein Klotz.
-  const bilder = [], bloecke = [];
+  // Was flach gezeichnet wird, kommt zuerst - es liegt am Boden und darf
+  // nichts verdecken, was dahinter steht.
+  const flache = [], bilder = [], bloecke = [];
   const abgedeckt = new Uint8Array(N * N);
-  if (mitBildern && dorf.bauten && dorf.gruppen && dorf.mauern) {
+  if (dorf.bauten && dorf.gruppen && dorf.mauern) {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       const i = y * N + x, id = dorf.bauten[i], n = dorf.gruppen[i];
       if (!id || n < 2 || dorf.mauern[i] !== 1) continue;      // nur die Ecke oben links eines Bauwerks
-      const b = bildFuer(id);
-      if (!b || b.kacheln !== n) continue;
-      bilder.push({ x, y, n, b, tiefe: x + y + 2 * (n - 1) });
+      const flach = flachGezeichnet(id, stil);
+      const b = flach ? null : (mitBildern ? bildFuer(id) : null);
+      if (!flach && (!b || b.kacheln !== n)) continue;
+      (flach ? flache : bilder).push({ x, y, n, b, id, i, tiefe: x + y + 2 * (n - 1) });
       for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++)
         if (x + dx < N && y + dy < N) abgedeckt[(y + dy) * N + x + dx] = 1;
     }
@@ -300,10 +338,18 @@ function maleSchraeg() {
     if (abgedeckt[i]) continue;
     const id = dorf.bauten ? dorf.bauten[i] : 0;
     if (!id) continue;
+    if (flachGezeichnet(id, stil)) { flache.push({ x, y, n: 1, id, i, tiefe: x + y }); continue; }
     const b = mitBildern ? bildFuer(id) : null;
     const kante = dorf.gruppen ? dorf.gruppen[i] : 0;
-    if (b && b.kacheln === 1 && kante <= 1) bilder.push({ x, y, n: 1, b, tiefe: x + y });
+    if (b && b.kacheln === 1 && kante <= 1) bilder.push({ x, y, n: 1, b, id, i, tiefe: x + y });
     else bloecke.push({ x, y, id, i, tiefe: x + y });
+  }
+
+  // Die flachen Grundflächen liegen unter allem anderen
+  for (const e of flache.sort((a, b) => a.tiefe - b.tiefe)) {
+    const grund = nachSchritt && dorf.schritte && dorf.schritte[e.i]
+      ? schritteFarbe(dorf.schritte[e.i], maxSchritt) : farbeFuer(e.id);
+    maleGrundflaeche(e.x, e.y, e.n, grund);
   }
 
   const alles = bloecke.concat(bilder).sort((a, b) => a.tiefe - b.tiefe || a.x - b.x);
@@ -513,6 +559,48 @@ function rueckgaengig() {
   zeigeKennzahlen(); zeigeLegende(); malen_();
 }
 
+// ---------- Drehen ----------
+// In der AIV steht KEINE Ausrichtung - alle vierzehn Abschnitte sind
+// durchgesehen. Nur bei den Torhäusern ist die Richtung eine eigene
+// Bau-Nummer, und nur die lassen sich darum wirklich drehen. Bei allen
+// anderen Bauten sucht sich das Spiel die Ausrichtung selbst aus.
+const DREHPAARE = { 40: 41, 41: 40, 42: 43, 43: 42 };
+
+// Zu einem Feld die Ecke oben links seines Bauwerks finden
+function bauwerkAn(x, y) {
+  if (!dorf || !dorf.bauten || !dorf.gruppen || !dorf.mauern) return null;
+  const id = dorf.bauten[y * N + x];
+  if (!id) return null;
+  for (let oy = 0; oy <= 12; oy++) for (let ox = 0; ox <= 12; ox++) {
+    const bx = x - ox, by = y - oy;
+    if (bx < 0 || by < 0) continue;
+    const j = by * N + bx;
+    if (dorf.bauten[j] !== id || dorf.mauern[j] !== 1) continue;
+    const n = dorf.gruppen[j];
+    if (n >= 2 && ox < n && oy < n) return { x: bx, y: by, n, id };
+  }
+  return null;
+}
+
+function drehen(x, y) {
+  const w = bauwerkAn(x, y);
+  if (!w) { $('#status').textContent = 'Zum Drehen auf ein Bauwerk zeigen.'; return; }
+  const neu = DREHPAARE[w.id];
+  if (!neu) {
+    $('#status').textContent = `${bauName(w.id)} lässt sich nicht drehen — in der AIV steht keine Ausrichtung. `
+      + 'Nur Torhäuser haben je Richtung eine eigene Nummer.';
+    return;
+  }
+  schnappschuss();
+  for (let dy = 0; dy < w.n; dy++) for (let dx = 0; dx < w.n; dx++) {
+    const j = (w.y + dy) * N + w.x + dx;
+    if (dorf.bauten[j] === w.id) dorf.bauten[j] = neu;
+  }
+  setzeGeaendert(true);
+  zeigeKennzahlen(); zeigeLegende(); malen_();
+  $('#status').textContent = `${bauName(w.id)} → ${bauName(neu)} (Nr ${w.id} → ${neu})`;
+}
+
 function anwenden(cx, cy) {
   if (!dorf || !dorf.bauten) return;
   const p = +$('#pinsel').value;
@@ -607,6 +695,7 @@ cv.addEventListener('mousemove', ev => {
   if (malt && c) { anwenden(c.x, c.y); }
   const tt = $('#tooltip');
   if (!c || !dorf) { tt.hidden = true; $('#fadenkreuz').textContent = ''; return; }
+  letztesFeld = c;
   $('#fadenkreuz').textContent = `x ${c.x} · y ${c.y}`;
   const zeilen = [`Feld  ${c.x} , ${c.y}`];
   if (dorf.bauten) {
@@ -626,7 +715,7 @@ cv.addEventListener('mousemove', ev => {
   tt.style.top = (ev.clientY + 16) + 'px';
 });
 
-cv.addEventListener('mouseleave', () => { $('#tooltip').hidden = true; });
+cv.addEventListener('mouseleave', () => { $('#tooltip').hidden = true; });   // letztesFeld bleibt: R soll nach dem Wegziehen noch wirken
 window.addEventListener('mouseup', () => {
   if (ziehen && ziehen.vorlage) merkeVorlage();
   ziehen = null; malt = false;
@@ -701,7 +790,7 @@ $('#ansichtWechsel').onclick = () => {
 $('#rueckgaengig').onclick = rueckgaengig;
 $('#pinsel').addEventListener('input', () => $('#pinselWert').textContent = $('#pinsel').value);
 for (const b of document.querySelectorAll('.wz')) b.onclick = () => setzeWerkzeug(b.dataset.wz);
-for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebUmriss', 'ebRaster', 'ebBilder'])
+for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebUmriss', 'ebRaster', 'stilWahl'])
   $('#' + id).addEventListener('change', malen_);
 
 window.addEventListener('keydown', ev => {
@@ -711,6 +800,7 @@ window.addEventListener('keydown', ev => {
   else if (ev.key === '2') setzeWerkzeug('malen');
   else if (ev.key === '3') setzeWerkzeug('radieren');
   else if (ev.key === '4') setzeWerkzeug('pipette');
+  else if (ev.key.toLowerCase() === 'r' && letztesFeld) { ev.preventDefault(); drehen(letztesFeld.x, letztesFeld.y); }
 });
 
 window.addEventListener('beforeunload', ev => { if (geaendert) { ev.preventDefault(); ev.returnValue = ''; } });

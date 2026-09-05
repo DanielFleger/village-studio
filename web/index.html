@@ -94,7 +94,13 @@
       <label><input type="checkbox" id="ebUmriss" checked> Umriss-Prüfung</label>
       <label><input type="checkbox" id="ebSonst"> Sonstiges</label>
       <label><input type="checkbox" id="ebRaster" checked> Raster</label>
-      <label title="in der schrägen Ansicht die echten Spielgrafiken statt Klötze"><input type="checkbox" id="ebBilder" checked> Spielgrafiken</label>
+      <div class="feldzeile" title="nur in der schrägen Ansicht"><label for="stilWahl">Darstellung</label>
+        <select id="stilWahl">
+          <option value="bilder">Spielgrafiken</option>
+          <option value="flach">flach: Wehrbau liegt</option>
+          <option value="grundriss">Grundriss: alles flach</option>
+          <option value="kloetze">Klötze</option>
+        </select></div>
     </div>
 
     <div class="abschnitt">
