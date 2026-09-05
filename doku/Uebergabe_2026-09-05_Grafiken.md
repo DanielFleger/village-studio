@@ -46,16 +46,12 @@ desselben Bildes — nur eben eines größeren, das ich noch nicht gefunden habe
 
 ## Was als Nächstes ansteht
 
-**1. Daniels Korrekturen einarbeiten.** Der Prüfzettel liegt bei:
-
-```
-Tools\VillageStudio-bogen\Zuordnung_pruefen.html
-```
-
-37 Zeilen sind gelb (vermutet) und brauchen seinen Blick, 37 sind grün
-(am Bild belegt) und dienen zum Gegenlesen. Kommt eine Korrektur, gehört sie
-in `_setze_zuordnung.js` — dort steht die Zuordnung als Positionsnummer, gut
-lesbar — und danach `node _setze_zuordnung.js --schreibe`.
+**1. Weitere Korrekturen von Daniel.** Die Prüfseite läuft im Werkzeug unter
+`localhost:8790/pruefen.html`: je Nummer drei Knöpfe, rechts die ausziehbare
+Sammlung zum Draufziehen (wahlweise nur die passende Grundfläche oder alle
+Größen), Screenshots per Strg+V. Alles landet sofort in
+`lib/zuordnung_urteil.json`, und `node _setze_zuordnung.js --schreibe` holt es
+in die Zuordnung. **Nichts abtippen** — die Datei ist die Quelle.
 
 **2. Die vier Farmen.** Getreidefarm, Hopfenfarm, Apfelplantage und
 Milchviehhof haben **kein** Gebäudebild in den gelesenen Dateien (gemessen:
@@ -155,7 +151,8 @@ node _baue_zuordnung.js --schreibe --boegen    Kandidaten und Bögen erneuern
 node _baue_einzelbilder.js                     Einzelbilder mit Nummer im Namen
 node _baue_montage.js 4 23 40 ziel.png         eine Gruppe nebeneinander
 node _setze_zuordnung.js --schreibe            Zuordnung eintragen
-node _baue_pruefzettel.js                      Prüfzettel für Daniel
+node _zeige_gm1.js --liste                      alle gm1-Dateien mit Art
+node _zeige_gm1.js anim_windmill a.png         eine Datei Bild für Bild ansehen
 node _baue_beispieldorf.js Emir3 bild.png      ein Dorf als PNG
 node server.js                                 Oberfläche auf localhost:8790
 ```
