@@ -32,10 +32,6 @@ const Z = {
   15: [1, 196, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
   16: [1, 197, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
   17: [1, 198, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
-  20: [1, 183, 'vermutet', 'Flache Kachel aus dunkelbraun aufgegrabener Erde, 30x16 Punkte. In tile_flatties liegen genau VIER solche Kacheln (183, 185, 187, 189) - so viele, wie die Tabelle Wassergraben-Nummern hat. Dazwischen liegen Werkzeuge (Spaten, Kuebel, Baumstumpf), also der Graben beim Ausheben. Welcher Buchstabe a bis d welche Kachel ist, ist willkuerlich.', [183, 185, 187, 189]],
-  21: [1, 185, 'vermutet', 'siehe Nr. 20', [183, 185, 187, 189]],
-  22: [1, 187, 'vermutet', 'siehe Nr. 20', [183, 185, 187, 189]],
-  23: [1, 189, 'vermutet', 'siehe Nr. 20', [183, 185, 187, 189]],
   24: [1, 249, 'sicher', 'Schwarze Pechflaeche mit Schilf, aus pitch_ditches. Acht Fassungen (249-256).', [249, 250, 251, 252, 253, 254, 255, 256]],
   37: [1, 233, 'sicher', 'Grube mit Sandrand und Holzpfaehlen, aus killing_pits. 16 Fassungen: 233-240 offen, 241-248 mit Deckung.', [233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248]],
 
@@ -81,8 +77,8 @@ const Z = {
   // ---- 5x5 ----
   32: [5, 26, 'sicher', 'Eckiger Sandsteinturm mit Zinnen in 5x5. 27 ist seine Ruine, 28 sein Fundament.', [26]],
   39: [5, 9, 'vermutet', 'Zelt aus Fell und Tuch ueber Holzgestell - der arabische Posten, an dem Soeldner angeworben werden.', [9]],
-  40: [5, 29, 'vermutet', 'Torhaus mit Fallgitter; der Durchgang liegt auf der rechten unteren Flaeche, also laengs der x-Achse. 30 ist dieselbe Form gespiegelt. Dass x die Ost-West-Achse ist, ist angenommen, nicht gemessen.', [29]],
-  41: [5, 30, 'vermutet', 'siehe Nr. 40 - die gespiegelte Fassung, Durchgang laengs der y-Achse.', [30]],
+  40: [5, 30, 'sicher', 'Kleines Torhaus mit Fallgitter. Von Daniel am 05.09.2026 im Editor korrigiert: die O-W-Fassung war um 90 Grad verdreht, die beiden Bilder sind getauscht. Dazu passt die Gegenprobe in den AIV-Dateien - das einzige dort verbaute Torhaus sitzt in einer Mauerlinie laengs x, seine Durchfahrt laeuft also laengs y.', [29, 30]],
+  41: [5, 29, 'sicher', 'siehe Nr. 40 - die gespiegelte Fassung.', [29, 30]],
   44: [5, 31, 'vermutet', 'Holzbohlenbruecke ueber Wasser, an Ketten. Vier Stellungen (31-34).', [31, 32, 33, 34]],
   55: [5, 10, 'vermutet', 'Massiver Steinbau mit Zinnen, Holzdach, Bogentuer und Banner. Der Tabellenname sagt Kaserne, der Mapper-Name M_MAPPER_BARRACKS_ARAB das Gegenteil - die beiden Namen koennten vertauscht sein.', [10]],
   57: [5, 15, 'vermutet', 'Zinnenbau, auf dem Dach ein grosses Wagenrad, ein Saegeblatt und Balken - Teile fuer Belagerungsgeraet. Koennte mit Nr. 58 vertauscht sein.', [15]],
@@ -103,8 +99,8 @@ const Z = {
 
   // ---- 7x7 ----
   38: [7, 9, 'sicher', 'Quadratischer Steinbau mit Zinnen, Fackeln an den Waenden, KEIN Torbogen - das einzige 7x7-Bauwerk ohne Tor, das kein Bauzustand ist.', [9]],
-  42: [7, 3, 'vermutet', 'Torhaus mit Fallgitter und Zinnen; der Torbogen liegt auf der rechten unteren Flaeche, der Durchgang also laengs der x-Achse. Dass x die Ost-West-Achse ist, ist angenommen, nicht gemessen.', [3]],
-  43: [7, 4, 'vermutet', 'siehe Nr. 42 - dieselbe Form gespiegelt, Durchgang laengs der y-Achse.', [4]],
+  42: [7, 4, 'sicher', 'Grosses Torhaus mit Fallgitter und Zinnen. Von Daniel am 05.09.2026 im Editor korrigiert: die O-W-Fassung war um 90 Grad verdreht, die beiden Bilder sind getauscht. Dazu passt die Gegenprobe in den AIV-Dateien - das einzige dort verbaute Torhaus (eine Nr. 42) sitzt in einer Mauerlinie laengs x, seine Durchfahrt laeuft also laengs y.', [3, 4]],
+  43: [7, 3, 'sicher', 'siehe Nr. 42 - dieselbe Form gespiegelt.', [3, 4]],
 };
 
 // Schon belegt und nicht anzutasten: die fuenf aus der Vorsitzung
@@ -120,10 +116,11 @@ const OFFEN = {
   '71 Apfelplantage, 72 Milchviehhof': 'Kein einziges 10x10-Bild in den 20 Gebaeude-Dateien. Das Hofgebaeude muss anderswo liegen.',
   '73 Getreidefarm, 75 Hopfenfarm': 'Von den drei 9x9-Bildern sind zwei ein europaeischer Bergfried aus Stronghold 1 samt Fundament, das dritte die Kirche. Kein Farmgebaeude.',
   '96 Teich': 'Kein Wasserbild in 3x3. Die einzigen Teiche liegen in 5x5 (Grosser Teich) und in 6x6, wo die Tabelle gar keinen Teich kennt.',
+  '20-23 Wassergraben': 'KEIN Bild. Gemessen am 05.09.2026: kein einziges 1x1-Bild der zehn Gebaeude-Dateien hat nennenswert blaugruene Punkte (Schwelle 10 Prozent, einziger Treffer ueberhaupt ist der 6x6-Teich). Auf Daniels Spielbild ist der Graben eine ausgehobene Mulde voll tuerkisem Wasser - das malt das Spiel als Gelaende, nicht als Gebaeudebild. Meine vorherige Zuordnung auf die braunen Erdkacheln war falsch und ist entfernt.',
+  '14-17 Treppen': 'Von Daniel widerlegt. Auf seinem Spielbild sind es steinerne Stufen, die an der Mauer hochlaufen - die gestuften Steinplatten aus tile_flatties sind es nicht. Wo sie liegen, ist offen; naechster Ort zum Nachsehen ist anim_castle, wo auch die Mauer-Seitenflaechen liegen.',
   '18, 19 Treppe 5 und 6': 'Es gibt nur vier gestufte Steinplatten (195-198) fuer sechs Treppen-Nummern.',
   '25 unbenutzt': 'Laut Tabelle unbenutzt - kein Bild noetig.',
   'Mauern 10 und 12': 'Position 1 und 3 sind fast gleich (278 von 2910 Punkten verschieden, gleicher Zinnenkranz). Welche Steinmauer und welche Zinnenmauer ist, entscheidet nur das Spiel.',
-  'Torrichtungen 40/41 und 42/43': 'Die gespiegelten Paare sind gefunden; welche Fassung O-W und welche N-S ist, haengt daran, ob x die Ost-West-Achse der Karte ist. Ungemessen.',
   '57 und 58': 'Ingenieursgilde und Tunnelgraebergilde koennten vertauscht sein - entschieden ist nur, dass das eine Bild Belagerungsgeraet und das andere Grabwerkzeug zeigt.',
 };
 

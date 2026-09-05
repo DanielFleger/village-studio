@@ -185,42 +185,46 @@
    "fehlt": "hier fehlt das trainigslager vor dem posten"
   },
   "40": {
-   "bild": "tile_castle#369",
+   "bild": "tile_castle#394",
    "name": "Kleines Torhaus (O-W)",
    "kacheln": 5,
-   "pos": 29,
-   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). Torhaus mit Fallgitter; der Durchgang liegt auf der rechten unteren Flaeche, also laengs der x-Achse. 30 ist dieselbe Form gespiegelt. Dass x die Ost-West-Achse ist, ist angenommen, nicht gemessen.",
+   "pos": 30,
+   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). Kleines Torhaus mit Fallgitter. Von Daniel am 05.09.2026 im Editor korrigiert: die O-W-Fassung war um 90 Grad verdreht, die beiden Bilder sind getauscht. Dazu passt die Gegenprobe in den AIV-Dateien - das einzige dort verbaute Torhaus sitzt in einer Mauerlinie laengs x, seine Durchfahrt laeuft also laengs y.",
    "gruppe": [
-    "tile_castle#369"
+    "tile_castle#369",
+    "tile_castle#394"
    ]
   },
   "41": {
-   "bild": "tile_castle#394",
+   "bild": "tile_castle#369",
    "name": "Kleines Torhaus (N-S)",
    "kacheln": 5,
-   "pos": 30,
-   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). siehe Nr. 40 - die gespiegelte Fassung, Durchgang laengs der y-Achse.",
+   "pos": 29,
+   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). siehe Nr. 40 - die gespiegelte Fassung.",
    "gruppe": [
+    "tile_castle#369",
     "tile_castle#394"
    ]
   },
   "42": {
-   "bild": "tile_castle#419",
+   "bild": "tile_castle#468",
    "name": "Grosses Torhaus (O-W)",
    "kacheln": 7,
-   "pos": 3,
-   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). Torhaus mit Fallgitter und Zinnen; der Torbogen liegt auf der rechten unteren Flaeche, der Durchgang also laengs der x-Achse. Dass x die Ost-West-Achse ist, ist angenommen, nicht gemessen.",
+   "pos": 4,
+   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). Grosses Torhaus mit Fallgitter und Zinnen. Von Daniel am 05.09.2026 im Editor korrigiert: die O-W-Fassung war um 90 Grad verdreht, die beiden Bilder sind getauscht. Dazu passt die Gegenprobe in den AIV-Dateien - das einzige dort verbaute Torhaus (eine Nr. 42) sitzt in einer Mauerlinie laengs x, seine Durchfahrt laeuft also laengs y.",
    "gruppe": [
-    "tile_castle#419"
+    "tile_castle#419",
+    "tile_castle#468"
    ]
   },
   "43": {
-   "bild": "tile_castle#468",
+   "bild": "tile_castle#419",
    "name": "Grosses Torhaus (N-S)",
    "kacheln": 7,
-   "pos": 4,
-   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). siehe Nr. 42 - dieselbe Form gespiegelt, Durchgang laengs der y-Achse.",
+   "pos": 3,
+   "beleg": "Von Daniel am Bild bestaetigt (05.09.2026). siehe Nr. 42 - dieselbe Form gespiegelt.",
    "gruppe": [
+    "tile_castle#419",
     "tile_castle#468"
    ]
   },
@@ -931,72 +935,17 @@
     "tile_flatties#39"
    ],
    "zweifel": "Daniel erkennt dieses Bild NICHT als \"Treppe 4\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "20": {
-   "bild": "tile_flatties#24",
-   "name": "Wassergraben a",
-   "kacheln": 1,
-   "pos": 183,
-   "beleg": "Flache Kachel aus dunkelbraun aufgegrabener Erde, 30x16 Punkte. In tile_flatties liegen genau VIER solche Kacheln (183, 185, 187, 189) - so viele, wie die Tabelle Wassergraben-Nummern hat. Dazwischen liegen Werkzeuge (Spaten, Kuebel, Baumstumpf), also der Graben beim Ausheben. Welcher Buchstabe a bis d welche Kachel ist, ist willkuerlich.",
-   "gruppe": [
-    "tile_flatties#24",
-    "tile_flatties#26",
-    "tile_flatties#28",
-    "tile_flatties#30"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben a\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "21": {
-   "bild": "tile_flatties#26",
-   "name": "Wassergraben b",
-   "kacheln": 1,
-   "pos": 185,
-   "beleg": "siehe Nr. 20",
-   "gruppe": [
-    "tile_flatties#24",
-    "tile_flatties#26",
-    "tile_flatties#28",
-    "tile_flatties#30"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben b\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "22": {
-   "bild": "tile_flatties#28",
-   "name": "Wassergraben c",
-   "kacheln": 1,
-   "pos": 187,
-   "beleg": "siehe Nr. 20",
-   "gruppe": [
-    "tile_flatties#24",
-    "tile_flatties#26",
-    "tile_flatties#28",
-    "tile_flatties#30"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben c\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
-  },
-  "23": {
-   "bild": "tile_flatties#30",
-   "name": "Wassergraben d",
-   "kacheln": 1,
-   "pos": 189,
-   "beleg": "siehe Nr. 20",
-   "gruppe": [
-    "tile_flatties#24",
-    "tile_flatties#26",
-    "tile_flatties#28",
-    "tile_flatties#30"
-   ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Wassergraben d\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
   }
  },
  "_offen": {
   "71 Apfelplantage, 72 Milchviehhof": "Kein einziges 10x10-Bild in den 20 Gebaeude-Dateien. Das Hofgebaeude muss anderswo liegen.",
   "73 Getreidefarm, 75 Hopfenfarm": "Von den drei 9x9-Bildern sind zwei ein europaeischer Bergfried aus Stronghold 1 samt Fundament, das dritte die Kirche. Kein Farmgebaeude.",
   "96 Teich": "Kein Wasserbild in 3x3. Die einzigen Teiche liegen in 5x5 (Grosser Teich) und in 6x6, wo die Tabelle gar keinen Teich kennt.",
+  "20-23 Wassergraben": "KEIN Bild. Gemessen am 05.09.2026: kein einziges 1x1-Bild der zehn Gebaeude-Dateien hat nennenswert blaugruene Punkte (Schwelle 10 Prozent, einziger Treffer ueberhaupt ist der 6x6-Teich). Auf Daniels Spielbild ist der Graben eine ausgehobene Mulde voll tuerkisem Wasser - das malt das Spiel als Gelaende, nicht als Gebaeudebild. Meine vorherige Zuordnung auf die braunen Erdkacheln war falsch und ist entfernt.",
+  "14-17 Treppen": "Von Daniel widerlegt. Auf seinem Spielbild sind es steinerne Stufen, die an der Mauer hochlaufen - die gestuften Steinplatten aus tile_flatties sind es nicht. Wo sie liegen, ist offen; naechster Ort zum Nachsehen ist anim_castle, wo auch die Mauer-Seitenflaechen liegen.",
   "18, 19 Treppe 5 und 6": "Es gibt nur vier gestufte Steinplatten (195-198) fuer sechs Treppen-Nummern.",
   "25 unbenutzt": "Laut Tabelle unbenutzt - kein Bild noetig.",
   "Mauern 10 und 12": "Position 1 und 3 sind fast gleich (278 von 2910 Punkten verschieden, gleicher Zinnenkranz). Welche Steinmauer und welche Zinnenmauer ist, entscheidet nur das Spiel.",
-  "Torrichtungen 40/41 und 42/43": "Die gespiegelten Paare sind gefunden; welche Fassung O-W und welche N-S ist, haengt daran, ob x die Ost-West-Achse der Karte ist. Ungemessen.",
   "57 und 58": "Ingenieursgilde und Tunnelgraebergilde koennten vertauscht sein - entschieden ist nur, dass das eine Bild Belagerungsgeraet und das andere Grabwerkzeug zeigt."
  },
  "_warnung": "Die Kandidatenlisten enthalten Altbestand aus Stronghold 1 - zum Beispiel Holzpalisaden, die es in Crusader nicht gibt. Vor dem Zuordnen aussortieren.",
