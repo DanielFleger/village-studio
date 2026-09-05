@@ -210,6 +210,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Die Pruefseite: Zuordnung, ganzer Bildervorrat, bisherige Urteile
+  if (u.pathname === '/api/vorplaetze') {
+    try { return sendeJson(res, 200, webbilder.vorplaetze()); }
+    catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
   if (u.pathname === '/api/pruefstand') {
     try { return sendeJson(res, 200, webbilder.pruefstand()); }
     catch (e) { return sendeJson(res, 500, { fehler: e.message }); }

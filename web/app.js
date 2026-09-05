@@ -44,7 +44,18 @@ async function ladeGebaeude() {
 // ist wie in lib/gm1.js gerechnet: die unterste Kachel des Bauwerks sitzt
 // waagerecht in der Bildmitte, ihre Oberkante liegt bei hoehe - 16.
 let BILDER = {};
+// Vorplätze: je Bau-Nummer die Bodenplatten daneben, mit Versatz in Feldern.
+// Sie stehen als Bau-Nummer 2 in der AIV, aber welches Bild daraufgehört,
+// sagt die Datei nicht - das kommt aus lib/webbilder.js.
+let VORPLAETZE = {};
 async function ladeBilder() {
+  try { VORPLAETZE = await fetch('/api/vorplaetze').then(r => r.json()); } catch { VORPLAETZE = {}; }
+  for (const teile of Object.values(VORPLAETZE)) for (const t of teile) {
+    const img = new Image();
+    img.onload = () => { t.fertig = true; if (ansicht === 'schraeg') malen_(); };
+    img.src = '/bild/' + t.bild.replace('#', '/') + '.png';
+    t.img = img;
+  }
   let idx = {};
   try { idx = await fetch('/api/bilder').then(r => r.json()); } catch { return; }
   for (const [id, e] of Object.entries(idx)) {
@@ -356,7 +367,7 @@ function maleSchraeg() {
   // ein Klotz ist genau ein Feld. Was kein Bild hat, bleibt ein Klotz.
   // Was flach gezeichnet wird, kommt zuerst - es liegt am Boden und darf
   // nichts verdecken, was dahinter steht.
-  const flache = [], bilder = [], bloecke = [];
+  const flache = [], bilder = [], bloecke = [], platten = [];
   const abgedeckt = new Uint8Array(N * N);
   if (dorf.bauten && dorf.gruppen && dorf.mauern) {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
@@ -366,6 +377,12 @@ function maleSchraeg() {
       const b = flach ? null : (mitBildern ? (id === 44 ? bildFuerBruecke(x, y, n) : bildFuer(id)) : null);
       if (!flach && (!b || b.kacheln !== n)) continue;
       (flach ? flache : bilder).push({ x, y, n, b, id, i, tiefe: x + y + 2 * (n - 1) });
+      // Bodenplatten daneben - sie liegen flach und gehören vor das Gebäude
+      for (const t of (VORPLAETZE[id] || [])) {
+        if (!t.fertig) continue;
+        platten.push({ x: x + t.dx, y: y + t.dy, n: t.kacheln, b: t,
+                       tiefe: (x + t.dx) + (y + t.dy) + 2 * (t.kacheln - 1) });
+      }
       for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++)
         if (x + dx < N && y + dy < N) abgedeckt[(y + dy) * N + x + dx] = 1;
     }
@@ -375,6 +392,10 @@ function maleSchraeg() {
     if (abgedeckt[i]) continue;
     const id = dorf.bauten ? dorf.bauten[i] : 0;
     if (!id) continue;
+    // Kartenrand und Baufläche sind kein Bauwerk, sondern Boden. Mit
+    // Spielgrafiken bleiben sie weg - wo ein Vorplatz zugeordnet ist, liegt
+    // dort schon seine Platte, und der Rest hat noch keine Textur.
+    if ((id === 1 || id === 2) && (stil === 'bilder' || stil === 'flach')) continue;
     if (flachGezeichnet(id, stil)) { flache.push({ x, y, n: 1, id, i, tiefe: x + y }); continue; }
     const b = mitBildern ? bildFuer(id) : null;
     const kante = dorf.gruppen ? dorf.gruppen[i] : 0;
@@ -398,9 +419,16 @@ function maleSchraeg() {
     maleGrundflaeche(e.x, e.y, e.n, grund);
   }
 
-  const alles = bloecke.concat(bilder).sort((a, b) => a.tiefe - b.tiefe || a.x - b.x);
   const k = hb / 16;                       // ein Spielpunkt in Bildschirmpunkten (Kachel im Spiel 32 breit)
   ctx.imageSmoothingEnabled = k < 1;
+
+  // Die Bodenplatten liegen am Boden - erst sie, dann die Bauten darüber
+  for (const e of platten.sort((a, b) => a.tiefe - b.tiefe)) {
+    const [sx, sy] = isoPunkt(e.x + e.n - 1, e.y + e.n - 1);
+    ctx.drawImage(e.b.img, sx - e.b.breite / 2 * k, sy - (e.b.hoehe - 16) * k, e.b.breite * k, e.b.hoehe * k);
+  }
+
+  const alles = bloecke.concat(bilder).sort((a, b) => a.tiefe - b.tiefe || a.x - b.x);
   for (const e of alles) {
     if (e.b) {
       const [sx, sy] = isoPunkt(e.x + e.n - 1, e.y + e.n - 1);   // unterste Ecke des Bauwerks
