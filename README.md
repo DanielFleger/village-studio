@@ -1,98 +1,152 @@
 # Village Studio
 
-Ein eigener AIV-Editor fuer Stronghold Crusader - Ersatz fuer `village.exe`
-von Lord Reza (Stronghold-Engine von 2001).
+Ein Editor für die KI-Dörfer (`.aiv`) von **Stronghold Crusader**.
+Läuft im Browser, braucht nur Node — keine Installation, keine Fremdbausteine.
 
-Node ohne Fremdpakete, Oberflaeche als HTML/Canvas. Kein Bauschritt noetig:
-`start.cmd` startet den Server auf http://localhost:8790 und oeffnet den Browser.
+---
 
-## Loslegen
+## Alpha. Bitte vorher lesen.
 
-1. **Node.js** installieren (LTS von [nodejs.org](https://nodejs.org) — sonst nichts,
-   das Werkzeug benutzt kein einziges Fremdpaket).
-2. Dieses Verzeichnis herunterladen: gruener Knopf *Code → Download ZIP*, oder
-   `git clone https://github.com/DanielFleger/village-studio`.
-3. **`start.cmd`** doppelklicken. Der Server laeuft auf
-   <http://localhost:8790>, der Browser geht von selbst auf.
-   Unter Linux/Mac stattdessen `node server.js`.
+Dieses Werkzeug schreibt AIV-Dateien, die Stronghold Crusader lädt. Es
+funktioniert bei mir, aber es ist jung und wenig erprobt.
 
-Zwei Dinge holt sich das Werkzeug von aussen:
+* **Lege Sicherungen an.** Das Programm legt vor jedem Überschreiben selbst eine
+  Kopie in `_backup` an — verlass dich trotzdem nicht allein darauf.
+* **Getestet nur mit Stronghold Crusader und Crusader Extreme** unter Windows.
+  Andere Teile der Reihe sind ungeprüft.
+* **Rückgängig gilt nur, solange das Fenster offen ist.** Es gibt keinen Verlauf
+  über Sitzungen hinweg.
+* **Zwei Dinge im Dateiformat sind noch nicht verstanden** — sie stehen unten in
+  der Todo-Liste. Dateien, die dieses Programm schreibt, sind deshalb nicht
+  garantiert gleichwertig mit denen des Original-Editors.
 
-**Die AIV-Dateien.** Gesucht wird an diesen Orten:
+---
 
-| Ort | gedacht fuer |
-|---|---|
-| `..\Village\villages`, `..\Village\aiv`, `..\Village` | neben dem alten Editor von Lord Reza |
-| `aiv\` **in diesem Ordner** | der einfachste Weg: eigene .aiv einfach hier hineinlegen |
-| `<Stronghold>\aiv` | die mitgelieferten KI-Doerfer des Spiels |
-| jeder Ordner, den man im Werkzeug unter **AIV Ordner auswählen** hinzufuegt | alles andere - der Ordner wird samt Unterordnern durchsucht |
+![Village Studio mit dem geladenen Dorf Emir3, darunter das Gelände der Karte](bilder/oberflaeche.png)
 
-Der Knopf **Ordner wählen …** oeffnet den Windows-Ordnerdialog; wer lieber
-tippt, traegt den Pfad daneben ein. Beides landet in der `config.json`, der
-Ordner bleibt also auch nach einem Neustart dabei. Es reicht, den
-Stronghold-Ordner anzugeben - gesucht wird in allen Unterordnern ohne feste Tiefen- oder Eintragsgrenze. Verzeichnisverknüpfungen werden nicht verfolgt.
+*Das Original-KI-Dorf `Emir3`, darunter das Gelände einer echten Karte des Spiels.
+Links die gefundenen Dörfer, rechts Werkzeuge, Speicherziele und Ebenen.*
 
-**Die Spielgrafiken.** Fuer die schraege Ansicht liest das Werkzeug die
-`.gm1`-Dateien der Installation — nur lesend, es wird nichts veraendert.
-Gesucht wird unter
-`C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme`.
-Liegt das Spiel woanders, eine Datei `config.json` daneben legen:
+---
+
+## Starten
+
+Node muss installiert sein ([nodejs.org](https://nodejs.org)).
+
+```
+node server.js
+```
+
+Dann [http://localhost:8790](http://localhost:8790) im Browser öffnen.
+Unter Windows tut es auch ein Doppelklick auf `start.cmd`.
+
+### Wo das Programm sucht
+
+Am einfachsten: die `.aiv` in den Ordner **`aiv`** legen, der neben
+`start.cmd` liegt, und die Seite neu laden.
+
+Liegen die Dateien woanders, hilft ganz oben in der linken Spalte der Knopf
+**AIV Ordner auswählen**: Er öffnet den Windows-Dialog,
+unter *Ordner und Pfad eingeben* lässt sich der Pfad auch eintippen. Ein so hinzugefügter Ordner wird
+**samt Unterordnern** durchsucht — es genügt also, den Stronghold-Ordner
+anzugeben, dann werden auch die AIV der UCP-Plugins gefunden. Die Suche hat keine feste Tiefen- oder Eintragsgrenze; Verzeichnisverknüpfungen werden nicht verfolgt. Erneutes Auswählen liest den Ordner neu ein.
+
+Von allein gesucht wird außerdem in einem Ordner `Village` neben dem
+Programmordner, im Programmordner selbst und im `aiv`-Ordner der
+Spielinstallation. Findet das Programm gar nichts, zeigt es alle diese Orte
+an. Alles lässt sich auch von Hand in eine `config.json` daneben schreiben:
 
 ```json
-{ "stronghold": "D:\Spiele\Stronghold Crusader Extreme" }
+{
+  "stronghold": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Stronghold Crusader Extreme",
+  "doerfer": ["D:\\Meine AIV-Dateien"]
+}
 ```
 
-Ohne Spielordner laeuft alles ausser den Spielgrafiken; die Rasteransicht
-und das Bearbeiten funktionieren.
+---
 
-## Was drin ist
+## Was heute funktioniert
 
-| Datei | Zweck |
-|---|---|
-| `server.js` | kleiner lokaler Server, liest und schreibt AIV-Dateien |
-| `lib/aiv.js` | AIV lesen: 2036 Byte Verzeichnis, dann 14 Abschnitte |
-| `lib/blast.js` | PKWare-DCL-Entpacker (Portierung von Mark Adlers `blast.c`) |
-| `lib/implode.js` | der passende Packer - Gegenstueck zu `blast.js` |
-| `lib/aivwrite.js` | AIV zurueckschreiben, unveraenderte Abschnitte byteweise |
-| `lib/gebaeude.json` | Bau-Nummer -> Name, Groesse, Gebaeudeart |
-| `web/` | Oberflaeche |
+Jede Zeile hier ist gemessen, nicht geplant.
 
-## Pruefen, ohne etwas anzufassen
+**AIV-Dateien lesen** — alle 14 Abschnitte samt der PKWare-Implode-Packung.
+An 152 Dateien geprüft, darunter alle 111 Originale des Spiels.
 
-Alle drei Skripte arbeiten nur lesend bzw. im Arbeitsspeicher:
+**AIV-Dateien schreiben** — gepackt zurück, mit automatisch neu berechneten
+Abschnitten 2004 und 2005; die halten fest, wie die Felder eines Gebäudes
+zusammengehören. Im Spiel bestätigt: eine geschriebene Burg wurde in einem Test
+zu 445 von 450 Bauschritten gebaut.
 
-```
-node _pruefe_schreiben.js     # Rundlauf ueber alle gefundenen AIV-Dateien
-node _pruefe_gebaeude.js      # Namenstabelle gegen die echten Dateien
-node _untersuche_nummer.js 93 # eine Bau-Nummer im Detail ansehen
-```
+**Anzeigen** — 100×100-Raster mit umschaltbaren Ebenen: Bauten, Bauschritte,
+Lage im Bauwerk, Kantenlänge, Umriss-Prüfung. Zoom und Verschieben mit der Maus,
+je Feld ein Hinweisfenster mit Nummer und Bauschritt.
 
-## Was wir wissen
+**Gebäudenamen statt Nummern** — mit Größe und den drei verschiedenen
+Nummernsätzen, die Stronghold für dasselbe Gebäude benutzt.
 
-`doku/Wissensstand.md` ist das Woerterbuch: alle Erkenntnisse ueber das
-AIV-System an einer Stelle, jede mit Beleglage - belegt, gemessen, abgelesen,
-vermutet oder widerlegt. Wer hier etwas nachschlaegt, sieht sofort, ob er sich
-darauf verlassen kann. Die widerlegten Annahmen stehen mit drin, damit
-dieselben Irrtuemer nicht wiederkommen.
+**Bearbeiten** — Malen, Radieren, Pipette, Pinselgröße 1 bis 7, Bauschritt
+getrennt einstellbar, Rückgängig.
 
-Daneben:
+**Speichern an drei Stellen** — über das Original, unter neuem Namen, oder direkt
+dorthin, wo das Spiel schaut (die `mapping.json` der UCP3-KI-Ordner). Immer mit
+Sicherung.
 
-| Datei | Inhalt |
-|---|---|
-| `doku/AIV-im-Speicher.md` | Bauliste im laufenden Spiel, Adressen und Aufbau |
-| `doku/Abreissen.md` | Gebaeude, Mauern und einzelne Bauschritte abreissen |
-| `doku/AIV-tauschen.md` | einer laufenden KI einen anderen Bauplan geben |
-| `doku/ghidra/` | die Skripte, mit denen das alles herausfaellt |
+**Karte als Hintergrund** — die Geländevorschau aus den `.map`-Dateien des
+Spiels, senkrecht von oben, unter dem Raster. Alle 113 Karten des Spiels lesen
+sich fehlerfrei; mit den Karten der Plugins findet das Programm 189. Alternativ
+lässt sich ein eigenes Bild unterlegen.
 
-## Zwei Dinge, die man wissen muss
+**Spielgrafiken in der schrägen Ansicht** — statt farbiger Blöcke die echten
+Bilder aus den `.gm1`-Dateien des Spiels, mit richtiger Verdeckung von hinten
+nach vorn. Für 70 der 82 quadratischen Bau-Nummern ist das Bild zugeordnet und
+Bild für Bild von Hand geprüft. Vier Darstellungen zur Auswahl: Spielgrafiken,
+flach (Mauern, Türme, Tore und Bergfried liegen, der Rest steht), Grundriss
+(alles flach, wie im alten Editor) und Klötze.
 
-**Die Gepackt-Kennung ist nicht optional.** In allen 129 Originaldateien auf
-dem Entwicklungsrechner - davon 111 aus dem Spiel selbst - sind die Abschnitte
-2004, 2005, 2007, 2008 und 2013 gepackt und alle uebrigen roh. Kein einziges
-Gegenbeispiel. Es gibt keinen Beleg, dass das Spiel diese Abschnitte auch roh
-liest, also werden sie nie roh zurueckgeschrieben.
+**Was das Spiel selbst dazumalt** — die Bodenplatten neben Bergfried, Kaserne,
+Söldnerposten und den beiden Gilden; die Ausrichtung der Zugbrücke, aus der Lage
+des Nachbartores gerechnet; die Treppenstufen als zweite Ebene; und für Häuser,
+Gärten und Felder die Fassung, die das Spiel beim Bauen auswürfelt — hier fest
+aus der Lage des Feldes gerechnet, damit sie beim Neuzeichnen nicht springt.
 
-**Die Bau-Nummern sind ein eigener Satz.** Weder die Reihenfolge der
-Balance-Tabellen noch `sourcehold/data/shc.py` passen. Die richtige Liste ist
-`BUILDING_TYPE_AIV_FILES_KV` aus `sourcehold/tool/convert/aiv/info.py`;
-sie ist hier gegen die gemessenen Grundflaechen aller Dateien geprueft.
+**Torhäuser drehen** — Taste `R` auf dem zuletzt berührten Feld tauscht die
+beiden Ausrichtungen (40/41 und 42/43).
+
+**Alles bleibt stehen** — Ansicht, Darstellung, Ebenen, Werkzeug, Zoom, Pinsel
+und das zuletzt geöffnete Dorf überleben das Neuladen der Seite.
+
+**Prüfblatt** unter `/pruefen.html` — je Bau-Nummer das zugeordnete Bild, drei
+Knöpfe (*passt*, *sehe ich nicht*, *nicht vollständig*), ein Notizfeld und eine
+ausziehbare Sammlung aller 549 Gebäudebilder zum Hineinziehen. So ist die
+Zuordnung entstanden.
+
+**Umriss-Prüfung** — meldet Felder, an denen die Zusammengehörigkeit nicht zu den
+Bauten passt. Genau der Fehler, der ein 3×3-Gebäude in neun einzelne zerfallen
+lässt.
+
+---
+
+## Was als Nächstes kommt
+
+1. **Karte automatisch einrasten.** Dafür fehlt die Umrechnung zwischen dem
+   Kachelgitter der Karte (80.400 Felder, keine Quadratfläche) und der Vorschau
+   (200×200). Bis dahin legt man die Karte von Hand zurecht.
+2. **Mauerwerk in Abschnitt 2004.** Dort steht mal 0, mal 1, und die Regel
+   dahinter ist unbekannt. Zwei Erklärungen sind gemessen und widerlegt.
+3. **Bauschritte durchspielen** — den Aufbau der Burg Schritt für Schritt ansehen
+   wie einen Film.
+4. **AIV im laufenden Gefecht tauschen**, ohne das Gefecht neu zu starten.
+5. **Die restlichen 113 Abschnitte der `.map`** — bisher ist nur die Vorschau
+   erschlossen.
+
+---
+
+## Dank
+
+Die Beschreibung des AIV- und des Kartenformats stammt in Teilen vom
+[Sourcehold-Projekt](https://github.com/sourcehold). Der Entpacker ist eine
+Portierung von Mark Adlers `blast.c`.
+
+## Lizenz
+
+MIT — siehe [LICENSE](LICENSE).

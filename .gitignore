@@ -1,8 +1,12 @@
-_backup/
 node_modules/
 config.json
+_backup/
+_vorlagen/
 *.aiv
 /dorf.png
 /beispieldorf_*.png
-zuordnung_urteil.json
+
+# fremde Bilder und eigene Notizen gehoeren nicht ins Repo
 skins/
+zuordnung_urteil.json
+lib/zuordnung_urteil.json
