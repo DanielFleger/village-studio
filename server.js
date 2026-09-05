@@ -60,40 +60,41 @@ const MIME = {
   '.webp': 'image/webp',
 };
 
-// Ein Ordner wird samt Unterordnern durchsucht - wer den Stronghold-Ordner
-// angibt, findet damit auch die AIV in ucp/plugins/<irgendwas>/aiv. Zwei
-// Bremsen, damit ein versehentlich gewaehltes "C:\\" nicht die ganze Platte
-// liest: hoechstens sechs Ebenen tief und hoechstens 6000 Eintraege je Ordner.
-function sucheAiv(wurzel, treffer, wurzelName, tiefe, budget) {
-  if (tiefe > 6 || budget.rest <= 0) return;
-  let eintraege;
-  try { eintraege = fs.readdirSync(wurzel, { withFileTypes: true }); } catch { return; }
-  for (const e of eintraege) {
-    if (--budget.rest <= 0) return;
-    const voll = path.join(wurzel, e.name);
-    if (e.isDirectory()) {
-      // Der Sicherungsordner bleibt draussen - sonst steht jede Fassung
-      // eines Dorfes mehrfach in der Liste.
-      if (e.name.startsWith('.') || e.name === 'node_modules' || e.name === '_backup') continue;
-      sucheAiv(voll, treffer, wurzelName, tiefe + 1, budget);
-      continue;
+// Alle regulären AIV-Dateien unter den Suchordnern erfassen. Verzeichnislinks
+// werden nicht verfolgt, damit die Suche im gewählten Baum bleibt.
+function sucheAiv(wurzel, treffer, wurzelName, gesehen = new Set(), besucht = new Set()) {
+  const schluessel = p => process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p);
+  const offen = [path.resolve(wurzel)];
+  while (offen.length) {
+    const ordner = offen.pop();
+    const key = schluessel(ordner);
+    if (besucht.has(key)) continue;
+    besucht.add(key);
+    let eintraege;
+    try { eintraege = fs.readdirSync(ordner, { withFileTypes: true }); } catch { continue; }
+    for (const e of eintraege) {
+      const voll = path.join(ordner, e.name);
+      if (e.isDirectory()) { offen.push(voll); continue; }
+      if (!e.isFile() || !e.name.toLowerCase().endsWith('.aiv')) continue;
+      const dateiKey = schluessel(voll);
+      if (gesehen.has(dateiKey)) continue;
+      let st; try { st = fs.statSync(voll); } catch { continue; }
+      gesehen.add(dateiKey);
+      treffer.push({
+        name: e.name.replace(/\.aiv$/i, ''), datei: e.name, pfad: voll,
+        ordner: path.basename(ordner), wurzel: wurzelName,
+        herkunft: path.join(wurzelName, path.relative(wurzel, ordner)),
+        groesse: st.size, geaendert: st.mtime.toISOString(),
+      });
     }
-    if (!e.name.toLowerCase().endsWith('.aiv')) continue;
-    if (treffer.some(t => t.pfad === voll)) continue;
-    let st; try { st = fs.statSync(voll); } catch { continue; }
-    treffer.push({
-      name: e.name.replace(/\.aiv$/i, ''), datei: e.name, pfad: voll,
-      ordner: path.basename(path.dirname(voll)), wurzel: wurzelName,
-      groesse: st.size, geaendert: st.mtime.toISOString(),
-    });
   }
 }
 
 function listeDoerfer() {
-  const treffer = [];
+  const treffer = [], gesehen = new Set(), besucht = new Set();
   for (const ordner of dorfOrdner())
-    sucheAiv(ordner, treffer, path.basename(ordner), 0, { rest: 6000 });
-  treffer.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    sucheAiv(ordner, treffer, path.basename(ordner), gesehen, besucht);
+  treffer.sort((a, b) => a.name.localeCompare(b.name, 'de') || a.pfad.localeCompare(b.pfad, 'de'));
   return treffer;
 }
 
@@ -108,7 +109,7 @@ function merkeOrdner(pfad, entfernen) {
   else {
     if (!fs.existsSync(pfad)) return { fehler: 'Diesen Ordner gibt es nicht: ' + pfad };
     if (!fs.statSync(pfad).isDirectory()) return { fehler: 'Das ist kein Ordner: ' + pfad };
-    if (drin >= 0) return { fehler: 'Der Ordner ist schon dabei' };
+    if (drin >= 0) return { ordner: liste };
     liste.push(pfad);
   }
   c.doerfer = liste;

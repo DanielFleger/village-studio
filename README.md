@@ -45,11 +45,11 @@ Unter Windows tut es auch ein Doppelklick auf `start.cmd`.
 Am einfachsten: die `.aiv` in den Ordner **`aiv`** legen, der neben
 `start.cmd` liegt, und die Seite neu laden.
 
-Liegen die Dateien woanders, hilft in der linken Spalte der Abschnitt
-**Eigene Ordner**: der Knopf *Ordner wählen …* öffnet den Windows-Dialog,
-daneben lässt sich der Pfad auch eintippen. Ein so hinzugefügter Ordner wird
+Liegen die Dateien woanders, hilft ganz oben in der linken Spalte der Knopf
+**AIV Ordner auswählen**: Er öffnet den Windows-Dialog,
+unter *Ordner und Pfad eingeben* lässt sich der Pfad auch eintippen. Ein so hinzugefügter Ordner wird
 **samt Unterordnern** durchsucht — es genügt also, den Stronghold-Ordner
-anzugeben, dann werden auch die AIV der UCP-Plugins gefunden.
+anzugeben, dann werden auch die AIV der UCP-Plugins gefunden. Die Suche hat keine feste Tiefen- oder Eintragsgrenze; Verzeichnisverknüpfungen werden nicht verfolgt. Erneutes Auswählen liest den Ordner neu ein.
 
 Von allein gesucht wird außerdem in einem Ordner `Village` neben dem
 Programmordner, im Programmordner selbst und im `aiv`-Ordner der

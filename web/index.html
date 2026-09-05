@@ -14,20 +14,19 @@
 
 <main>
   <aside class="links">
-    <div class="abschnitt">
-      <h2>Dörfer</h2>
+    <div class="ordnerkopf">
+      <button id="ordnerWaehlen" class="breit">AIV Ordner auswählen</button>
+      <div class="hinweisklein">Findet AIV-Dateien in allen Unterordnern.</div>
+      <details id="ordnerDetails">
+        <summary>Ordner und Pfad eingeben</summary>
+        <input type="text" id="ordnerPfad" placeholder="Ordnerpfad einfügen …" aria-label="AIV Ordnerpfad" autocomplete="off">
+        <button id="ordnerDazu" class="breit">Ordner einlesen</button>
+        <ul id="ordnerListe" class="liste"></ul>
+      </details>
+      <h2>Dörfer <span id="dorfAnzahl"></span></h2>
       <input type="search" id="suche" placeholder="suchen …" autocomplete="off">
-      <ul id="liste" class="liste"></ul>
     </div>
-
-    <div class="abschnitt">
-      <h2>Eigene Ordner</h2>
-      <div class="hinweisklein">Ein Ordner wird samt Unterordnern nach <code>.aiv</code> durchsucht. Der Stronghold-Ordner reicht also.</div>
-      <button id="ordnerWaehlen" class="breit">Ordner wählen …</button>
-      <input type="text" id="ordnerPfad" placeholder="…oder Pfad hier eintippen" autocomplete="off">
-      <button id="ordnerDazu" class="breit">Hinzufügen</button>
-      <ul id="ordnerListe" class="liste"></ul>
-    </div>
+    <div class="dorfscroll"><ul id="liste" class="liste"></ul></div>
   </aside>
 
   <section class="mitte">
