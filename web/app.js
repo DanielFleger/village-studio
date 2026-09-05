@@ -261,6 +261,9 @@ function isoFeldAn(sx, sy) {
 //                 sich hin; der Rest bleibt stehen. So sieht man die Anlage,
 //                 ohne dass die Türme das Dorf dahinter verdecken.
 //   'grundriss' – alles flach, wie im Raster, nur schräg
+// Der freigeräumte Sandplatz, auf dem im Spiel jedes Gebäude steht
+const PLATZ_FARBE = '#a4906a';
+
 const FLACH_GRUPPEN = new Set(['mauer', 'turm', 'burg', 'graben']);
 function flachGezeichnet(id, stil) {
   const b = bau(id);
@@ -368,6 +371,15 @@ function maleSchraeg() {
     const kante = dorf.gruppen ? dorf.gruppen[i] : 0;
     if (b && b.kacheln === 1 && kante <= 1) bilder.push({ x, y, n: 1, b, id, i, tiefe: x + y });
     else bloecke.push({ x, y, id, i, tiefe: x + y });
+  }
+
+  // Jedes Bauwerk steht im Spiel auf einem freigeräumten, sandigen Platz -
+  // ohne den schweben die Häuser über dem Gras. Der Platz ist genau die
+  // Grundfläche aus der AIV; der Vorplatz DANEBEN (Pennerhof, Trainingslager)
+  // steht dort nicht und fehlt darum weiterhin.
+  if (stil === 'bilder' || stil === 'flach') {
+    for (const e of bilder) maleGrundflaeche(e.x, e.y, e.n, PLATZ_FARBE);
+    for (const e of bloecke) if (e.n === undefined) maleGrundflaeche(e.x, e.y, 1, PLATZ_FARBE);
   }
 
   // Die flachen Grundflächen liegen unter allem anderen
