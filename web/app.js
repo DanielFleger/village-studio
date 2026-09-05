@@ -750,6 +750,42 @@ function malen_() {
   $('#zoomWert').textContent = Math.round(zoom * 100) + ' %';
 }
 
+// ---------- Mitlesen ----------
+// Wer im AI-Toolkit baut und dort speichert, will nicht jedes Mal hier auf
+// dasselbe Dorf klicken. Bei eingeschaltetem Mitlesen schaut das Werkzeug
+// alle zwei Sekunden nach, ob die Datei sich geaendert hat, und laedt sie
+// dann neu - Ansicht, Zoom und Ausschnitt bleiben, wo sie waren.
+let mitlesenZeit = null;
+let zuletztGesehen = null;
+
+async function pruefeStand() {
+  if (!dorf || !$('#mitlesen').checked) return;
+  let s;
+  try { s = await fetch('/api/stand?pfad=' + encodeURIComponent(dorf.pfad)).then(r => r.json()); } catch { return; }
+  if (!s || s.fehler) return;
+  const kennung = s.zeit + '/' + s.groesse;
+  if (zuletztGesehen === null) { zuletztGesehen = kennung; return; }
+  if (kennung === zuletztGesehen) return;
+  zuletztGesehen = kennung;
+  if (geaendert) {                       // eigene Aenderungen nicht wegwerfen
+    $('#status').textContent = 'Die Datei wurde von aussen geändert — hier liegen ungespeicherte Änderungen.';
+    return;
+  }
+  const merkZoom = zoom, merkX = offX, merkY = offY, merkName = dorf.name;
+  const pfad = dorf.pfad;
+  await ladeDorf(pfad, merkName);
+  zoom = merkZoom; offX = merkX; offY = merkY;
+  malen_();
+  $('#status').textContent = 'neu geladen · ' + new Date().toLocaleTimeString('de-DE');
+}
+
+function mitlesenSchalten() {
+  clearInterval(mitlesenZeit);
+  zuletztGesehen = null;
+  if ($('#mitlesen').checked) mitlesenZeit = setInterval(pruefeStand, 2000);
+  merkeStand();
+}
+
 // ---------- Vorlage ----------
 // x, y und Größe zählen in Rasterfeldern, damit die Vorlage beim Zoomen sitzen bleibt.
 const vorlage = { bild: null, x: 0, y: 0, skala: 1, deckkraft: .6, sichtbar: true };
@@ -1154,7 +1190,7 @@ if (suchparam.has('anonym')) $('#liste').classList.add('anonym');
 // Liegt im Browser (localStorage), nicht auf der Platte - es ist reine
 // Bedienung, kein Arbeitsergebnis.
 const MERK_SCHLUESSEL = 'villagestudio.stand.v1';
-const MERK_SCHALTER = ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebUmriss', 'ebSonst', 'ebRaster', 'ebSkins'];
+const MERK_SCHALTER = ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebUmriss', 'ebSonst', 'ebRaster', 'ebSkins', 'mitlesen'];
 const MERK_FELDER = ['baunr', 'schrittnr', 'pinsel', 'stilWahl', 'suche'];
 let merkenAn = false;                 // erst nach dem Wiederherstellen scharf
 
@@ -1187,6 +1223,7 @@ function stelleBedienungHer(stand) {
     $('#hinweisSchraeg').hidden = false;
   }
   if (stand.werkzeug) setzeWerkzeug(stand.werkzeug);
+  if ($('#mitlesen').checked) mitlesenSchalten();
 }
 
 // Merken an jeder Bedienstelle anhängen
@@ -1238,3 +1275,5 @@ $('#ordnerWaehlen').onclick = async () => {
     knopf.textContent = 'AIV Ordner auswählen';
   }
 };
+
+$('#mitlesen').onchange = mitlesenSchalten;

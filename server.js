@@ -356,6 +356,17 @@ const server = http.createServer(async (req, res) => {
   }
   if (u.pathname === '/pruefen') { res.writeHead(302, { Location: '/pruefen.html' }); return res.end(); }
 
+  // Wann wurde die Datei zuletzt geschrieben? Damit kann die Oberflaeche
+  // mitlesen, waehrend jemand dieselbe Burg in einem anderen Werkzeug
+  // bearbeitet - im AI-Toolkit zum Beispiel.
+  if (u.pathname === '/api/stand') {
+    const p = u.searchParams.get('pfad');
+    try {
+      const st = fs.statSync(p);
+      return sendeJson(res, 200, { zeit: st.mtimeMs, groesse: st.size });
+    } catch { return sendeJson(res, 404, { fehler: 'nicht gefunden' }); }
+  }
+
   if (u.pathname === '/api/dorf') {
     const p = u.searchParams.get('pfad');
     const bekannt = listeDoerfer().some(d => d.pfad === p) || spielZiele().some(z => z.pfad === p);
