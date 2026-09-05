@@ -4,19 +4,32 @@
 // Aufruf:  node _baue_pruefzettel.js
 // Ergebnis: Tools\VillageStudio-bogen\Zuordnung_pruefen.html
 //
-// Die Bilder liegen schon als Einzelbilder daneben (einzeln\<n>x<n>\gross\),
-// die Seite verlinkt sie nur - es wird nichts doppelt abgelegt.
+// Die Bilder stecken IN der Datei, nicht daneben. Erste Fassung hat sie aus
+// dem Nachbarordner verlinkt - beim Öffnen blieben alle Rahmen leer. Woran es
+// lag, ist nicht geklärt (die Dateien lagen da und die Pfade stimmten); mit
+// eingebetteten Bildern kann es an gar nichts mehr liegen: eine Datei, die
+// überall aufgeht, auch verschoben oder weitergeschickt. Kostet rund 3 MB.
 
 const fs = require('fs');
 const path = require('path');
-const { sammle } = require('./lib/bildvorrat');
+const { sammle, GM } = require('./lib/bildvorrat');
+const { pngRgba } = require('./lib/gm1');
 
 const BOGEN = path.resolve(__dirname, '..', 'VillageStudio-bogen');
 const ZIEL = path.join(BOGEN, 'Zuordnung_pruefen.html');
 
+// Das Bild dreifach vergrößert und direkt in die Seite gelegt
 function bildPfad(vorrat, n, pos) {
   const p = vorrat[n].find(x => x.pos === pos);
-  return `einzeln/${n}x${n}/gross/${String(pos).padStart(3, '0')}_${p.datei}-${p.nr}.png`;
+  const b = p.bild, F = 3;
+  const B = b.breite * F, H = b.hoehe * F;
+  const gross = Buffer.alloc(B * H * 4, 0);
+  for (let y = 0; y < H; y++) for (let x = 0; x < B; x++) {
+    const q = ((y / F | 0) * b.breite + (x / F | 0)) * 4, t = (y * B + x) * 4;
+    gross[t] = b.rgba[q]; gross[t + 1] = b.rgba[q + 1];
+    gross[t + 2] = b.rgba[q + 2]; gross[t + 3] = b.rgba[q + 3];
+  }
+  return 'data:image/png;base64,' + pngRgba(B, H, gross).toString('base64');
 }
 
 function karte(vorrat, id, e, stand) {
