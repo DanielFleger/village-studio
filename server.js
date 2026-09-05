@@ -7,37 +7,42 @@ const path = require('path');
 const { decode } = require('./lib/aiv');
 const { writeAivMit } = require('./lib/aivwrite');
 const { vorschauAlsPng } = require('./lib/karte');
+const webbilder = require('./lib/webbilder');
 
 const PORT = 8790;
 const HIER = __dirname;
 
-// Einstellungen aus config.json, falls vorhanden. Beispiel:
-//   { "stronghold": "C:\Spiele\Stronghold Crusader",
-//     "doerfer": ["C:\Meine AIV-Dateien"] }
+const VILLAGE_DIR = path.resolve(HIER, '..', 'Village');
+
+// Wo AIV-Dateien gesucht werden. Die ersten drei sind der Ordner des alten
+// Editors neben diesem hier - so liegt es auf dem Entwicklungsrechner. Wer
+// das Werkzeug irgendwohin klont, hat den nicht: darum sucht es auch im
+// eigenen Ordner "aiv" und im aiv-Ordner der Stronghold-Installation.
+// Die Reihenfolge entscheidet nur, was zuerst in der Liste steht.
+function dorfOrdner() {
+  const o = [
+    path.join(VILLAGE_DIR, 'villages'),
+    path.join(VILLAGE_DIR, 'aiv'),
+    VILLAGE_DIR,
+    path.join(HIER, 'aiv'),
+  ];
+  const spiel = spielOrdner();
+  if (spiel) o.push(path.join(spiel, 'aiv'));
+  // Eigene Ordner aus der config.json - "doerfer": ["D:\Meine AIV-Dateien"]
+  for (const e of (einstellungen().doerfer || [])) if (typeof e === 'string') o.push(e);
+  return o;
+}
+
+// config.json neben dem Werkzeug: { "stronghold": "...", "doerfer": ["..."] }
 function einstellungen() {
   try { return JSON.parse(fs.readFileSync(path.join(HIER, 'config.json'), 'utf8')); }
   catch { return {}; }
 }
 
-// Wo nach AIV-Dateien gesucht wird: was in config.json steht, sonst der
-// Village-Ordner neben dem Programm, sonst der Programmordner selbst.
-function dorfOrdner() {
-  const c = einstellungen();
-  if (Array.isArray(c.doerfer) && c.doerfer.length) return c.doerfer;
-  const neben = path.resolve(HIER, '..', 'Village');
-  const liste = [path.join(neben, 'villages'), path.join(neben, 'aiv'), neben, HIER];
-  const spiel = spielOrdner();
-  if (spiel) liste.push(path.join(spiel, 'aiv'));
-  return liste;
-}
-
-// Stronghold-Installation: aus config.json, sonst der uebliche Steam-Pfad
+// Stronghold-Installation: aus der config.json, sonst der uebliche Steam-Pfad
 function spielOrdner() {
-  try {
-    const c = JSON.parse(fs.readFileSync(path.join(HIER, 'config.json'), 'utf8'));
-    if (c.stronghold && fs.existsSync(c.stronghold)) return c.stronghold;
-  } catch { }
-  // Ohne Eintrag: der uebliche Steam-Pfad
+  const c = einstellungen();
+  if (c.stronghold && fs.existsSync(c.stronghold)) return c.stronghold;
   const std = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Stronghold Crusader Extreme';
   return fs.existsSync(std) ? std : null;
 }
@@ -47,6 +52,11 @@ const MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
 };
 
 function listeDoerfer() {
@@ -111,7 +121,7 @@ function spielZiele() {
 }
 
 // Vorlagen (Kartenbilder unter dem Raster) liegen gesammelt neben den Doerfern
-const VORLAGEN = path.join(HIER, '_vorlagen');
+const VORLAGEN = path.join(VILLAGE_DIR, '_vorlagen');
 function vorlageName(dorfPfad) {
   return path.basename(dorfPfad, '.aiv').replace(/[^A-Za-z0-9_. -]/g, '_');
 }
@@ -192,6 +202,79 @@ const server = http.createServer(async (req, res) => {
 
   if (u.pathname === '/api/spielziele')
     return sendeJson(res, 200, { spiel: spielOrdner(), ziele: spielZiele() });
+
+  // Spielgrafiken fuer die schraege Ansicht - aus den gm1-Dateien, nach lib/gebaeude_bilder.json
+  if (u.pathname === '/api/bilder') {
+    try { return sendeJson(res, 200, webbilder.bilderIndex()); }
+    catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+  const mBild = u.pathname.match(/^\/bilder\/([a-z0-9_]+)\.png$/i);
+  if (mBild) {
+    let png = null;
+    try { png = webbilder.bildPng(mBild[1]); } catch (e) { res.writeHead(500); return res.end(e.message); }
+    if (!png) { res.writeHead(404); return res.end('kein Bild fuer Nummer ' + mBild[1]); }
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(png);
+  }
+
+  // Jedes einzelne Gebaeudebild, angesprochen wie in der Zuordnung: /bild/tile_castle/713.png
+  const mRoh = u.pathname.match(/^\/bild\/([a-z0-9_]+)\/(\d+)\.png$/i);
+  if (mRoh) {
+    let png = null;
+    try { png = webbilder.pngVon(mRoh[1] + '#' + mRoh[2]); } catch (e) { res.writeHead(500); return res.end(e.message); }
+    if (!png) { res.writeHead(404); return res.end('kein Bild ' + mRoh[1] + '#' + mRoh[2]); }
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'max-age=86400' });
+    return res.end(png);
+  }
+
+  // Die Pruefseite: Zuordnung, ganzer Bildervorrat, bisherige Urteile
+  const mSkin = u.pathname.match(/^\/skin\/(\d+)\.png$/);
+  if (mSkin) {
+    const buf = webbilder.leseSkin(mSkin[1]);
+    if (!buf) { res.writeHead(404); return res.end('kein Skin ' + mSkin[1]); }
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'max-age=86400' });
+    return res.end(buf);
+  }
+  if (u.pathname === '/api/vorplaetze') {
+    try { return sendeJson(res, 200, webbilder.vorplaetze()); }
+    catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+  if (u.pathname === '/api/pruefstand') {
+    try { return sendeJson(res, 200, webbilder.pruefstand()); }
+    catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+  // Urteil speichern. Zwei Formen: { id, eintrag } aendert genau einen Eintrag
+  // (so koennen zwei offene Seiten sich nicht ueberschreiben), { urteile }
+  // ersetzt alles - das kann noch eine alte, nicht neu geladene Seite schicken.
+  if (u.pathname === '/api/urteil' && req.method === 'POST') {
+    let k;
+    try { k = await leseKoerper(req); } catch { return sendeJson(res, 400, { fehler: 'ungueltige Anfrage' }); }
+    try {
+      if (k.id !== undefined) return sendeJson(res, 200, webbilder.speichereUrteil(String(k.id), k.eintrag));
+      return sendeJson(res, 200, webbilder.speichereUrteile(k.urteile || {}));
+    } catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+
+  // Screenshot aus dem Spiel an eine Bau-Nummer heften
+  if (u.pathname === '/api/pruefbild' && req.method === 'POST') {
+    let k;
+    try { k = await leseKoerper(req); } catch { return sendeJson(res, 400, { fehler: 'ungueltige Anfrage' }); }
+    try {
+      const m = String(k.daten || '').match(/^data:image\/([a-z]+);base64,(.+)$/i);
+      if (!m) return sendeJson(res, 400, { fehler: 'kein Bild erkannt' });
+      const endung = m[1].toLowerCase() === 'jpeg' ? 'jpg' : m[1].toLowerCase();
+      const name = webbilder.speicherePruefbild(String(k.id), endung, Buffer.from(m[2], 'base64'));
+      return sendeJson(res, 200, { name });
+    } catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+  const mPruef = u.pathname.match(/^\/pruefbild\/([A-Za-z0-9_.]+)$/);
+  if (mPruef) {
+    const buf = webbilder.lesePruefbild(mPruef[1]);
+    if (!buf) { res.writeHead(404); return res.end('kein Bild'); }
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(mPruef[1])] || 'image/png' });
+    return res.end(buf);
+  }
+  if (u.pathname === '/pruefen') { res.writeHead(302, { Location: '/pruefen.html' }); return res.end(); }
 
   if (u.pathname === '/api/dorf') {
     const p = u.searchParams.get('pfad');

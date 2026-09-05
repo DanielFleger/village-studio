@@ -3,3 +3,7 @@ config.json
 _backup/
 _vorlagen/
 *.aiv
+
+# fremde Bilder und eigene Notizen gehoeren nicht ins Repo
+skins/
+lib/zuordnung_urteil.json

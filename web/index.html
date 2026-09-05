@@ -26,6 +26,7 @@
       <span id="dorfname" class="dorfname">kein Dorf geladen</span>
       <span id="geaendert" class="geaendert" hidden>• ungespeichert</span>
       <div class="spacer"></div>
+      <button id="ansichtWechsel" title="zwischen senkrechter und schräger Ansicht wechseln">Ansicht: Raster</button>
       <button id="rueckgaengig" title="Rückgängig (Strg+Z)" disabled>↶</button>
       <button id="zoomRaus" title="verkleinern">−</button>
       <span id="zoomWert">100 %</span>
@@ -39,6 +40,7 @@
     <div class="statusleiste">
       <span id="status">bereit</span>
       <span class="spacer"></span>
+      <span id="hinweisSchraeg" hidden>schräge Ansicht: nur schauen und schieben</span>
       <span id="fadenkreuz"></span>
     </div>
   </section>
@@ -92,6 +94,14 @@
       <label><input type="checkbox" id="ebUmriss" checked> Umriss-Prüfung</label>
       <label><input type="checkbox" id="ebSonst"> Sonstiges</label>
       <label><input type="checkbox" id="ebRaster" checked> Raster</label>
+      <label title="beschriftete Kacheln aus Schlossgespensts AI-Toolkit &#8211; nur in der Rasteransicht"><input type="checkbox" id="ebSkins"> Toolkit-Kacheln (Raster)</label>
+      <div class="feldzeile" title="nur in der schrägen Ansicht"><label for="stilWahl">Darstellung</label>
+        <select id="stilWahl">
+          <option value="bilder">Spielgrafiken</option>
+          <option value="flach">flach: Wehrbau liegt</option>
+          <option value="grundriss">Grundriss: alles flach</option>
+          <option value="kloetze">Klötze</option>
+        </select></div>
     </div>
 
     <div class="abschnitt">

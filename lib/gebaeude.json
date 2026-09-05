@@ -1,12 +1,11 @@
 {
  "_quelle": "Nummern aus sourcehold/tool/convert/aiv/info.py (BUILDING_TYPE_AIV_FILES_KV), gegengeprueft an den gemessenen Grundflaechen aller 18 AIV-Dateien auf diesem Rechner.",
- "_stand": "2026-08-28",
+ "_stand": "2026-09-05",
  "gebaeude": {
   "1": {
    "name": "Kartenrand",
    "kurz": "Rand",
    "gruppe": "sonstiges",
-   "farbe": "#8a8a8a",
    "b": 0,
    "h": 0,
    "hinweis": "kein Gebaeude: Ring um die ganze 100x100-Karte, 396 Felder je Dorf"
@@ -15,10 +14,9 @@
    "name": "Bauflaeche",
    "kurz": "Flaeche",
    "gruppe": "sonstiges",
-   "farbe": "#4a4a4a",
    "b": 0,
    "h": 0,
-   "hinweis": "kein Gebaeude: 5x5- und 10x10-Bloecke, vom sourcehold-Wandler uebersprungen"
+   "hinweis": "kein Gebaeude, sondern der freigeraeumte Platz um die Bauten: Pennerhof am Bergfried, Trainingslager an Kaserne und Soeldnerposten, Versammlungsplatz an den Gilden. Steht Feld fuer Feld in der AIV. Die Bodentextur dafuer ist noch nicht zugeordnet."
   },
   "10": {
    "name": "Steinmauer",
@@ -117,7 +115,8 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "21": {
    "name": "Wassergraben b",
@@ -126,7 +125,8 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "22": {
    "name": "Wassergraben c",
@@ -135,7 +135,8 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "23": {
    "name": "Wassergraben d",
@@ -144,7 +145,8 @@
    "b": 1,
    "h": 1,
    "mapper": 106,
-   "mapperName": "M_MAPPER_MOAT"
+   "mapperName": "M_MAPPER_MOAT",
+   "hinweis": "Bodentextur noch nicht zugeordnet - in den Gebaeude-Dateien ist sie nicht, gesucht wird in den Gelaende-Dateien."
   },
   "24": {
    "name": "Pechgraben",
@@ -275,7 +277,7 @@
    "laufzeitName": "BT_MERCENARYPOST"
   },
   "40": {
-   "name": "Kleines Torhaus (O-W)",
+   "name": "Kleines Torhaus (Durchfahrt N-S)",
    "kurz": "Tor klein",
    "gruppe": "burg",
    "b": 5,
@@ -286,7 +288,7 @@
    "laufzeitName": "BT_GATEHOUSESMALL"
   },
   "41": {
-   "name": "Kleines Torhaus (N-S)",
+   "name": "Kleines Torhaus (Durchfahrt O-W)",
    "kurz": "Tor klein",
    "gruppe": "burg",
    "b": 5,
@@ -297,7 +299,7 @@
    "laufzeitName": "BT_GATEHOUSESMALL"
   },
   "42": {
-   "name": "Grosses Torhaus (O-W)",
+   "name": "Grosses Torhaus (Durchfahrt N-S)",
    "kurz": "Tor gross",
    "gruppe": "burg",
    "b": 7,
@@ -308,7 +310,7 @@
    "laufzeitName": "BT_GATEHOUSELARGE"
   },
   "43": {
-   "name": "Grosses Torhaus (N-S)",
+   "name": "Grosses Torhaus (Durchfahrt O-W)",
    "kurz": "Tor gross",
    "gruppe": "burg",
    "b": 7,
@@ -330,15 +332,16 @@
    "laufzeitName": "BT_DRAWBRIDGE"
   },
   "50": {
-   "name": "Stangendreher",
-   "kurz": "Stangen",
+   "name": "Lanzenmacher",
+   "kurz": "Lanzen",
    "gruppe": "waffen",
    "b": 4,
    "h": 4,
    "mapper": 82,
    "mapperName": "M_MAPPER_POLETURNER",
    "laufzeit": 14,
-   "laufzeitName": "BT_POLETURNER"
+   "laufzeitName": "BT_POLETURNER",
+   "hinweis": "Hiess hier bisher 'Stangendreher' - das war die woertliche Uebersetzung von 'Poleturner' und kennt im Spiel niemand. Daniel nennt ihn Pikenier- oder Lanzenmacher (05.09.2026)."
   },
   "51": {
    "name": "Bogenmacher",

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Zuordnung prüfen — Village Studio</title>
+<link rel="stylesheet" href="pruefen.css">
+</head>
+<body>
+
+<header>
+  <div class="marke">Village<span>Studio</span> <small>Zuordnung prüfen</small></div>
+  <div class="zaehler" id="zaehler">lädt …</div>
+  <div class="filter">
+    <button class="f aktiv" data-f="offen">noch offen</button>
+    <button class="f" data-f="vermutet">vermutet</button>
+    <button class="f" data-f="sicher">belegt</button>
+    <button class="f" data-f="alle">alle</button>
+  </div>
+  <button id="sammlungAuf" title="Bildersammlung ein- und ausblenden">Sammlung ▸</button>
+</header>
+
+<main>
+  <div class="anleitung">
+    <b>So geht es:</b> <i>passt</i> / <i>Grafik sehe ich nicht</i> / <i>Grafik nicht vollständig</i> anklicken.
+    <i>andere Grafik …</i> öffnet rechts die Sammlung — Kachel auf die Karte ziehen tauscht das Bild.
+    Für einen Screenshot aus dem Spiel: Karte anklicken und mit <b>Strg+V</b> einfügen, oder das Bild auf die Karte ziehen, oder <i>Screenshot …</i> drücken.
+    Alles landet sofort in <code>lib/zuordnung_urteil.json</code>.
+  </div>
+  <div id="karten" class="karten">lädt …</div>
+</main>
+
+<aside id="sammlung" class="zu">
+  <div class="kopf">
+    <b>Sammlung</b>
+    <span id="sammlungInfo">wähle links ein Bild</span>
+    <input id="sammlungSuche" placeholder="Datei filtern, z. B. land8" autocomplete="off">
+    <button id="alleGroessen" title="auch Bilder anderer Grundfläche zeigen">alle Größen</button>
+    <button id="sammlungZu" title="schließen">✕</button>
+  </div>
+  <div class="hinweis">Kachel auf die Karte links ziehen oder doppelklicken — sie tauscht das Bild aus.</div>
+  <div id="sammlungRaster" class="sraster"></div>
+</aside>
+
+<div id="fuss">
+  <span id="stand">—</span>
+  <button id="alsText">Urteile als Text</button>
+</div>
+
+<dialog id="textFenster">
+  <h3>Deine Urteile</h3>
+  <textarea id="textFeld" readonly rows="18"></textarea>
+  <div class="reihe"><button id="textZu">schließen</button></div>
+</dialog>
+
+<script src="pruefen.js"></script>
+</body>
+</html>

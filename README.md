@@ -86,6 +86,30 @@ Spiels, senkrecht von oben, unter dem Raster. Alle 113 Karten des Spiels lesen
 sich fehlerfrei; mit den Karten der Plugins findet das Programm 189. Alternativ
 lässt sich ein eigenes Bild unterlegen.
 
+**Spielgrafiken in der schrägen Ansicht** — statt farbiger Blöcke die echten
+Bilder aus den `.gm1`-Dateien des Spiels, mit richtiger Verdeckung von hinten
+nach vorn. Für 70 der 82 quadratischen Bau-Nummern ist das Bild zugeordnet und
+Bild für Bild von Hand geprüft. Vier Darstellungen zur Auswahl: Spielgrafiken,
+flach (Mauern, Türme, Tore und Bergfried liegen, der Rest steht), Grundriss
+(alles flach, wie im alten Editor) und Klötze.
+
+**Was das Spiel selbst dazumalt** — die Bodenplatten neben Bergfried, Kaserne,
+Söldnerposten und den beiden Gilden; die Ausrichtung der Zugbrücke, aus der Lage
+des Nachbartores gerechnet; die Treppenstufen als zweite Ebene; und für Häuser,
+Gärten und Felder die Fassung, die das Spiel beim Bauen auswürfelt — hier fest
+aus der Lage des Feldes gerechnet, damit sie beim Neuzeichnen nicht springt.
+
+**Torhäuser drehen** — Taste `R` auf dem zuletzt berührten Feld tauscht die
+beiden Ausrichtungen (40/41 und 42/43).
+
+**Alles bleibt stehen** — Ansicht, Darstellung, Ebenen, Werkzeug, Zoom, Pinsel
+und das zuletzt geöffnete Dorf überleben das Neuladen der Seite.
+
+**Prüfblatt** unter `/pruefen.html` — je Bau-Nummer das zugeordnete Bild, drei
+Knöpfe (*passt*, *sehe ich nicht*, *nicht vollständig*), ein Notizfeld und eine
+ausziehbare Sammlung aller 549 Gebäudebilder zum Hineinziehen. So ist die
+Zuordnung entstanden.
+
 **Umriss-Prüfung** — meldet Felder, an denen die Zusammengehörigkeit nicht zu den
 Bauten passt. Genau der Fehler, der ein 3×3-Gebäude in neun einzelne zerfallen
 lässt.
@@ -94,17 +118,15 @@ lässt.
 
 ## Was als Nächstes kommt
 
-1. **Echte Gebäudegrafiken** aus den `.gm1`-Dateien des Spiels statt der farbigen
-   Blöcke.
-2. **Karte automatisch einrasten.** Dafür fehlt die Umrechnung zwischen dem
+1. **Karte automatisch einrasten.** Dafür fehlt die Umrechnung zwischen dem
    Kachelgitter der Karte (80.400 Felder, keine Quadratfläche) und der Vorschau
    (200×200). Bis dahin legt man die Karte von Hand zurecht.
-3. **Mauerwerk in Abschnitt 2004.** Dort steht mal 0, mal 1, und die Regel
+2. **Mauerwerk in Abschnitt 2004.** Dort steht mal 0, mal 1, und die Regel
    dahinter ist unbekannt. Zwei Erklärungen sind gemessen und widerlegt.
-4. **Bauschritte durchspielen** — den Aufbau der Burg Schritt für Schritt ansehen
+3. **Bauschritte durchspielen** — den Aufbau der Burg Schritt für Schritt ansehen
    wie einen Film.
-5. **AIV im laufenden Gefecht tauschen**, ohne das Gefecht neu zu starten.
-6. **Die restlichen 113 Abschnitte der `.map`** — bisher ist nur die Vorschau
+4. **AIV im laufenden Gefecht tauschen**, ohne das Gefecht neu zu starten.
+5. **Die restlichen 113 Abschnitte der `.map`** — bisher ist nur die Vorschau
    erschlossen.
 
 ---

@@ -1,0 +1,2 @@
+Hier hineingelegte .aiv-Dateien tauchen in Village Studio in der Liste auf.
+Sie werden nicht mit ins Repo genommen (siehe .gitignore).
