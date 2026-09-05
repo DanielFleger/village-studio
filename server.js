@@ -21,6 +21,12 @@ const VILLAGE_DIR = path.resolve(HIER, '..', 'Village');
 // eigenen Ordner "aiv" und im aiv-Ordner der Stronghold-Installation.
 // Die Reihenfolge entscheidet nur, was zuerst in der Liste steht.
 function dorfOrdner() {
+  // Wer selbst einen Ordner waehlt, will genau den sehen - und nicht noch
+  // die 128 KI-Doerfer des Spiels dazu. Die Standardorte gelten darum nur,
+  // solange kein eigener Ordner eingetragen ist.
+  const eigene = (einstellungen().doerfer || []).filter(e => typeof e === 'string');
+  if (eigene.length) return eigene;
+
   const o = [
     path.join(VILLAGE_DIR, 'villages'),
     path.join(VILLAGE_DIR, 'aiv'),
@@ -29,8 +35,6 @@ function dorfOrdner() {
   ];
   const spiel = spielOrdner();
   if (spiel) o.push(path.join(spiel, 'aiv'));
-  // Eigene Ordner aus der config.json - "doerfer": ["D:\Meine AIV-Dateien"]
-  for (const e of (einstellungen().doerfer || [])) if (typeof e === 'string') o.push(e);
   return o;
 }
 
@@ -74,7 +78,9 @@ function sucheAiv(wurzel, treffer, wurzelName, gesehen = new Set(), besucht = ne
     try { eintraege = fs.readdirSync(ordner, { withFileTypes: true }); } catch { continue; }
     for (const e of eintraege) {
       const voll = path.join(ordner, e.name);
-      if (e.isDirectory()) { offen.push(voll); continue; }
+      // Der Sicherungsordner bleibt draussen, sonst steht jede aeltere
+      // Fassung eines Dorfes ein zweites Mal in der Liste.
+      if (e.isDirectory()) { if (e.name !== '_backup') offen.push(voll); continue; }
       if (!e.isFile() || !e.name.toLowerCase().endsWith('.aiv')) continue;
       const dateiKey = schluessel(voll);
       if (gesehen.has(dateiKey)) continue;
