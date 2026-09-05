@@ -25,6 +25,7 @@ Zwei Dinge holt sich das Werkzeug von aussen:
 | `..\Village\villages`, `..\Village\aiv`, `..\Village` | neben dem alten Editor von Lord Reza |
 | `aiv\` **in diesem Ordner** | der einfachste Weg: eigene .aiv einfach hier hineinlegen |
 | `<Stronghold>\aiv` | die mitgelieferten KI-Doerfer des Spiels |
+| jeder Ordner aus `"doerfer"` in der `config.json` | eigene Sammlungen anderswo |
 
 **Die Spielgrafiken.** Fuer die schraege Ansicht liest das Werkzeug die
 `.gm1`-Dateien der Installation — nur lesend, es wird nichts veraendert.

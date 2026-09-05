@@ -28,15 +28,21 @@ function dorfOrdner() {
   ];
   const spiel = spielOrdner();
   if (spiel) o.push(path.join(spiel, 'aiv'));
+  // Eigene Ordner aus der config.json - "doerfer": ["D:\Meine AIV-Dateien"]
+  for (const e of (einstellungen().doerfer || [])) if (typeof e === 'string') o.push(e);
   return o;
 }
 
-// Stronghold-Installation: aus config.json, sonst der uebliche Steam-Pfad
+// config.json neben dem Werkzeug: { "stronghold": "...", "doerfer": ["..."] }
+function einstellungen() {
+  try { return JSON.parse(fs.readFileSync(path.join(HIER, 'config.json'), 'utf8')); }
+  catch { return {}; }
+}
+
+// Stronghold-Installation: aus der config.json, sonst der uebliche Steam-Pfad
 function spielOrdner() {
-  try {
-    const c = JSON.parse(fs.readFileSync(path.join(HIER, 'config.json'), 'utf8'));
-    if (c.stronghold && fs.existsSync(c.stronghold)) return c.stronghold;
-  } catch { }
+  const c = einstellungen();
+  if (c.stronghold && fs.existsSync(c.stronghold)) return c.stronghold;
   const std = 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Stronghold Crusader Extreme';
   return fs.existsSync(std) ? std : null;
 }
