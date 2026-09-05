@@ -16,13 +16,33 @@ Repos; was dort als „nächster Handgriff" stand, ist erledigt.*
 | Ganze Gebäude zusammensetzen | fertig, `lib/gm1.js` → `ganzesGebaeude` |
 | Ganzes Dorf zeichnen | fertig, `_baue_beispieldorf.js <Dorfname>` |
 | Einzelbilder mit Nummer im Dateinamen | fertig, `_baue_einzelbilder.js` |
-| **Zuordnung Nummer → Bild** | **74 von 82, davon 37 am Bild belegt** |
+| **Zuordnung Nummer → Bild** | **74 von 82; Daniel hat alle 74 selbst durchgesehen** |
 | **Grafiken in der Oberfläche** | **fertig — die schräge Ansicht zeichnet das Spiel** |
+| Prüfseite im Werkzeug | fertig, `localhost:8790/pruefen.html` |
+| Darstellung flach / Grundriss | fertig |
+| Drehen der Torhäuser (Taste R) | fertig |
+| Einstellungen überleben das Neuladen | fertig |
 
 Was noch fehlt, fehlt **in den Spieldateien**, nicht in der Arbeit: für acht
 Nummern gibt es in keiner der zwanzig Gebäude-Dateien ein Bild.
 
 ---
+
+## Was Daniels Durchgang ergeben hat (05.09.2026)
+
+Er hat alle 74 Nummern beurteilt: **52 passt, 13 richtig aber unvollständig,
+9 widerlegt.** Zwölf Bilder hat er selbst umgehängt. Sein Urteil steht in
+`lib/zuordnung_urteil.json` und wird vom Generator gelesen, nicht abgetippt.
+
+**Die 13 unvollständigen haben ein Muster.** Es fehlt entweder das Bewegtbild
+(Mühlenflügel, Tanzbär, Kinder am Maibaum) oder der **Außenbereich**
+(Pennerhof am Bergfried, Trainingslager an Kaserne und Söldnerposten,
+Versammlungsplatz an Ölbrennerei und den Gilden). Für die Bewegtbilder ist die
+Quelle gefunden: 45 Dateien `anim_<gebäude>.gm1`. Für die Außenbereiche nicht —
+aber Daniels Grundriss-Bilder aus dem Spiel zeigen, dass sie **zur Grundfläche
+des Gebäudes gehören**: der Bauplan des Bergfrieds schließt die Feuerstelle
+und die Treppe mit ein. Sie sind also kein eigenes Bauwerk, sondern Teil
+desselben Bildes — nur eben eines größeren, das ich noch nicht gefunden habe.
 
 ## Was als Nächstes ansteht
 
@@ -109,16 +129,22 @@ Steinbau mit Banner = Kaserne).
 
 ## Offene Fragen an Daniel
 
-* **Steinmauer oder Zinnenmauer?** Zwei der drei Mauerbilder unterscheiden sich
-  in 278 von 2910 Punkten und tragen denselben Zinnenkranz — es sind zwei
-  Fassungen desselben Steins. Das dritte ist sichtbar niedriger (30×70 statt
-  30×97). Welche Nummer welches Bild bekommt, entscheidet nur das Spiel.
-* **Torrichtungen.** Bei beiden Torhäusern ist das gespiegelte Paar gefunden.
-  Welche Fassung O-W und welche N-S ist, hängt daran, ob x die Ost-West-Achse
-  der Karte ist — angenommen, nicht gemessen.
+* **Welches Wasser ist der Graben?** Im ganzen `gm`-Ordner gibt es nur zwei
+  Dateien mit türkisen Kacheln: `tile_sea8` (ruhige Fläche) und
+  `tile_sea_new_01` (dunkel mit Schaumkronen). Eingetragen ist `tile_sea8`,
+  aber als *vermutet* — Daniel hat gewarnt, dass See- und Flusstexturen etwas
+  anderes sind. Vergleichsbild: `Tools\VillageStudio-bogen\Wasser_Vergleich.png`.
+* **Die vier Treppen.** Von Daniel widerlegt. Auf seinem Spielbild sind es
+  steinerne Stufen an der Mauer; die gestuften Steinplatten aus `tile_flatties`
+  sind es nicht. Nächster Ort zum Nachsehen ist `anim_castle`, wo auch die
+  Mauer-Seitenflächen liegen.
 * **Ingenieurs- oder Tunnelgräbergilde?** Das eine Bild trägt Wagenrad, Sägeblatt
   und Balken, das andere Spitzhacke, Seilzugeimer und Schutthaufen. Welches
   welche Gilde ist, ist die einzige Frage.
+
+*Erledigt seit der ersten Fassung:* die Torrichtungen (Daniel hat sie im Editor
+korrigiert, die Paare waren getauscht) und die Mauerfrage (er hat Steinmauer
+und Niedrige Mauer selbst gesetzt).
 
 ---
 
