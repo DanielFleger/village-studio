@@ -7,8 +7,9 @@
 # umstellen. Windows PowerShell 5.1 kennt ihn nicht von sich aus, darum steht
 # er hier als kleines C#-Stueck.
 #
-# Faellt der moderne Dialog aus, kommt der alte - lieber ein haesslicher
-# Dialog als gar keiner.
+# Geht etwas schief, steht der Grund im Temp-Ordner in der Datei
+# village-studio-dialog.log. Einen Rueckfall auf den alten Dialog gibt es
+# nicht mehr - er hat Fehler versteckt, statt sie zu zeigen.
 #
 # Ausgabe: der Pfad, oder nichts, wenn abgebrochen wurde.
 
@@ -148,6 +149,13 @@ $titel = 'Ordner mit AIV-Dateien waehlen'
 $start = ''
 if ($args.Count -ge 1) { $start = $args[0] }
 
+# Geht der moderne Dialog nicht, steht der Grund hier drin - sonst raet man
+# daran herum. Die Datei liegt im Temp-Ordner und stoert nichts.
+$protokoll = Join-Path $env:TEMP 'village-studio-dialog.log'
+function Notiere([string]$text) {
+    try { Add-Content -Path $protokoll -Value ((Get-Date -Format 'HH:mm:ss') + '  ' + $text) } catch { }
+}
+
 try {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -TypeDefinition $quelle -Language CSharp | Out-Null
@@ -166,14 +174,20 @@ try {
     # WICHTIG: der Dialog zentriert sich UEBER seinem Besitzer. Liegt der
     # ausserhalb des Bildschirms, ist auch der Dialog dort - gemessen am
     # 05.09.2026: das Fenster war da und im Vordergrund, aber unsichtbar.
-    $mitte = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    # Punkt-Koordinaten sind ganze Zahlen. PowerShell macht aus einer
+    # Division sonst eine Kommazahl - oder gleich ein Array, wenn mehrere
+    # Bildschirme im Spiel sind; beides laesst New-Object scheitern.
+    $bereich = @([System.Windows.Forms.Screen]::PrimaryScreen)[0].WorkingArea
+    $mx = [int]($bereich.X + $bereich.Width / 2)
+    $my = [int]($bereich.Y + $bereich.Height / 2)
     $fenster.StartPosition = 'Manual'
-    $fenster.Location = New-Object System.Drawing.Point($mitte.Width / 2, $mitte.Height / 2)
+    $fenster.Location = New-Object System.Drawing.Point -ArgumentList @([int]$mx, [int]$my)
 
     $script:pfad = $null
     $fenster.Add_Shown({
         [OrdnerWahl]::NachVorn($fenster.Handle)
-        try { $script:pfad = [OrdnerWahl]::Waehlen($titel, $start, $fenster.Handle) } catch { }
+        try { $script:pfad = [OrdnerWahl]::Waehlen($titel, $start, $fenster.Handle) }
+        catch { Notiere('beim Oeffnen: ' + $_.Exception.Message) }
         $fenster.Close()
     })
     [System.Windows.Forms.Application]::Run($fenster)
@@ -182,13 +196,13 @@ try {
     if ($script:pfad) { Write-Output $script:pfad }
 }
 catch {
-    # Rueckfall auf den alten Dialog
-    Add-Type -AssemblyName System.Windows.Forms
-    $oben = New-Object System.Windows.Forms.Form
-    $oben.TopMost = $true
-    $d = New-Object System.Windows.Forms.FolderBrowserDialog
-    $d.Description = $titel
-    $d.ShowNewFolderButton = $false
-    if ($d.ShowDialog($oben) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.SelectedPath }
-    $oben.Dispose()
+    Notiere ('moderner Dialog gescheitert: ' + $_.Exception.GetType().Name + ': ' + $_.Exception.Message)
+    if ($_.Exception.InnerException) { Notiere ('    innen: ' + $_.Exception.InnerException.Message) }
+    if ($_.InvocationInfo) { Notiere ('    Zeile ' + $_.InvocationInfo.ScriptLineNumber + ': ' + $_.InvocationInfo.Line.Trim()) }
+
+    # Kein Rueckfall auf den alten Dialog. Er hat mehr geschadet als
+    # geholfen: bei jedem Fehler im modernen Teil kam still der XP-Baum,
+    # und von aussen sah es aus, als waere gar nichts umgebaut worden.
+    # Jetzt kommt in dem Fall kein Dialog - und der Grund steht im
+    # Protokoll oben.
 }
