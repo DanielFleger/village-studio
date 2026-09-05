@@ -42,9 +42,19 @@ Unter Windows tut es auch ein Doppelklick auf `start.cmd`.
 
 ### Wo das Programm sucht
 
-Ohne weitere Angabe schaut es in einen Ordner `Village` neben dem
-Programmordner, in den Programmordner selbst und in den `aiv`-Ordner der
-Spielinstallation. Passt das nicht, lege eine `config.json` daneben:
+Am einfachsten: die `.aiv` in den Ordner **`aiv`** legen, der neben
+`start.cmd` liegt, und die Seite neu laden.
+
+Liegen die Dateien woanders, hilft in der linken Spalte der Abschnitt
+**Eigene Ordner**: der Knopf *Ordner wählen …* öffnet den Windows-Dialog,
+daneben lässt sich der Pfad auch eintippen. Ein so hinzugefügter Ordner wird
+**samt Unterordnern** durchsucht — es genügt also, den Stronghold-Ordner
+anzugeben, dann werden auch die AIV der UCP-Plugins gefunden.
+
+Von allein gesucht wird außerdem in einem Ordner `Village` neben dem
+Programmordner, im Programmordner selbst und im `aiv`-Ordner der
+Spielinstallation. Findet das Programm gar nichts, zeigt es alle diese Orte
+an. Alles lässt sich auch von Hand in eine `config.json` daneben schreiben:
 
 ```json
 {
