@@ -57,20 +57,29 @@ async function ladeBilder() {
 function bildFuer(id) { const b = BILDER[String(id)]; return b && b.fertig ? b : null; }
 
 // Die Zugbrücke (44) liegt in vier Ausrichtungen vor, in der AIV steht keine.
-// Darum wird die Fassung nach dem Torhaus daneben gewählt: 41 und 43 lassen
-// längs x durch, 40 und 42 längs y. Findet sich kein Tor, bleibt es beim
-// Standardbild. Welche Bohlenrichtung zu welcher Durchfahrt gehört, ist eine
-// erste Zuordnung und gehört noch geprüft.
-const TOR_LAENGS_X = new Set([41, 43]);
-const TOR_LAENGS_Y = new Set([40, 42]);
+// Welche gilt, sagt die Lage zum Torhaus daneben — Daniels Regel vom
+// 05.09.2026, auf dem Schirm liegt Norden oben rechts:
+//   Brücke nördlich des Tores (kleineres y)  → Bogenplatz 33
+//   Brücke südlich  (größeres y)             → 31
+//   Brücke westlich (kleineres x, „links")   → 34
+//   Brücke östlich  (größeres x, „rechts")   → 32
+const TORE = new Set([40, 41, 42, 43]);
 function bildFuerBruecke(x, y, n) {
   if (!dorf || !dorf.bauten) return bildFuer(44);
-  for (let d = -1; d <= n; d++) {
-    for (const [px, py] of [[x + d, y - 1], [x + d, y + n], [x - 1, y + d], [x + n, y + d]]) {
+  // Das Torhaus am Rand der Brücke suchen und merken, auf welcher Seite
+  const seiten = [
+    { dir: 'n', felder: () => Array.from({ length: n }, (_, k) => [x + k, y - 1]) },      // Tor im Süden → Brücke nördlich
+    { dir: 's', felder: () => Array.from({ length: n }, (_, k) => [x + k, y + n]) },
+    { dir: 'w', felder: () => Array.from({ length: n }, (_, k) => [x - 1, y + k]) },
+    { dir: 'o', felder: () => Array.from({ length: n }, (_, k) => [x + n, y + k]) },
+  ];
+  // Liegt das Tor im Süden der Brücke, dann liegt die Brücke NÖRDLICH des Tores
+  const gegen = { n: 's', s: 'n', w: 'o', o: 'w' };
+  for (const s of seiten) {
+    for (const [px, py] of s.felder()) {
       if (px < 0 || py < 0 || px >= N || py >= N) continue;
-      const id = dorf.bauten[py * N + px];
-      if (TOR_LAENGS_X.has(id)) return bildFuer('44x') || bildFuer(44);
-      if (TOR_LAENGS_Y.has(id)) return bildFuer('44y') || bildFuer(44);
+      if (!TORE.has(dorf.bauten[py * N + px])) continue;
+      return bildFuer('44' + gegen[s.dir]) || bildFuer(44);
     }
   }
   return bildFuer(44);
