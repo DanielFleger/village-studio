@@ -115,6 +115,25 @@ function bildFuerBruecke(x, y, n) {
   return bildFuer(44);
 }
 
+// Zweite Ebene: Auflagen, die AUF eine Kachel kommen statt sie zu ersetzen.
+// Bisher nur die Treppenstufen - Daniel: beim Ziehen einer Treppe werden sie
+// je nach Perspektive daraufgelegt. Die Richtung nimmt die Seite, auf der die
+// Mauer steht, zu der die Treppe hochfuehrt. Welches der vier Bilder zu
+// welcher Richtung gehoert, ist eine erste Zuordnung.
+const TREPPEN = new Set([14, 15, 16, 17, 18, 19]);
+const MAUERN_IDS = new Set([10, 11, 12, 13]);
+function auflageFuer(id, x, y) {
+  if (!TREPPEN.has(id) || !dorf || !dorf.bauten) return null;
+  const seiten = [['n', 0, -1], ['s', 0, 1], ['w', -1, 0], ['o', 1, 0]];
+  for (const [dir, dx, dy] of seiten) {
+    const px = x + dx, py = y + dy;
+    if (px < 0 || py < 0 || px >= N || py >= N) continue;
+    if (!MAUERN_IDS.has(dorf.bauten[py * N + px])) continue;
+    return bildFuer('stufe_' + dir);
+  }
+  return null;
+}
+
 function bau(id) { return GEB[String(id)] || null; }
 function bauName(id) {
   if (!id) return '–';
@@ -452,6 +471,12 @@ function maleSchraeg() {
     if (e.b) {
       const [sx, sy] = isoPunkt(e.x + e.n - 1, e.y + e.n - 1);   // unterste Ecke des Bauwerks
       ctx.drawImage(e.b.img, sx - e.b.breite / 2 * k, sy - (e.b.hoehe - 16) * k, e.b.breite * k, e.b.hoehe * k);
+      // zweite Ebene: was obendrauf gehört, kommt direkt danach
+      const auf = auflageFuer(e.id, e.x, e.y);
+      if (auf) {
+        const oben = sy - (e.b.hoehe - 16) * k;                  // Oberkante der Kachel
+        ctx.drawImage(auf.img, sx - auf.breite / 2 * k, oben - (auf.hoehe - 16) * k, auf.breite * k, auf.hoehe * k);
+      }
       continue;
     }
     const { x, y, id, i } = e;

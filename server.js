@@ -190,7 +190,7 @@ const server = http.createServer(async (req, res) => {
     try { return sendeJson(res, 200, webbilder.bilderIndex()); }
     catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
   }
-  const mBild = u.pathname.match(/^\/bilder\/(\d+[a-z]?)\.png$/);
+  const mBild = u.pathname.match(/^\/bilder\/([a-z0-9_]+)\.png$/i);
   if (mBild) {
     let png = null;
     try { png = webbilder.bildPng(mBild[1]); } catch (e) { res.writeHead(500); return res.end(e.message); }
