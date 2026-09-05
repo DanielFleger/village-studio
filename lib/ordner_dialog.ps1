@@ -68,13 +68,39 @@ public static class OrdnerWahl
     private static extern int SHCreateItemFromParsingName(
         string pszPath, IntPtr pbc, ref Guid riid, out IShellItem ppv);
 
+    [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] private static extern bool BringWindowToTop(IntPtr hWnd);
+    [DllImport("user32.dll")] private static extern IntPtr FindWindow(string cls, string titel);
+    [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int cmd);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr pid);
+    [DllImport("user32.dll")] private static extern bool AttachThreadInput(uint from, uint to, bool anhaengen);
+    [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+
+    // Windows verhindert, dass ein Programm im Hintergrund einfach den Fokus
+    // an sich reisst - genau deshalb ging der Dialog hinter dem Browser auf.
+    // Der uebliche Weg daran vorbei: sich kurz an den Eingabefaden des
+    // Vordergrundfensters haengen, dann darf man.
+    public static void NachVorn(IntPtr fenster)
+    {
+        if (fenster == IntPtr.Zero) return;
+        IntPtr vorn = GetForegroundWindow();
+        uint fremd = GetWindowThreadProcessId(vorn, IntPtr.Zero);
+        uint eigen = GetCurrentThreadId();
+        if (fremd != eigen) AttachThreadInput(fremd, eigen, true);
+        ShowWindow(fenster, 5);      // SW_SHOW
+        BringWindowToTop(fenster);
+        SetForegroundWindow(fenster);
+        if (fremd != eigen) AttachThreadInput(fremd, eigen, false);
+    }
+
     private const uint FOS_PICKFOLDERS      = 0x00000020;
     private const uint FOS_FORCEFILESYSTEM  = 0x00000040;
     private const uint FOS_PATHMUSTEXIST    = 0x00000800;
     private const uint SIGDN_FILESYSPATH    = 0x80058000;
 
     // Gibt den gewaehlten Pfad zurueck, oder null bei Abbruch.
-    public static string Waehlen(string titel, string startOrdner)
+    public static string Waehlen(string titel, string startOrdner, IntPtr besitzer)
     {
         IFileDialog dialog = (IFileDialog)new FileOpenDialog();
         dialog.SetOptions(FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST);
@@ -92,8 +118,20 @@ public static class OrdnerWahl
             catch { }
         }
 
+        // Waehrend Show() blockiert, holt ein zweiter Faden den Dialog nach
+        // vorn - vorher gibt es sein Fenster noch gar nicht.
+        string suchTitel = titel;
+        System.Threading.ThreadPool.QueueUserWorkItem(delegate {
+            for (int i = 0; i < 60; i++)
+            {
+                System.Threading.Thread.Sleep(100);
+                IntPtr h = FindWindow(null, suchTitel);
+                if (h != IntPtr.Zero) { NachVorn(h); return; }
+            }
+        });
+
         // 0x800704C7 = der Benutzer hat abgebrochen
-        if (dialog.Show(IntPtr.Zero) != 0) return null;
+        if (dialog.Show(besitzer) != 0) return null;
 
         IShellItem ergebnis;
         dialog.GetResult(out ergebnis);
@@ -111,9 +149,37 @@ $start = ''
 if ($args.Count -ge 1) { $start = $args[0] }
 
 try {
+    Add-Type -AssemblyName System.Windows.Forms
     Add-Type -TypeDefinition $quelle -Language CSharp | Out-Null
-    $pfad = [OrdnerWahl]::Waehlen($titel, $start)
-    if ($pfad) { Write-Output $pfad }
+
+    # Ein Dialog braucht zweierlei, um vorn zu liegen: einen Besitzer, der
+    # immer oben ist, UND eine laufende Nachrichtenschleife. Gemessen am
+    # 05.09.2026: nur Besitzer ohne Schleife laesst ihn haengen, nur Schleife
+    # ohne Besitzer laesst ihn hinter dem Browser aufgehen. Application.Run
+    # liefert die Schleife, das unsichtbare Fenster den Besitz.
+    $fenster = New-Object System.Windows.Forms.Form
+    $fenster.TopMost = $true
+    $fenster.ShowInTaskbar = $false
+    $fenster.FormBorderStyle = 'None'
+    $fenster.Opacity = 0
+    $fenster.Size = New-Object System.Drawing.Size(1, 1)
+    # WICHTIG: der Dialog zentriert sich UEBER seinem Besitzer. Liegt der
+    # ausserhalb des Bildschirms, ist auch der Dialog dort - gemessen am
+    # 05.09.2026: das Fenster war da und im Vordergrund, aber unsichtbar.
+    $mitte = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $fenster.StartPosition = 'Manual'
+    $fenster.Location = New-Object System.Drawing.Point($mitte.Width / 2, $mitte.Height / 2)
+
+    $script:pfad = $null
+    $fenster.Add_Shown({
+        [OrdnerWahl]::NachVorn($fenster.Handle)
+        try { $script:pfad = [OrdnerWahl]::Waehlen($titel, $start, $fenster.Handle) } catch { }
+        $fenster.Close()
+    })
+    [System.Windows.Forms.Application]::Run($fenster)
+    $fenster.Dispose()
+
+    if ($script:pfad) { Write-Output $script:pfad }
 }
 catch {
     # Rueckfall auf den alten Dialog
