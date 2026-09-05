@@ -121,16 +121,24 @@ function bildFuerBruecke(x, y, n) {
 // Mauer steht, zu der die Treppe hochfuehrt. Welches der vier Bilder zu
 // welcher Richtung gehoert, ist eine erste Zuordnung.
 const TREPPEN = new Set([14, 15, 16, 17, 18, 19]);
-const MAUERN_IDS = new Set([10, 11, 12, 13]);
+// Eine Treppe läuft im Raster meist DIAGONAL - auf dem Schirm ist das eine
+// gerade Linie. Darum zählen hier die acht Nachbarn, nicht nur die vier
+// geraden. Die vier Diagonalen sind die vier Blickrichtungen des Spiels.
+const SEITEN = [
+  ['n', 0, -1], ['o', 1, 0], ['s', 0, 1], ['w', -1, 0],
+  ['s', 1, 1], ['n', -1, -1], ['o', 1, -1], ['w', -1, 1],
+];
+const GEGEN = { n: 's', s: 'n', w: 'o', o: 'w' };
 function auflageFuer(id, x, y) {
   if (!TREPPEN.has(id) || !dorf || !dorf.bauten) return null;
-  const seiten = [['n', 0, -1], ['s', 0, 1], ['w', -1, 0], ['o', 1, 0]];
-  for (const [dir, dx, dy] of seiten) {
-    const px = x + dx, py = y + dy;
-    if (px < 0 || py < 0 || px >= N || py >= N) continue;
-    if (!MAUERN_IDS.has(dorf.bauten[py * N + px])) continue;
-    return bildFuer('stufe_' + dir);
-  }
+  const at = (px, py) => (px < 0 || py < 0 || px >= N || py >= N) ? 0 : dorf.bauten[py * N + px];
+  // Treppe 1 liegt oben, gezogen wird von oben nach unten. Die Richtung zur
+  // nächsthöheren Nummer ist also bergab - Daniels Regel vom 05.09.2026.
+  for (const [dir, dx, dy] of SEITEN)
+    if (at(x + dx, y + dy) === id + 1) return bildFuer('stufe_' + dir);
+  // Die unterste Stufe hat keinen Nachfolger: dann die Gegenrichtung des Vorgängers
+  for (const [dir, dx, dy] of SEITEN)
+    if (at(x + dx, y + dy) === id - 1) return bildFuer('stufe_' + GEGEN[dir]);
   return null;
 }
 
