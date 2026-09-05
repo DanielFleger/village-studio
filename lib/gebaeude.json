@@ -6,19 +6,21 @@
    "name": "Kartenrand",
    "kurz": "Rand",
    "gruppe": "sonstiges",
-   "farbe": "#8a8a8a",
+   "farbe": "#3b4232",
    "b": 0,
    "h": 0,
-   "hinweis": "kein Gebaeude: Ring um die ganze 100x100-Karte, 396 Felder je Dorf"
+   "hinweis": "kein Gebaeude: Ring um die ganze 100x100-Karte, 396 Felder je Dorf",
+   "flach": true
   },
   "2": {
    "name": "Bauflaeche",
    "kurz": "Flaeche",
    "gruppe": "sonstiges",
-   "farbe": "#4a4a4a",
+   "farbe": "#ab9770",
    "b": 0,
    "h": 0,
-   "hinweis": "kein Gebaeude: 5x5- und 10x10-Bloecke, vom sourcehold-Wandler uebersprungen"
+   "hinweis": "kein Gebaeude, sondern der freigeraeumte Platz: die Vorplaetze und Hoefe, die im Spiel zu den Gebaeuden gehoeren (Pennerhof am Bergfried, Trainingslager an Kaserne und Soeldnerposten, Versammlungsplatz an den Gilden). Steht Feld fuer Feld in der AIV, nicht als Block - darum flach gezeichnet und in Sandfarbe, nicht als Kloetzchen.",
+   "flach": true
   },
   "10": {
    "name": "Steinmauer",

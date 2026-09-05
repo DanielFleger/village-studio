@@ -246,7 +246,7 @@ const BAUHOEHE = {
 function bauhoehe(id) {
   const b = bau(id);
   if (!b) return .8;
-  if (id === 1 || id === 2) return .05;         // Kartenrand und Baufläche liegen flach
+  if (id === 1 || id === 2) return .05;         // Notnagel: normal greift schon b.flach
   return BAUHOEHE[b.gruppe] !== undefined ? BAUHOEHE[b.gruppe] : .8;
 }
 
