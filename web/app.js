@@ -202,6 +202,8 @@ async function ladeListe() {
   const r = await fetch('/api/doerfer').then(r => r.json());
   doerfer = r.doerfer;
   zeichneListe();
+  zeigeSuchorte(r.ordnerInfo || []);
+  zeichneOrdner(r.eigene || []);
   $('#status').textContent = `${doerfer.length} Dörfer gefunden`;
   const z = await fetch('/api/spielziele').then(r => r.json());
   ziele = z.ziele || [];
@@ -218,6 +220,67 @@ async function ladeListe() {
       sel.appendChild(o);
     }
   }
+}
+
+// Eigene AIV-Ordner. Der Browser kommt an keinen echten Pfad heran - darum
+// oeffnet der Server den Windows-Ordnerdialog; er laeuft ja auf demselben
+// Rechner. Wer lieber tippt, tippt.
+let eigeneOrdner = [];
+
+function zeichneOrdner(liste) {
+  eigeneOrdner = liste;
+  const ul = $('#ordnerListe');
+  ul.innerHTML = '';
+  for (const o of liste) {
+    const li = document.createElement('li');
+    li.style.cssText = 'display:flex;gap:6px;align-items:center';
+    const span = document.createElement('span');
+    span.textContent = o;
+    span.title = o;
+    span.style.cssText = 'flex:1;word-break:break-all;font-size:11px';
+    const weg = document.createElement('button');
+    weg.textContent = '×';
+    weg.title = 'Ordner nicht mehr durchsuchen';
+    weg.style.cssText = 'padding:2px 7px;flex:none';
+    weg.onclick = () => ordnerSenden(o, true);
+    li.append(span, weg);
+    ul.appendChild(li);
+  }
+}
+
+async function ordnerSenden(pfad, entfernen) {
+  if (!pfad) return;
+  $('#status').textContent = entfernen ? 'entferne Ordner …' : 'durchsuche Ordner …';
+  const r = await fetch('/api/ordner', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pfad, entfernen: !!entfernen }),
+  }).then(r => r.json());
+  if (r.fehler) { $('#status').textContent = r.fehler; return; }
+  doerfer = r.doerfer;
+  zeichneOrdner(r.eigene || []);
+  zeichneListe();
+  zeigeSuchorte([]);
+  $('#ordnerPfad').value = '';
+  $('#status').textContent = `${doerfer.length} Dörfer gefunden`;
+}
+
+// Findet das Werkzeug kein einziges Dorf, ist die häufigste Ursache, dass die
+// .aiv woanders liegt als gesucht wird. Dann steht hier, wo gesucht wurde und
+// welcher dieser Ordner überhaupt existiert - das erspart das Raten.
+function zeigeSuchorte(orte) {
+  let box = document.getElementById('suchorte');
+  if (doerfer.length) { if (box) box.remove(); return; }
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'suchorte';
+    box.className = 'hinweisklein';
+    box.style.cssText = 'margin-top:10px;line-height:1.5;word-break:break-all';
+    document.getElementById('liste').after(box);
+  }
+  const zeilen = orte.map(o =>
+    `<div style="margin:4px 0"><span style="color:${o.da ? '#8fbf6a' : '#c06a6a'}">${o.da ? '✓' : '✗'}</span> ${o.pfad}</div>`).join('');
+  box.innerHTML = '<b>Keine .aiv gefunden.</b> Gesucht wurde in:' + zeilen +
+    '<div style="margin-top:6px">Lege deine Dateien in einen der Ordner mit ✓, oder trage eigene Ordner in der <code>config.json</code> unter <code>"doerfer"</code> ein.</div>';
 }
 
 function zeichneListe() {
@@ -449,11 +512,17 @@ function maleSchraeg() {
       const b = flach ? null : (mitBildern ? (id === 44 ? bildFuerBruecke(x, y, n) : fassungFuer(id, x, y)) : null);
       if (!flach && (!b || b.kacheln !== n)) continue;
       (flach ? flache : bilder).push({ x, y, n, b, id, i, tiefe: x + y + 2 * (n - 1) });
-      // Bodenplatten daneben - sie liegen flach und gehören vor das Gebäude
+      // Bodenplatten daneben - sie liegen flach und gehören vor das Gebäude.
+      // Gezeichnet wird nur, was auch in der Datei steht: die Platte kommt
+      // nur auf ein Feld, das dort als Baufläche (2) eingetragen ist. Sonst
+      // läge sie in den paar Dörfern, die ihren Bergfried ohne Hof gesetzt
+      // haben, auf blankem Gras.
       for (const t of (VORPLAETZE[id] || [])) {
         if (!t.fertig) continue;
-        platten.push({ x: x + t.dx, y: y + t.dy, n: t.kacheln, b: t,
-                       tiefe: (x + t.dx) + (y + t.dy) + 2 * (t.kacheln - 1) });
+        const px = x + t.dx, py = y + t.dy;
+        if (px >= N || py >= N || dorf.bauten[py * N + px] !== 2) continue;
+        platten.push({ x: px, y: py, n: t.kacheln, b: t,
+                       tiefe: px + py + 2 * (t.kacheln - 1) });
       }
       for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++)
         if (x + dx < N && y + dy < N) abgedeckt[(y + dy) * N + x + dx] = 1;
@@ -1148,3 +1217,19 @@ ladeGebaeude().then(ladeListe).then(() => {
     });
   }
 });
+
+// ---------- Eigene AIV-Ordner ----------
+$('#ordnerDazu').onclick = () => ordnerSenden($('#ordnerPfad').value.trim(), false);
+$('#ordnerPfad').onkeydown = (ev) => { if (ev.key === 'Enter') $('#ordnerDazu').click(); };
+$('#ordnerWaehlen').onclick = async () => {
+  const knopf = $('#ordnerWaehlen');
+  knopf.disabled = true;
+  knopf.textContent = 'Fenster ist offen …';
+  try {
+    const r = await fetch('/api/ordnerwaehlen').then(r => r.json());
+    if (r.pfad) await ordnerSenden(r.pfad, false);
+  } finally {
+    knopf.disabled = false;
+    knopf.textContent = 'Ordner wählen …';
+  }
+};
