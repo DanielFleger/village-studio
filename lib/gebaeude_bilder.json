@@ -637,6 +637,58 @@
     "tile_flatties#39"
    ]
   },
+  "20": {
+   "bild": "tile_flatties#24",
+   "name": "Wassergraben a",
+   "kacheln": 1,
+   "pos": 183,
+   "beleg": "Flache Kachel aus dunkelbraun aufgegrabener Erde, 30x16 Punkte. In tile_flatties liegen genau VIER solche Kacheln (183, 185, 187, 189) - so viele, wie die Tabelle Wassergraben-Nummern hat. Dazwischen liegen Werkzeuge (Spaten, Kuebel, Baumstumpf), also der Graben beim Ausheben. Welcher Buchstabe a bis d welche Kachel ist, ist willkuerlich.",
+   "gruppe": [
+    "tile_flatties#24",
+    "tile_flatties#26",
+    "tile_flatties#28",
+    "tile_flatties#30"
+   ]
+  },
+  "21": {
+   "bild": "tile_flatties#26",
+   "name": "Wassergraben b",
+   "kacheln": 1,
+   "pos": 185,
+   "beleg": "siehe Nr. 20",
+   "gruppe": [
+    "tile_flatties#24",
+    "tile_flatties#26",
+    "tile_flatties#28",
+    "tile_flatties#30"
+   ]
+  },
+  "22": {
+   "bild": "tile_flatties#28",
+   "name": "Wassergraben c",
+   "kacheln": 1,
+   "pos": 187,
+   "beleg": "siehe Nr. 20",
+   "gruppe": [
+    "tile_flatties#24",
+    "tile_flatties#26",
+    "tile_flatties#28",
+    "tile_flatties#30"
+   ]
+  },
+  "23": {
+   "bild": "tile_flatties#30",
+   "name": "Wassergraben d",
+   "kacheln": 1,
+   "pos": 189,
+   "beleg": "siehe Nr. 20",
+   "gruppe": [
+    "tile_flatties#24",
+    "tile_flatties#26",
+    "tile_flatties#28",
+    "tile_flatties#30"
+   ]
+  },
   "35": {
    "bild": "tile_buildings2#707",
    "name": "Oelbrennerei",
@@ -904,7 +956,6 @@
   "71 Apfelplantage, 72 Milchviehhof": "Kein einziges 10x10-Bild in den 20 Gebaeude-Dateien. Das Hofgebaeude muss anderswo liegen.",
   "73 Getreidefarm, 75 Hopfenfarm": "Von den drei 9x9-Bildern sind zwei ein europaeischer Bergfried aus Stronghold 1 samt Fundament, das dritte die Kirche. Kein Farmgebaeude.",
   "96 Teich": "Kein Wasserbild in 3x3. Die einzigen Teiche liegen in 5x5 (Grosser Teich) und in 6x6, wo die Tabelle gar keinen Teich kennt.",
-  "20-23 Wassergraben": "Kein Wasser-Kachelbild gefunden. In tile_flatties liegen nur Boden, Bohlen und Trockenflaechen.",
   "18, 19 Treppe 5 und 6": "Es gibt nur vier gestufte Steinplatten (195-198) fuer sechs Treppen-Nummern.",
   "25 unbenutzt": "Laut Tabelle unbenutzt - kein Bild noetig.",
   "Mauern 10 und 12": "Position 1 und 3 sind fast gleich (278 von 2910 Punkten verschieden, gleicher Zinnenkranz). Welche Steinmauer und welche Zinnenmauer ist, entscheidet nur das Spiel.",

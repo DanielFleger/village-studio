@@ -7,6 +7,7 @@ const path = require('path');
 const { decode } = require('./lib/aiv');
 const { writeAivMit } = require('./lib/aivwrite');
 const { vorschauAlsPng } = require('./lib/karte');
+const webbilder = require('./lib/webbilder');
 
 const PORT = 8790;
 const HIER = __dirname;
@@ -33,6 +34,7 @@ const MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
 };
 
 function listeDoerfer() {
@@ -178,6 +180,20 @@ const server = http.createServer(async (req, res) => {
 
   if (u.pathname === '/api/spielziele')
     return sendeJson(res, 200, { spiel: spielOrdner(), ziele: spielZiele() });
+
+  // Spielgrafiken fuer die schraege Ansicht - aus den gm1-Dateien, nach lib/gebaeude_bilder.json
+  if (u.pathname === '/api/bilder') {
+    try { return sendeJson(res, 200, webbilder.bilderIndex()); }
+    catch (e) { return sendeJson(res, 500, { fehler: e.message }); }
+  }
+  const mBild = u.pathname.match(/^\/bilder\/(\d+)\.png$/);
+  if (mBild) {
+    let png = null;
+    try { png = webbilder.bildPng(mBild[1]); } catch (e) { res.writeHead(500); return res.end(e.message); }
+    if (!png) { res.writeHead(404); return res.end('kein Bild fuer Nummer ' + mBild[1]); }
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(png);
+  }
 
   if (u.pathname === '/api/dorf') {
     const p = u.searchParams.get('pfad');

@@ -37,6 +37,24 @@ async function ladeGebaeude() {
       GEB[String(id)].stufe = ids.length < 2 ? 0 : -spanne / 2 + spanne * k / (ids.length - 1);
     });
 }
+// ---------- Spielgrafiken ----------
+// Je Bau-Nummer ein Bild aus den gm1-Dateien des Spiels (Server: /api/bilder,
+// /bilder/<nr>.png), zugeordnet in lib/gebaeude_bilder.json. Die Lage im Bild
+// ist wie in lib/gm1.js gerechnet: die unterste Kachel des Bauwerks sitzt
+// waagerecht in der Bildmitte, ihre Oberkante liegt bei hoehe - 16.
+let BILDER = {};
+async function ladeBilder() {
+  let idx = {};
+  try { idx = await fetch('/api/bilder').then(r => r.json()); } catch { return; }
+  for (const [id, e] of Object.entries(idx)) {
+    const img = new Image();
+    img.onload = () => { e.fertig = true; if (ansicht === 'schraeg') malen_(); };
+    img.src = '/bilder/' + id + '.png';
+    BILDER[id] = Object.assign(e, { img });
+  }
+}
+function bildFuer(id) { const b = BILDER[String(id)]; return b && b.fertig ? b : null; }
+
 function bau(id) { return GEB[String(id)] || null; }
 function bauName(id) {
   if (!id) return '–';
@@ -256,41 +274,70 @@ function maleSchraeg() {
     }
   }
 
-  // Von hinten nach vorn, sonst decken die vorderen Bauten die hinteren nicht ab
   let maxSchritt = 1;
   if (dorf.schritte) for (const v of dorf.schritte) if (v > maxSchritt) maxSchritt = v;
   const nachSchritt = $('#ebSchritte').checked;
+  const mitBildern = $('#ebBilder').checked && !nachSchritt;   // Bauschritte kann nur der Klotz einfaerben
 
-  for (let s = 0; s <= 2 * (N - 1); s++) {
-    for (let x = Math.max(0, s - N + 1); x <= Math.min(s, N - 1); x++) {
-      const y = s - x;
-      const i = y * N + x;
-      const id = dorf.bauten ? dorf.bauten[i] : 0;
-      if (!id) continue;
-
-      const grund = nachSchritt && dorf.schritte && dorf.schritte[i]
-        ? schritteFarbe(dorf.schritte[i], maxSchritt) : farbeFuer(id);
-      const [px, py] = isoPunkt(x, y);
-      const hoehe = bauhoehe(id) * hh * 2;
-
-      if (hoehe > 0.5) {
-        // linke und rechte Wand
-        ctx.fillStyle = dunkler(grund, .55);
-        ctx.beginPath();
-        ctx.moveTo(px - hb, py + hh - hoehe); ctx.lineTo(px, py + 2 * hh - hoehe);
-        ctx.lineTo(px, py + 2 * hh); ctx.lineTo(px - hb, py + hh);
-        ctx.closePath(); ctx.fill();
-        ctx.fillStyle = dunkler(grund, .75);
-        ctx.beginPath();
-        ctx.moveTo(px + hb, py + hh - hoehe); ctx.lineTo(px, py + 2 * hh - hoehe);
-        ctx.lineTo(px, py + 2 * hh); ctx.lineTo(px + hb, py + hh);
-        ctx.closePath(); ctx.fill();
-      }
-      // Dach
-      ctx.fillStyle = grund;
-      raute(ctx, px, py - hoehe, hb, hh);
-      ctx.fill();
+  // Erst einsammeln, dann von hinten nach vorn zeichnen. Ein Bild deckt alle
+  // Felder seines Bauwerks ab und gehoert an die Tiefe seiner untersten Ecke;
+  // ein Klotz ist genau ein Feld. Was kein Bild hat, bleibt ein Klotz.
+  const bilder = [], bloecke = [];
+  const abgedeckt = new Uint8Array(N * N);
+  if (mitBildern && dorf.bauten && dorf.gruppen && dorf.mauern) {
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const i = y * N + x, id = dorf.bauten[i], n = dorf.gruppen[i];
+      if (!id || n < 2 || dorf.mauern[i] !== 1) continue;      // nur die Ecke oben links eines Bauwerks
+      const b = bildFuer(id);
+      if (!b || b.kacheln !== n) continue;
+      bilder.push({ x, y, n, b, tiefe: x + y + 2 * (n - 1) });
+      for (let dy = 0; dy < n; dy++) for (let dx = 0; dx < n; dx++)
+        if (x + dx < N && y + dy < N) abgedeckt[(y + dy) * N + x + dx] = 1;
     }
+  }
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const i = y * N + x;
+    if (abgedeckt[i]) continue;
+    const id = dorf.bauten ? dorf.bauten[i] : 0;
+    if (!id) continue;
+    const b = mitBildern ? bildFuer(id) : null;
+    const kante = dorf.gruppen ? dorf.gruppen[i] : 0;
+    if (b && b.kacheln === 1 && kante <= 1) bilder.push({ x, y, n: 1, b, tiefe: x + y });
+    else bloecke.push({ x, y, id, i, tiefe: x + y });
+  }
+
+  const alles = bloecke.concat(bilder).sort((a, b) => a.tiefe - b.tiefe || a.x - b.x);
+  const k = hb / 16;                       // ein Spielpunkt in Bildschirmpunkten (Kachel im Spiel 32 breit)
+  ctx.imageSmoothingEnabled = k < 1;
+  for (const e of alles) {
+    if (e.b) {
+      const [sx, sy] = isoPunkt(e.x + e.n - 1, e.y + e.n - 1);   // unterste Ecke des Bauwerks
+      ctx.drawImage(e.b.img, sx - e.b.breite / 2 * k, sy - (e.b.hoehe - 16) * k, e.b.breite * k, e.b.hoehe * k);
+      continue;
+    }
+    const { x, y, id, i } = e;
+    const grund = nachSchritt && dorf.schritte && dorf.schritte[i]
+      ? schritteFarbe(dorf.schritte[i], maxSchritt) : farbeFuer(id);
+    const [px, py] = isoPunkt(x, y);
+    const hoehe = bauhoehe(id) * hh * 2;
+
+    if (hoehe > 0.5) {
+      // linke und rechte Wand
+      ctx.fillStyle = dunkler(grund, .55);
+      ctx.beginPath();
+      ctx.moveTo(px - hb, py + hh - hoehe); ctx.lineTo(px, py + 2 * hh - hoehe);
+      ctx.lineTo(px, py + 2 * hh); ctx.lineTo(px - hb, py + hh);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = dunkler(grund, .75);
+      ctx.beginPath();
+      ctx.moveTo(px + hb, py + hh - hoehe); ctx.lineTo(px, py + 2 * hh - hoehe);
+      ctx.lineTo(px, py + 2 * hh); ctx.lineTo(px + hb, py + hh);
+      ctx.closePath(); ctx.fill();
+    }
+    // Dach
+    ctx.fillStyle = grund;
+    raute(ctx, px, py - hoehe, hb, hh);
+    ctx.fill();
   }
 
   ctx.strokeStyle = 'rgba(214,184,122,.35)';
@@ -654,7 +701,7 @@ $('#ansichtWechsel').onclick = () => {
 $('#rueckgaengig').onclick = rueckgaengig;
 $('#pinsel').addEventListener('input', () => $('#pinselWert').textContent = $('#pinsel').value);
 for (const b of document.querySelectorAll('.wz')) b.onclick = () => setzeWerkzeug(b.dataset.wz);
-for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebUmriss', 'ebRaster'])
+for (const id of ['ebBauten', 'ebSchritte', 'ebMauern', 'ebGruppen', 'ebSonst', 'ebUmriss', 'ebRaster', 'ebBilder'])
   $('#' + id).addEventListener('change', malen_);
 
 window.addEventListener('keydown', ev => {
@@ -759,6 +806,7 @@ const suchparam = new URLSearchParams(location.search);
 // ?anonym=1 zeichnet die Dorfnamen weich - fuer Bildschirmfotos, die man teilt
 if (suchparam.has('anonym')) $('#liste').classList.add('anonym');
 
+ladeBilder();                       // laeuft nebenher, jedes Bild zeichnet sich beim Eintreffen selbst
 ladeGebaeude().then(ladeListe).then(() => {
   const wunsch = suchparam.get('dorf');
   if (!wunsch) return;

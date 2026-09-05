@@ -32,6 +32,10 @@ const Z = {
   15: [1, 196, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
   16: [1, 197, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
   17: [1, 198, 'vermutet', 'siehe Nr. 14', [195, 196, 197, 198]],
+  20: [1, 183, 'vermutet', 'Flache Kachel aus dunkelbraun aufgegrabener Erde, 30x16 Punkte. In tile_flatties liegen genau VIER solche Kacheln (183, 185, 187, 189) - so viele, wie die Tabelle Wassergraben-Nummern hat. Dazwischen liegen Werkzeuge (Spaten, Kuebel, Baumstumpf), also der Graben beim Ausheben. Welcher Buchstabe a bis d welche Kachel ist, ist willkuerlich.', [183, 185, 187, 189]],
+  21: [1, 185, 'vermutet', 'siehe Nr. 20', [183, 185, 187, 189]],
+  22: [1, 187, 'vermutet', 'siehe Nr. 20', [183, 185, 187, 189]],
+  23: [1, 189, 'vermutet', 'siehe Nr. 20', [183, 185, 187, 189]],
   24: [1, 249, 'sicher', 'Schwarze Pechflaeche mit Schilf, aus pitch_ditches. Acht Fassungen (249-256).', [249, 250, 251, 252, 253, 254, 255, 256]],
   37: [1, 233, 'sicher', 'Grube mit Sandrand und Holzpfaehlen, aus killing_pits. 16 Fassungen: 233-240 offen, 241-248 mit Deckung.', [233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248]],
 
@@ -116,7 +120,6 @@ const OFFEN = {
   '71 Apfelplantage, 72 Milchviehhof': 'Kein einziges 10x10-Bild in den 20 Gebaeude-Dateien. Das Hofgebaeude muss anderswo liegen.',
   '73 Getreidefarm, 75 Hopfenfarm': 'Von den drei 9x9-Bildern sind zwei ein europaeischer Bergfried aus Stronghold 1 samt Fundament, das dritte die Kirche. Kein Farmgebaeude.',
   '96 Teich': 'Kein Wasserbild in 3x3. Die einzigen Teiche liegen in 5x5 (Grosser Teich) und in 6x6, wo die Tabelle gar keinen Teich kennt.',
-  '20-23 Wassergraben': 'Kein Wasser-Kachelbild gefunden. In tile_flatties liegen nur Boden, Bohlen und Trockenflaechen.',
   '18, 19 Treppe 5 und 6': 'Es gibt nur vier gestufte Steinplatten (195-198) fuer sechs Treppen-Nummern.',
   '25 unbenutzt': 'Laut Tabelle unbenutzt - kein Bild noetig.',
   'Mauern 10 und 12': 'Position 1 und 3 sind fast gleich (278 von 2910 Punkten verschieden, gleicher Zinnenkranz). Welche Steinmauer und welche Zinnenmauer ist, entscheidet nur das Spiel.',
