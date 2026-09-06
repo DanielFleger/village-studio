@@ -170,6 +170,22 @@ die Zinnenmauer, wie sie unter dem Mauszeiger haengt — durchscheinend, mit
 Geruest. Wer eines davon als Bild eines fertigen Bauwerks nimmt, zeigt eine
 Baustelle.
 
+**Im Spiel gegengeprueft** (Daniel, 06.09.2026, mit Bildern): Eine gebaute
+Mauer ist oben **glatt** - die Zacken auf `tile_buildings1#0`/`#2` sind das
+Gitter der Vorschau, keine Zinnen. Die Zinnenmauer ist dieselbe Mauer mit einem
+**Zackenkranz obendrauf** und dadurch sichtbar hoeher. Und: „Es ist egal, ob
+kleine oder grosse Mauern - wenn ich nur eine Zinne ziehen will, kommt dieses
+Graue als Vorschau", also `tile_buildings1#4`. Das bestaetigt am laufenden
+Spiel, was aus `renderWallDragPreview` (`0x004f8bd0`) gelesen war: fuer den
+Zinnenbefehl `0x1a` steht dort genau ein Bild, und fuer die niedrige Zinne
+(Mapper 35) gibt es gar keinen Menuebefehl - darum ist die Vorschau immer
+dieselbe.
+
+**Dazu passen die Masse in `anim_castle`**: `#48`-`#61` sind 32x99 und oben
+schraeg abgeschlossen (glatte Mauer), `#62`-`#75` sind 32x130 und tragen ueber
+einer Trennlinie einen abgesetzten Block - den Kranz. Die Differenz von 31
+Punkten ist genau das, was im Spielbild obendrauf sitzt.
+
 **Eine gebaute Mauer besteht immer aus Koerper und Krone.** Gemessen an den
 Bildern: ohne Zinnen ist die Krone eine flache Platte (`tile_land3#96`–`#111`,
 30x18), mit Zinnen wechseln im Schachbrett flache Scharte (`#112`–`#119`,
