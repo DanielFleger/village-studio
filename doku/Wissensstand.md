@@ -56,6 +56,92 @@ Nutzbar gemacht in `lib/karte.js` (`leseVorschau`, `vorschauAlsPng`) und in der
 Oberfläche unter *Vorlage → Karte des Spiels wählen*. Der Server findet 189
 Karten, die des Spiels und die der Plugins.
 
+## 1b6. Das Gelände einer Karte zeichnen (06.09.2026)
+
+**belegt**, aus dem Programm gelesen, von einem zweiten Leser mit einer
+Blindprobe bestätigt.
+
+> **Abschnitt 1001 trägt die fertige Bildnummer je Feld**, keinen Geländetyp.
+> 2 Byte je Feld, 160.800 Byte = 80.400 Felder. Im Spiel ist das
+> `TileMapState.GfxLayer`.
+
+**Wie das belegt ist, ohne Raten:** In der EXE steht eine Adresstabelle
+`DAT_MapSectionAddressArray` (`0x00b92a58`, 123 Einträge zu 16 Byte), die zu
+jeder Abschnitts-ID die **Zieladresse im Speicher** nennt. Für 1001 steht dort
+`0x01ae5688`; `DAT_TileMapState` liegt bei `0x01a93208`, `GfxLayer` bei
+`+0x52480` — zusammen genau diese Adresse. Gegenprobe mit 1005:
+`0x01a93208 + 0x29fa30 = 0x01d32c38`, und genau das steht in der Tabelle.
+Damit sind alle Schichten benannt, nicht nur geraten.
+
+| ID | Name im Spiel | Byte | was drinsteht |
+|---|---|---|---|
+| **1001** | `GfxLayer` | 2 | **die gezeichnete Bildnummer** |
+| 1033 | `AlphaGFXLayer` | 2 | zweites Bild zum Überblenden; meist null |
+| 1002 | `PillarGFXLayer` | 2 | Steilkanten, fast überall `tile_cliffs#0` |
+| 1003 | `LogicLayer` | 4 | Art des Feldes als Bitfeld (Wasser, Fels, Erz) |
+| 1037 | `Logic2Layer` | 1 | dasselbe, zweiter Satz |
+| 1036 | `MacroLayer` | 2 | zu welchem Geländefleck ein Feld gehört — **keine** Bildnummer |
+| 1005 / 1045 | `HeightLayer` / `DefaultHeightLayer` | je 1 | Höhe |
+| 1008 | `RandomLayer` | — | steht in der Tabelle, wird aber in **keiner** der 143 Karten gespeichert |
+
+Dass der Zufallswert fehlt, passt ins Bild: **Die Karte legt das Ergebnis ab,
+nicht die Zutaten.** Deshalb steht in 1001 schon die fertige Nummer.
+
+**Vom Wert zum Bild.** Die Nummer zählt über **alle** `.gm1` durch, in der
+Ladereihenfolge der EXE:
+
+* `loadGmFiles` (`0x00455c60`) geht die Namensliste ab `0xb601c0` durch
+  (Schrittweite 1000 Byte, Abbruch beim Namen „null"), setzt
+  `GMTotalPicturesProcessed[gmID]` auf den bisherigen Zähler und addiert die
+  Bildzahl aus dem Dateikopf (@12). **Der Zähler startet bei 1.**
+* `renderGM` (`0x00455300`) greift auf `GMTotalPicturesProcessed[gmID] + bildNr − 1` zu.
+* Daraus: **0-basierter Platz = Wert aus 1001 minus 1.** Die Datei ist die,
+  deren Summenbereich den Platz enthält; die Bildnummer ist Platz minus
+  Summenanfang. Wert 0 heißt „kein Bild".
+* Gezeichnet wird wie ein Gebäudeteil (Datenart 3): die ersten 512 Byte sind
+  die Rautenkachel 30×16, der Rest ein TGX-Aufbau, den `kachelVersatz` anhebt
+  (Fels, Busch). Lage: `x = 15·(sx−sy)`, `y = 8·(sx+sy)`, von hinten nach vorn.
+
+**Verteilung über 143 Karten und 11.497.200 Felder:** keine Bildnummer außerhalb
+ihrer Datei, kein Feld ohne Bildplatz. `tile_land_macros` 6.866.151,
+`tile_land8` 3.167.958, `tile_sea_new_01` 435.802, `tile_sea8` 372.060,
+`tile_rocks8` 366.766, `tile_land3` 176.379.
+
+**Die Blindprobe, die es entscheidet:** Eine Karte hat **elf** Abschnitte mit
+2 Byte je Feld — die Größe allein beweist nichts. Derselbe Ausschnitt aus 1002,
+1033, 1036 und 1004 gezeichnet ergibt Steilkanten, Nullen, Farbrauschen mit
+zufälligen Soldatenbildern und Gebäudekacheln. **Nur 1001 gibt Gelände.**
+
+**Das Verzeichnis der `.map`**, nebenbei mitgemessen: Es beginnt beim u32-Wert
+1001 und hat drei Felder zu je 150 u32 (IDs, Ja/Nein, Versätze), dann 4 Byte,
+dann die Daten; je Abschnitt 12 Byte Kopf (entpackt, gepackt, Prüfsumme). Das
+Ja/Nein-Feld ist verlässlich: 6781 von 6781 Ja-Abschnitten ließen sich
+entpacken, kein einziger Nein-Abschnitt. Von 114 Verzeichniseinträgen tragen
+über alle Karten nur **50 IDs** wirklich Daten.
+
+**Zwei offene Stellen, ehrlich getrennt:**
+
+1. **Der Versatz 21.** Ab Listenplatz 149 liegt der Zähler des Spiels um 21
+   Bilder unter der Summe aus EXE-Liste und Dateiköpfen. Die Zahl ist an
+   11,5 Millionen Feldern angepasst und ein scharfes Minimum (20 → 26.833
+   unpassende Felder, 21 → 2.064, 22 → 2.096), und sie tut nachweislich Arbeit:
+   ohne sie landen Meeresfelder in Menügrafik. **Warum 21, ist ungeklärt.**
+2. **Der Vorschau-Versatz.** Die Zuordnung Vorschaupunkt → Feld
+   (`x = px+py`, `y = py−px+199`) stimmt auf **82 von 113** Karten. Auf 31
+   sitzt das Feld zwei Spalten weiter (`x = px+py+2`), darunter Rock Face,
+   Cyclades, The Dunes, Edessa, Antioch. Das ist vermutlich derselbe Versatz,
+   der in Abschnitt 1b5 offenblieb.
+
+Nutzbar in `lib/gelaende.js` und `lib/karte.js` (`leseAbschnitte`,
+`abschnittsDaten`, `leseGfxSchicht`); zum Ansehen
+`node _zeige_gelaende.js "<karte.map>" <px0> <py0> <kante> "<ziel.png>"`.
+
+**Wozu das gut ist, über die Anzeige hinaus:** Wer einen eigenen Karteneditor
+bauen will, braucht genau diese Zuordnungen — welche Schicht was trägt und wie
+eine Zahl zu einem Bild wird.
+
+---
+
 ## 1b5. Wo das Dorf auf der Karte liegt (06.09.2026)
 
 **belegt**, aus dem Programm gelesen, von einem zweiten Leser unabhängig
