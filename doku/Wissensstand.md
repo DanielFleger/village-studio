@@ -121,6 +121,97 @@ Spielstart, keine Sperre. Skripte in `werkzeug/`, Aufruf in Abschnitt
 
 ---
 
+## 1b3. Die Zinnenmauer (06.09.2026)
+
+**belegt**, aus dem Programm gelesen und an den Bildern nachgemessen.
+
+Die Zinnenmauer hat **kein fertiges Einzelbild**. Das Spiel setzt sie aus zwei
+Teilen zusammen:
+
+* **Flanke** aus `anim_castle.gm1` — `#48`–`#61` glatt, `#62`–`#75` mit
+  Zinnenkranz. Der Aufschlag von genau `0x0e` kommt, wenn zwei Nachbarkacheln
+  `L_CRENEL` tragen.
+* **Krone** aus `tile_land3` — `#112`–`#119` eine flache Platte (die Scharte),
+  `#120`–`#127` ein aufgesetzter Klotz (die Zinne). Welche von beiden kommt,
+  entscheidet allein die **x/y-Parität** der Kachel (`L_CRENEL_VARIATIONUnk`,
+  `0x400000`). Darum wechseln Zinne und Scharte im Schachbrett entlang der
+  Mauer — das ist der Zinnenkranz.
+
+**Daniels „flache Version, einer der 4: 195–198" ist die Flachansicht**, die
+das Spiel auf die Leertaste legt (`toggleFlatView` `0x004f70b0`, gerufen aus
+`WindowMsgProcessingFunc` bei `VK_SPACE`). Dort steht in `renderMap`
+(`0x004e8cf0`) wörtlich `Bild = flatties + 0x24 + (RandomLayer & 3)`, also
+`tile_flatties#36`–`#39`; beschädigt `+0x2c` = `#44`/`#45`.
+
+**Warum er nur „einer der 4" sagen konnte:** die vier Bilder sind
+**punktgleich** — 0 von 274 Punkten verschieden, selbst nachgemessen. Es ist
+gleichgültig welches, und sie gelten für **12 wie 13**.
+
+**Der Unterschied zwischen hoch (12) und niedrig (13)** ist eine einzige Zahl.
+`placeDefensiveStructureTile` (`0x005034a0`) setzt bei Mapper 26 die Höhe
+`+98`, bei Mapper 35 `+68`; alle Bits sind gleich. Die Höhe wirkt aber
+**mittelbar doch auf ein Bild**: `isWallConnectionHeightValid` (`0x004f8840`)
+vergleicht `HeightLayer[Kachel] − 0x10` gegen den Nachbarn, und daraus wählt
+`computeWallCornerRenderRotation` das Verbindungsbild. Eine Steinmauer neben
+einer niedrigen Zinne verbindet also anders als neben einer hohen.
+
+**Nebenbefund:** Bau 13 kann der Spieler gar nicht ziehen — für Mapper 35 gibt
+es keinen Menübefehl. Nur die KI setzt sie. Gemessen an 749 AIV-Dateien: Bau 12
+kommt 73.464-mal in 535 Dateien vor, Bau 13 17.989-mal in 188.
+
+**Nicht widerlegt**, obwohl im ersten Anlauf so gemeldet: der Eintrag zur
+Seitenfläche aus `anim_castle.gm1`. Die Gegenprobe hat ihn im Code bestätigt
+(`renderGM(..., GM_CASTLE_ANIMS, ...)`, `GID_ANIM_CASTLE = 54`). Wer hier nur
+`WallGFXLayer = GMTotal[10] + …` liest, hält ihn fälschlich für überholt —
+`WallGFXLayer` trägt an anderer Stelle eine Höhe statt einer Bildnummer.
+
+---
+
+## 1b4. Die Vorplätze sind eigene Gebäude (06.09.2026)
+
+**belegt**, aus dem Programm gelesen, von einem zweiten Leser Glied für Glied
+nachgeprüft.
+
+> Ein Vorplatz ist kein Bodenbelag und kein Teil des Gebäudebildes, sondern ein
+> **eigenes zweites Gebäude**, das das Spiel beim Setzen des Hauptgebäudes
+> automatisch mit anlegt.
+
+| Hauptgebäude | Setz-Funktion | legt an | Größe | Lage | Bild |
+|---|---|---|---|---|---|
+| Ölbrennerei (35) | `placeOilsmelter` `0x00508030` | `BT_CAMPFIRE` (51) | 4×4 | (0, 4) | `tile_buildings1#296` |
+| Kaserne (55), Söldnerposten (39) | `placeBarracks` `0x005076a0` | 57 / 58 / 56 | je 5×5 | (5,0) (0,5) (5,5) | `#72` `#122` `#97` |
+| Ingenieursgilde (57) | `placeEngineersguild` `0x00507bd0` | `BT_PARADEGROUND` (53) | 5×5 | (0, 5) | `#147` |
+| Tunnelgräbergilde (58) | `placeTunnelersguild` `0x00507e00` | `BT_PARADEGROUND5` (59) | 5×5 | (0, 5) | `#172` |
+| Bergfried (38) | `placeKeep` `0x005146d0` | `BT_CAMPGROUND` (55) | 7×7 | (0, 8) | `#23` |
+
+Bild und Lage stehen in `DAT_BuildingDefinedData` (`0x005b7974`) und
+`DAT_TerrainDefinedData` (`0x00b48f54`, Feld `field63_0x19c`). **Die
+Sprite-Nummern des Programms sind 1-basiert, unsere Bildnummern 0-basiert** —
+die abziehende Zeile steht in `updateBuildingGraphicsLayer` (`0x00506370`).
+Zwei unabhängige Anker: Ölbrennerei Sprite 708 → `tile_buildings2#707`,
+Steinbergfried Sprite 714 → `tile_castle#713`.
+
+**Was das wert ist:** Die Vorplatz-Tabelle in `lib/webbilder.js` war am
+05.09.2026 aus Bildähnlichkeit und aus der Zählung an 163 AIV-Dateien
+entstanden. Der Code bestätigt sie Feld für Feld — mit **einer Korrektur**: die
+Tunnelgräbergilde trug das Bild der Ingenieursgilde (`#147` statt `#172`; die
+beiden sind punktweise verschieden). Und mit **einer Ergänzung**: der 4×4-Platz
+der Ölbrennerei, der bis dahin leer blieb.
+
+Damit ist auch der offene Punkt bei **Bau 2 (Baufläche)** geschlossen: Es ist
+keine Bodentextur, sondern je nach Nachbargebäude eines von sieben
+Gebäudebildern.
+
+**Offen geblieben:** Auf `#296` ist kein Feuer zu sehen, obwohl der Typ
+`BT_CAMPFIRE` heißt. Feuer und Ölpresse kommen aus `anim_boiled_oil.gm1` (138
+Bilder zu 100×100) und hängen am Gebäude, nicht am Platz. Wo genau die
+Feuerstelle sitzt, die man im Spiel sieht, ist damit **nicht** geklärt.
+
+**Beide Befunde ohne Spielstart**, reines Lesen in Ghidra plus Nachmessen an
+den `.gm1`-Dateien. Am laufenden Bildschirm gesehen ist keiner von beiden.
+
+---
+
 ## 1c. Die Bildersammlungen (.gm1)
 
 | Aussage | Marke | Beleg |

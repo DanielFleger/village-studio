@@ -20,6 +20,19 @@ den Kacheldateien.
 Bilder sind es nicht. Die flachen Fassungen sind laut ihm eine der vier
 Nummern 195–198.
 
+**BEANTWORTET am 06.09.2026**, über die EXE. Die 195–198 waren
+Bogenpositionen, keine Bildnummern — sie zeigen auf `tile_flatties#36`–`#39`,
+und das ist die **Flachansicht** (Leertaste im Spiel). Die vier Bilder sind
+punktgleich und gelten für 12 wie 13; darum konnte Daniel nur „einer der vier"
+sagen. Eine fertige Zinnenmauer gibt es im Spiel nicht — sie wird aus Flanke
+(`anim_castle#62`–`#75`) und Krone (`tile_land3#120`–`#127` bzw. `#112`–`#119`)
+zusammengesetzt. Ganze Kette im Wissensstand unter „1b3. Die Zinnenmauer".
+
+**Noch offen daran:** welches Einzelbild der Editor in der Schrägansicht zeigen
+soll. Das ist eine Darstellungsfrage, keine Messung — Daniel entscheidet.
+Kandidat ist `tile_buildings1#4` (30×117), das Bild, das das Spiel beim Ziehen
+einer Zinnenmauer zeigt.
+
 **Treppe 1 bis 4 (14–17).** Dasselbe. Beim Ziehen legt das Spiel die
 Stufenbilder 390–393 darüber, je nach Blickrichtung; die flache Fassung ist
 199 oder 201.
@@ -48,6 +61,13 @@ unter „Die Treppengrafik — gefunden".
 
 **Der 4×4-Platz der Ölbrennerei (35).** Die Felder sind gemessen (4×4 direkt
 unter dem Gebäude), das Bild dafür fehlt.
+
+**ERLEDIGT am 06.09.2026**, über die EXE. Der Platz ist ein eigenes Gebäude,
+das `placeOilsmelter` mit anlegt: `BT_CAMPFIRE` (51), 4×4, Lage (0,4), Bild
+`tile_buildings1#296`–`#311`. Eingetragen in `lib/webbilder.js`. Im selben Zug
+bestätigt der Code die ganze Vorplatz-Tabelle und korrigiert einen Eintrag —
+die Tunnelgräbergilde hatte das Bild der Ingenieursgilde. Siehe Wissensstand
+„1b4. Die Vorplätze sind eigene Gebäude".
 
 **Sitzen die Bilder richtig?** Für die Vorplätze ist es geprüft (99,8 % der
 abgedeckten Felder sind auch in der Datei Baufläche). Für die Gebäudebilder

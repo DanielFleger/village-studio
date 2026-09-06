@@ -41,7 +41,8 @@
     "tile_buildings1#2"
    ],
    "notiz_daniel": "Das ist normalerweise die Steinmauer aber mit noch etwas oben drauf- Die flache version davon ist einer der 4: 195-198",
-   "fehlt": "Das ist normalerweise die Steinmauer aber mit noch etwas oben drauf- Die flache version davon ist einer der 4: 195-198"
+   "fehlt": "BELEGT 06.09.2026 aus dem Programm: Die Zinnenmauer hat KEIN fertiges Einzelbild - das Spiel setzt sie aus zwei Teilen zusammen. Flanke aus anim_castle.gm1 (#48-#61 glatt, #62-#75 mit Zinnenkranz, +0x0e wenn zwei Nachbarn Zinnen tragen), Krone aus tile_land3 (#112-#119 flache Scharte, #120-#127 aufgesetzter Klotz); welche Krone kommt, entscheidet die x/y-Paritaet der Kachel, deshalb wechseln Zinne und Scharte im Schachbrett. Daniels 'flache version, einer der 4: 195-198' ist die FLACHANSICHT (Leertaste): tile_flatties#36-#39, ausgewaehlt per RandomLayer & 3, beschaedigt #44/#45 - und die vier Bilder sind PUNKTGLEICH und gelten fuer 12 wie 13. Darum konnte er nur 'einer der 4' sagen: es ist gleichgueltig welches. Kette: renderMap 0x004e8cf0, placeDefensiveStructureTile 0x005034a0, GID_TILE_FLATTIES=157. Von einem zweiten Agenten Glied fuer Glied nachgeprueft. Fuer 12 (M_MAPPER_CRENAL, 26) setzt das Spiel LogicLayer |= 0x200 und HeightLayer += 98.",
+   "offen_anzeige": "Welches Einzelbild der Editor in der Schraegansicht zeigen soll, ist eine Darstellungsfrage und noch nicht entschieden - im Spiel gibt es keines. Kandidat: tile_buildings1#4 (30x117), das Bild, das renderWallDragPreview (0x004f8bd0) fuer den Zinnenmauer-Befehl 0x1a zeigt."
   },
   "13": {
    "bild": "tile_buildings1#1",
@@ -53,7 +54,8 @@
     "tile_buildings1#1"
    ],
    "notiz_daniel": "gleiches hier auch, Die flache version davon ist einer der 4: 195-198",
-   "fehlt": "gleiches hier auch, Die flache version davon ist einer der 4: 195-198"
+   "fehlt": "BELEGT 06.09.2026 aus dem Programm: Die Zinnenmauer hat KEIN fertiges Einzelbild - das Spiel setzt sie aus zwei Teilen zusammen. Flanke aus anim_castle.gm1 (#48-#61 glatt, #62-#75 mit Zinnenkranz, +0x0e wenn zwei Nachbarn Zinnen tragen), Krone aus tile_land3 (#112-#119 flache Scharte, #120-#127 aufgesetzter Klotz); welche Krone kommt, entscheidet die x/y-Paritaet der Kachel, deshalb wechseln Zinne und Scharte im Schachbrett. Daniels 'flache version, einer der 4: 195-198' ist die FLACHANSICHT (Leertaste): tile_flatties#36-#39, ausgewaehlt per RandomLayer & 3, beschaedigt #44/#45 - und die vier Bilder sind PUNKTGLEICH und gelten fuer 12 wie 13. Darum konnte er nur 'einer der 4' sagen: es ist gleichgueltig welches. Kette: renderMap 0x004e8cf0, placeDefensiveStructureTile 0x005034a0, GID_TILE_FLATTIES=157. Von einem zweiten Agenten Glied fuer Glied nachgeprueft. Fuer 13 (M_MAPPER_CRENAL2, 35) dasselbe, nur HeightLayer += 68. Der Unterschied zu 12 ist allein die Hoehe - die wirkt ueber isWallConnectionHeightValid (0x004f8840, HeightLayer-0x10 gegen den Nachbarn) auf die Wahl des Verbindungsbildes, nicht auf die Zinne selbst. Nebenbefund: 13 kann der Spieler gar nicht ziehen, es gibt keinen Menuebefehl dafuer - nur die KI setzt sie.",
+   "offen_anzeige": "Welches Einzelbild der Editor in der Schraegansicht zeigen soll, ist eine Darstellungsfrage und noch nicht entschieden - im Spiel gibt es keines. Kandidat: tile_buildings1#4 (30x117), das Bild, das renderWallDragPreview (0x004f8bd0) fuer den Zinnenmauer-Befehl 0x1a zeigt."
   },
   "24": {
    "bild": "pitch_ditches#3",
@@ -134,7 +136,7 @@
     "tile_buildings2#723"
    ],
    "notiz_daniel": "hier fhelt auch der platz davor wo sich die engineure versammeln",
-   "fehlt": "hier fhelt auch der platz davor wo sich die engineure versammeln"
+   "fehlt": "ERLEDIGT 06.09.2026: Der Platz davor ist ein eigenes Gebaeude, das placeOilsmelter (0x00508030) mit anlegt - BT_CAMPFIRE (51), 4x4, Lage (0,4) aus DAT_TerrainDefinedData, Sprite 297 -> tile_buildings1#296-#311. Eingetragen in lib/webbilder.js unter VORPLAETZE. Das Feuer und die Presse, die Daniel im Spiel sieht, kommen aus anim_boiled_oil.gm1 und haengen am Gebaeude, nicht am Platz."
   },
   "36": {
    "bild": "tile_buildings2#1043",

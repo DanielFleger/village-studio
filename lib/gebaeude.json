@@ -16,7 +16,7 @@
    "gruppe": "sonstiges",
    "b": 0,
    "h": 0,
-   "hinweis": "kein Gebaeude, sondern der freigeraeumte Platz um die Bauten: Pennerhof am Bergfried, Trainingslager an Kaserne und Soeldnerposten, Versammlungsplatz an den Gilden. Steht Feld fuer Feld in der AIV. Die Bodentextur dafuer ist noch nicht zugeordnet."
+   "hinweis": "kein Gebaeude, sondern der freigeraeumte Platz um die Bauten: Pennerhof am Bergfried, Trainingslager an Kaserne und Soeldnerposten, Versammlungsplatz an den Gilden. Steht Feld fuer Feld in der AIV. Es ist keine Bodentextur, sondern je Nachbargebaeude ein eigenes Gebaeudebild aus tile_buildings1 - belegt 06.09.2026 aus dem Programm, siehe lib/webbilder.js (VORPLAETZE) und den Wissensstand."
   },
   "10": {
    "name": "Steinmauer",
