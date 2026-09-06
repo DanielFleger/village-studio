@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { leseGm1, ganzesGebaeude, pngRgba } = require('./lib/gm1');
-const { bilderIndex, vorplaetze, mauerBilder } = require('./lib/webbilder');
+const { bilderIndex, vorplaetze, mauerBilder, treppenBilder } = require('./lib/webbilder');
 
 const SPIEL = 'C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme';
 const GM = path.join(SPIEL, 'gm');
@@ -24,6 +24,7 @@ const gebaeude = JSON.parse(fs.readFileSync(path.join(__dirname, 'lib', 'gebaeud
 const bilder = bilderIndex();
 const plaetze = vorplaetze();
 const mauern = mauerBilder();
+const treppen = treppenBilder();
 
 const geoeffnet = new Map();
 function datei(name) {
@@ -85,7 +86,13 @@ for (const [id, g] of Object.entries(gebaeude)) {
       return { bild: f.name, breite: f.bild.breite, hoehe: f.bild.hoehe };
     };
     const reihe = (liste) => liste.map(ablegen);
-    const m = { hoehe: mauer.hoehe, laengs: {}, quer: {}, rand: { laengs: {}, quer: {}, allein: {} } };
+    // zinne merkt sich, ob diese Mauer einen Zinnenkranz traegt. Fuer die
+    // Treppen ist das wichtig: hasHigherPlainNeighborWithWallOrGatehouse
+    // (0x004f8ac0) verlangt L_WALL_OR_GATEHOUSE und schliesst L_CRENEL
+    // (0x200) ausdruecklich aus - eine Treppe richtet sich also nicht nach
+    // einer hoeheren ZINNENmauer, nur nach einer glatten.
+    const m = { hoehe: mauer.hoehe, zinne: !!mauer.rand.allein.scharte,
+                laengs: {}, quer: {}, rand: { laengs: {}, quer: {}, allein: {} } };
     for (const welche of Object.keys(mauer.rand.allein)) {
       for (const fall of Object.keys(m.rand)) m.rand[fall][welche] = ablegen(mauer.rand[fall][welche]);
       m.laengs[welche] = reihe(mauer.laengs[welche]);
@@ -107,6 +114,33 @@ for (const [id, g] of Object.entries(gebaeude)) {
       eintrag.wechselHoehe = m.rand.allein.scharte.hoehe;
       eintrag.wechsel = 'x+y ungerade';
     }
+  }
+
+  // Die Treppen. Sie haben - wie die Mauern - kein fertiges Einzelbild,
+  // sondern eine gemessene Hoehe: Mapper 181 steht 80 Punkte ueber dem Boden,
+  // 182 auf 64, 183 auf 48, 184 auf 32, 185 auf 16, 186 auf 0
+  // (placeDefensiveStructureTile 0x005034a0, Herleitung in lib/webbilder.js
+  // ueber TREPPEN_HOEHE). Darum kommt je Stufe ein eigener Koerper heraus,
+  // und dazu vier Trittflaechen - eine je Blickrichtung, so wie
+  // updateGfxLayer sie waehlt.
+  const treppe = treppen[g.mapper];
+  if (treppe) {
+    const t = { hoehe: treppe.hoehe, richtungen: {} };
+    for (const [richtung, f] of Object.entries(treppe.richtungen)) {
+      fs.writeFileSync(path.join(ziel, f.name), pngRgba(f.bild.breite, f.bild.hoehe, f.bild.rgba));
+      t.richtungen[richtung] = { bild: f.name, breite: f.bild.breite, hoehe: f.bild.hoehe };
+    }
+    t.regel = {
+      bild: 'die Seite, auf der der HOEHERE Nachbar liegt (Treppe oder Mauer)',
+      ohne: 'kein hoeherer Nachbar -> allein (tile_land3#104, das flache Podest)',
+      quelle: 'updateGfxLayer 0x00509180, Richtung 0/2/4/6 -> #134/#135/#136/#133',
+    };
+    eintrag.treppe = t;
+    // Ohne hoeheren Nachbarn gilt dasselbe wie im Spiel: das flache Podest.
+    // Das ist auch das Bild fuer Katalog und Vorschau - und weil der Koerper
+    // je Stufe verschieden hoch ist, sehen die sechs Stufen dort jetzt
+    // verschieden aus statt sechsmal gleich.
+    Object.assign(eintrag, t.richtungen.allein);
   }
 
   verzeichnis.gegenstaende[g.mapper] = eintrag;
