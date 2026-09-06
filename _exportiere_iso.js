@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { leseGm1, ganzesGebaeude, pngRgba } = require('./lib/gm1');
-const { bilderIndex, vorplaetze, aufsaetze, mitAufsatz, ohneKappe, ohneBauschutt } = require('./lib/webbilder');
+const { bilderIndex, vorplaetze, mauerBilder } = require('./lib/webbilder');
 
 const SPIEL = 'C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme';
 const GM = path.join(SPIEL, 'gm');
@@ -23,7 +23,7 @@ fs.mkdirSync(ziel, { recursive: true });
 const gebaeude = JSON.parse(fs.readFileSync(path.join(__dirname, 'lib', 'gebaeude.json'), 'utf8')).gebaeude;
 const bilder = bilderIndex();
 const plaetze = vorplaetze();
-const zweiteilig = aufsaetze();
+const mauern = mauerBilder();
 
 const geoeffnet = new Map();
 function datei(name) {
@@ -44,13 +44,6 @@ function lege(schluessel) {
   const eintrag = { datei: dateiname, breite: bild.breite, hoehe: bild.hoehe };
   abgelegt.set(schluessel, eintrag);
   return eintrag;
-}
-
-// Ein einzelnes Bild lesen, ohne es abzulegen - fuer die Teile, aus denen
-// hier erst ein Bau zusammengesetzt wird.
-function teilBild(schluessel) {
-  const [name, nr] = schluessel.split('#');
-  try { return ganzesGebaeude(datei(name), Number(nr)); } catch { return null; }
 }
 
 const verzeichnis = { erzeugt: new Date().toISOString(), feld: 32, gegenstaende: {} };
@@ -78,29 +71,42 @@ for (const [id, g] of Object.entries(gebaeude)) {
                                     bild: p.datei, breite: p.breite, hoehe: p.hoehe });
     }
   }
-  // Zweiteilige Bauten: die Zinnenmauern. Sie haben kein eigenes Bild, sondern
-  // sind Koerper plus Aufsatz - und der Aufsatz wechselt Feld fuer Feld
-  // zwischen Klotz und flacher Scharte. Darum kommen hier ZWEI Bilder heraus,
-  // und die Ansicht waehlt je Feld eines davon.
-  const zwei = zweiteilig[g.mapper];
-  if (zwei) {
-    const koerper = ohneBauschutt(ohneKappe(teilBild(zwei.koerper), zwei.kappe));
-    const fassungen = { klotz: teilBild(zwei.klotz) };
-    if (zwei.scharte) fassungen.scharte = teilBild(zwei.scharte);
-    for (const [welche, aufsatz] of Object.entries(fassungen)) {
-      const gebaut = mitAufsatz(koerper, aufsatz);
-      if (!gebaut) continue;
-      const name = 'mauer_' + g.mapper + '_' + welche + '.png';
-      fs.writeFileSync(path.join(ziel, name), pngRgba(gebaut.breite, gebaut.hoehe, gebaut.rgba));
-      if (welche === 'klotz') {
-        eintrag.bild = name; eintrag.breite = gebaut.breite; eintrag.hoehe = gebaut.hoehe;
-      } else {
-        eintrag.wechselBild = name;
-        eintrag.wechselBreite = gebaut.breite; eintrag.wechselHoehe = gebaut.hoehe;
-      }
+  // Die Mauern. Sie haben kein fertiges Einzelbild, sondern werden Feld fuer
+  // Feld gerechnet: der Koerper aus einem Texturstreifen von tile_walls, der
+  // von der Laufrichtung und von x & 15 bzw. y & 15 abhaengt, darauf die
+  // Krone. Bei den Zinnenmauern wechselt die Krone zusaetzlich zwischen Klotz
+  // und flacher Scharte. Darum kommen hier viele Bilder heraus, und die
+  // Ansicht sucht sich je Feld eines. Die ganze Herleitung steht in
+  // lib/webbilder.js ueber MAUERN.
+  const mauer = mauern[g.mapper];
+  if (mauer) {
+    const ablegen = (f) => {
+      fs.writeFileSync(path.join(ziel, f.name), pngRgba(f.bild.breite, f.bild.hoehe, f.bild.rgba));
+      return { bild: f.name, breite: f.bild.breite, hoehe: f.bild.hoehe };
+    };
+    const reihe = (liste) => liste.map(ablegen);
+    const m = { hoehe: mauer.hoehe, laengs: {}, quer: {}, rand: { laengs: {}, quer: {}, allein: {} } };
+    for (const welche of Object.keys(mauer.rand.allein)) {
+      for (const fall of Object.keys(m.rand)) m.rand[fall][welche] = ablegen(mauer.rand[fall][welche]);
+      m.laengs[welche] = reihe(mauer.laengs[welche]);
+      m.quer[welche] = reihe(mauer.quer[welche]);
     }
-    // Die Regel, nach der die Ansicht waehlt - aus dem Spiel gelesen.
-    if (eintrag.wechselBild) eintrag.wechsel = 'x+y ungerade';
+    // Die Regeln, nach denen die Ansicht waehlt - aus dem Spiel gelesen.
+    m.regel = {
+      lauf: 'beide Nachbarn einer Achse sind Mauer (isWallConnectionHeightValid)',
+      laengs: 'Platz = x & 15', quer: 'Platz = y & 15',
+      rand: 'ein Nachbar in x -> rand.laengs, einer in y -> rand.quer, keiner -> rand.allein',
+      krone: mauer.rand.allein.scharte ? 'Klotz bei x+y ungerade, sonst Scharte' : 'immer flach',
+    };
+    eintrag.mauer = m;
+    // Was ohne Nachbarn gilt, ist auch das Bild fuer Katalog und Vorschau.
+    Object.assign(eintrag, m.rand.allein.klotz);
+    if (m.rand.allein.scharte) {
+      eintrag.wechselBild = m.rand.allein.scharte.bild;
+      eintrag.wechselBreite = m.rand.allein.scharte.breite;
+      eintrag.wechselHoehe = m.rand.allein.scharte.hoehe;
+      eintrag.wechsel = 'x+y ungerade';
+    }
   }
 
   verzeichnis.gegenstaende[g.mapper] = eintrag;
