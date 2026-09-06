@@ -155,6 +155,31 @@ vergleicht `HeightLayer[Kachel] − 0x10` gegen den Nachbarn, und daraus wählt
 `computeWallCornerRenderRotation` das Verbindungsbild. Eine Steinmauer neben
 einer niedrigen Zinne verbindet also anders als neben einer hohen.
 
+**Was die fuenf Mauerbilder in `tile_buildings1` wirklich sind** — Daniel am
+06.09.2026, beim Durchsehen von `#0`–`#4`: „Nummer 1 zeigt leichtes
+Grundgeruest, waehrend man es bei 3 mehr sieht, bei 2 sieht man es noch mehr,
+aber die Hoehe ist geringer; bei Bild 4 ist wieder gleiche Groesse wie 1 und 3,
+aber unten sieht man eben noch das Konstrukt darunter; und bei 5 sieht man
+alles x-ray, aber es ist groesser und wahrscheinlich eine Zinne. **Aber das ist
+was da steht, wenn man sie AUFZIEHT** — dieses x-ray. Beim Loslassen und
+tatsaechlich Bauen ist es dann eine echte Zinne."
+
+Das deckt sich mit `renderWallDragPreview`: Die Bilder `#0`–`#4` sind
+**Vorschaubilder fuer das Ziehen**, keine gebauten Mauern. `#4` (30x117) ist
+die Zinnenmauer, wie sie unter dem Mauszeiger haengt — durchscheinend, mit
+Geruest. Wer eines davon als Bild eines fertigen Bauwerks nimmt, zeigt eine
+Baustelle.
+
+**Eine gebaute Mauer besteht immer aus Koerper und Krone.** Gemessen an den
+Bildern: ohne Zinnen ist die Krone eine flache Platte (`tile_land3#96`–`#111`,
+30x18), mit Zinnen wechseln im Schachbrett flache Scharte (`#112`–`#119`,
+30x22) und aufgesetzter Klotz (`#120`–`#127`, 30x37/38). Der Zinnenkranz ist
+also **Feld fuer Feld gebaut**, nicht ein Bild — und `anim_castle#62`–`#75`
+sind Texturen, senkrechte Sandsteinstreifen, keine fertigen Mauerbilder.
+
+**Folge fuer den Editor:** Ein einzelnes fertiges Bild einer Zinnenmauer gibt
+es nirgends. Wer eines zeigen will, muss es zusammensetzen.
+
 **Nebenbefund:** Bau 13 kann der Spieler gar nicht ziehen — für Mapper 35 gibt
 es keinen Menübefehl. Nur die KI setzt sie. Gemessen an 749 AIV-Dateien: Bau 12
 kommt 73.464-mal in 535 Dateien vor, Bau 13 17.989-mal in 188.
