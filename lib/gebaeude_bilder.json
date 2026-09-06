@@ -55,50 +55,6 @@
    "notiz_daniel": "gleiches hier auch, Die flache version davon ist einer der 4: 195-198",
    "fehlt": "gleiches hier auch, Die flache version davon ist einer der 4: 195-198"
   },
-  "15": {
-   "bild": "tile_buildings1#1",
-   "name": "Treppe 2",
-   "kacheln": 1,
-   "pos": 2,
-   "beleg": "Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). Von Daniel selbst gewaehlt (05.09.2026). Vorher: siehe Nr. 14",
-   "gruppe": [
-    "tile_flatties#36",
-    "tile_flatties#37",
-    "tile_flatties#38",
-    "tile_flatties#39"
-   ],
-   "notiz_daniel": "Finde die nicht müsste aber eben höher sein als treppe 3, wichtig bei allen trefppen:  beim ziehen einer treppe bzw. anlegen werden die grafiken 390-393 draugelegt je nach perspektive, das sind die treppenstufen. Die flache version von egal welcher treppe ist 199 oder 201 je nach  ausrichtung",
-   "fehlt": "Finde die nicht müsste aber eben höher sein als treppe 3, wichtig bei allen trefppen:  beim ziehen einer treppe bzw. anlegen werden die grafiken 390-393 draugelegt je nach perspektive, das sind die treppenstufen. Die flache version von egal welcher treppe ist 199 oder 201 je nach  ausrichtung"
-  },
-  "16": {
-   "bild": "tile_land3#132",
-   "name": "Treppe 3",
-   "kacheln": 1,
-   "pos": 389,
-   "beleg": "Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). Von Daniel selbst gewaehlt (05.09.2026). Vorher: siehe Nr. 14",
-   "gruppe": [
-    "tile_flatties#36",
-    "tile_flatties#37",
-    "tile_flatties#38",
-    "tile_flatties#39"
-   ],
-   "fehlt": "Daniel: Grafik nicht vollstaendig - es fehlt ein Teil, den das Spiel getrennt zeichnet."
-  },
-  "17": {
-   "bild": "tile_land3#120",
-   "name": "Treppe 4",
-   "kacheln": 1,
-   "pos": 377,
-   "beleg": "Von Daniel als richtiges Gebaeude bestaetigt, aber unvollstaendig (05.09.2026). Von Daniel selbst gewaehlt (05.09.2026). Vorher: siehe Nr. 14",
-   "gruppe": [
-    "tile_flatties#36",
-    "tile_flatties#37",
-    "tile_flatties#38",
-    "tile_flatties#39"
-   ],
-   "notiz_daniel": "Varianten: 377-389",
-   "fehlt": "Varianten: 377-389"
-  },
   "24": {
    "bild": "pitch_ditches#3",
    "name": "Pechgraben",
@@ -921,24 +877,105 @@
    "gruppe": [
     "tile_buildings2#1009"
    ]
-  }
- },
- "vermutet": {
+  },
   "14": {
-   "bild": "tile_buildings1#1",
+   "bild": "tile_land3#133",
    "name": "Treppe 1",
    "kacheln": 1,
-   "pos": 2,
-   "beleg": "Von Daniel selbst gewaehlt (05.09.2026). Vorher: Gestufte Steinplattform, vier Ausrichtungen (195-198). Welche Nummer welche Ausrichtung ist, ist ungeprueft - hier steht schlicht die Reihenfolge der Datei. Fuer Treppe 5 und 6 gibt es kein fuenftes und sechstes Bild.",
+   "pos": 1,
+   "beleg": "Aus dem Programm gelesen (06.09.2026, SVS): updateGfxLayer (0x00509180) setzt fuer eine Treppenkachel GfxLayer = GMTotalPicturesProcessed[0xc] + {104, 133, 134, 135, 136}. GmID 12 ist GID_TILE_LAND_3, die Aufzaehlung ist 1-basiert. 133-136 sind die vier Blickrichtungen (die vier Aufrufe von hasHigherNeighborWithStairs mit 0/2/4/6), 104 ein freistehendes Treppenfeld ohne hoeheren Nachbarn. Gegengeprueft an Datei 5 (GID_TILE_SEA_8, Versaetze ab 204 = unsere Wassergrabenbilder). Bilder angesehen: vier hoelzerne Treppen. Ganze Kette in doku/Wissensstand.md.",
+   "hinweis": "Die Grafik haengt an der RICHTUNG, nicht an der Stufennummer: 14 bis 19 bekommen dieselben vier Bilder, ausgewaehlt danach, auf welcher Seite die hoehere Nachbarkachel liegt. Ein Bildersatz von hoch nach niedrig existiert nicht.",
    "gruppe": [
-    "tile_flatties#36",
-    "tile_flatties#37",
-    "tile_flatties#38",
-    "tile_flatties#39"
+    "tile_land3#133",
+    "tile_land3#134",
+    "tile_land3#135",
+    "tile_land3#136",
+    "tile_land3#104"
    ],
-   "zweifel": "Daniel erkennt dieses Bild NICHT als \"Treppe 1\". Die Zuordnung ist damit widerlegt, das richtige Bild ist noch zu finden."
+   "ersetzt": "Vorher von Hand auf tile_buildings1#1 gesetzt (05.09.2026). Zurueckgenommen am 06.09.2026, weil die Zuordnung jetzt aus dem Programm gelesen ist."
+  },
+  "15": {
+   "bild": "tile_land3#133",
+   "name": "Treppe 2",
+   "kacheln": 1,
+   "pos": 1,
+   "beleg": "Aus dem Programm gelesen (06.09.2026, SVS): updateGfxLayer (0x00509180) setzt fuer eine Treppenkachel GfxLayer = GMTotalPicturesProcessed[0xc] + {104, 133, 134, 135, 136}. GmID 12 ist GID_TILE_LAND_3, die Aufzaehlung ist 1-basiert. 133-136 sind die vier Blickrichtungen (die vier Aufrufe von hasHigherNeighborWithStairs mit 0/2/4/6), 104 ein freistehendes Treppenfeld ohne hoeheren Nachbarn. Gegengeprueft an Datei 5 (GID_TILE_SEA_8, Versaetze ab 204 = unsere Wassergrabenbilder). Bilder angesehen: vier hoelzerne Treppen. Ganze Kette in doku/Wissensstand.md.",
+   "hinweis": "Die Grafik haengt an der RICHTUNG, nicht an der Stufennummer: 14 bis 19 bekommen dieselben vier Bilder, ausgewaehlt danach, auf welcher Seite die hoehere Nachbarkachel liegt. Ein Bildersatz von hoch nach niedrig existiert nicht.",
+   "gruppe": [
+    "tile_land3#133",
+    "tile_land3#134",
+    "tile_land3#135",
+    "tile_land3#136",
+    "tile_land3#104"
+   ],
+   "ersetzt": "Vorher von Hand auf tile_buildings1#1 gesetzt (05.09.2026). Zurueckgenommen am 06.09.2026, weil die Zuordnung jetzt aus dem Programm gelesen ist."
+  },
+  "16": {
+   "bild": "tile_land3#133",
+   "name": "Treppe 3",
+   "kacheln": 1,
+   "pos": 1,
+   "beleg": "Aus dem Programm gelesen (06.09.2026, SVS): updateGfxLayer (0x00509180) setzt fuer eine Treppenkachel GfxLayer = GMTotalPicturesProcessed[0xc] + {104, 133, 134, 135, 136}. GmID 12 ist GID_TILE_LAND_3, die Aufzaehlung ist 1-basiert. 133-136 sind die vier Blickrichtungen (die vier Aufrufe von hasHigherNeighborWithStairs mit 0/2/4/6), 104 ein freistehendes Treppenfeld ohne hoeheren Nachbarn. Gegengeprueft an Datei 5 (GID_TILE_SEA_8, Versaetze ab 204 = unsere Wassergrabenbilder). Bilder angesehen: vier hoelzerne Treppen. Ganze Kette in doku/Wissensstand.md.",
+   "hinweis": "Die Grafik haengt an der RICHTUNG, nicht an der Stufennummer: 14 bis 19 bekommen dieselben vier Bilder, ausgewaehlt danach, auf welcher Seite die hoehere Nachbarkachel liegt. Ein Bildersatz von hoch nach niedrig existiert nicht.",
+   "gruppe": [
+    "tile_land3#133",
+    "tile_land3#134",
+    "tile_land3#135",
+    "tile_land3#136",
+    "tile_land3#104"
+   ],
+   "ersetzt": "Vorher von Hand auf tile_land3#132 gesetzt (05.09.2026). Zurueckgenommen am 06.09.2026, weil die Zuordnung jetzt aus dem Programm gelesen ist."
+  },
+  "17": {
+   "bild": "tile_land3#133",
+   "name": "Treppe 4",
+   "kacheln": 1,
+   "pos": 1,
+   "beleg": "Aus dem Programm gelesen (06.09.2026, SVS): updateGfxLayer (0x00509180) setzt fuer eine Treppenkachel GfxLayer = GMTotalPicturesProcessed[0xc] + {104, 133, 134, 135, 136}. GmID 12 ist GID_TILE_LAND_3, die Aufzaehlung ist 1-basiert. 133-136 sind die vier Blickrichtungen (die vier Aufrufe von hasHigherNeighborWithStairs mit 0/2/4/6), 104 ein freistehendes Treppenfeld ohne hoeheren Nachbarn. Gegengeprueft an Datei 5 (GID_TILE_SEA_8, Versaetze ab 204 = unsere Wassergrabenbilder). Bilder angesehen: vier hoelzerne Treppen. Ganze Kette in doku/Wissensstand.md.",
+   "hinweis": "Die Grafik haengt an der RICHTUNG, nicht an der Stufennummer: 14 bis 19 bekommen dieselben vier Bilder, ausgewaehlt danach, auf welcher Seite die hoehere Nachbarkachel liegt. Ein Bildersatz von hoch nach niedrig existiert nicht.",
+   "gruppe": [
+    "tile_land3#133",
+    "tile_land3#134",
+    "tile_land3#135",
+    "tile_land3#136",
+    "tile_land3#104"
+   ],
+   "ersetzt": "Vorher von Hand auf tile_land3#120 gesetzt (05.09.2026). Zurueckgenommen am 06.09.2026, weil die Zuordnung jetzt aus dem Programm gelesen ist."
+  },
+  "18": {
+   "bild": "tile_land3#133",
+   "name": "Treppe 5",
+   "kacheln": 1,
+   "pos": 1,
+   "beleg": "Aus dem Programm gelesen (06.09.2026, SVS): updateGfxLayer (0x00509180) setzt fuer eine Treppenkachel GfxLayer = GMTotalPicturesProcessed[0xc] + {104, 133, 134, 135, 136}. GmID 12 ist GID_TILE_LAND_3, die Aufzaehlung ist 1-basiert. 133-136 sind die vier Blickrichtungen (die vier Aufrufe von hasHigherNeighborWithStairs mit 0/2/4/6), 104 ein freistehendes Treppenfeld ohne hoeheren Nachbarn. Gegengeprueft an Datei 5 (GID_TILE_SEA_8, Versaetze ab 204 = unsere Wassergrabenbilder). Bilder angesehen: vier hoelzerne Treppen. Ganze Kette in doku/Wissensstand.md.",
+   "hinweis": "Die Grafik haengt an der RICHTUNG, nicht an der Stufennummer: 14 bis 19 bekommen dieselben vier Bilder, ausgewaehlt danach, auf welcher Seite die hoehere Nachbarkachel liegt. Ein Bildersatz von hoch nach niedrig existiert nicht.",
+   "gruppe": [
+    "tile_land3#133",
+    "tile_land3#134",
+    "tile_land3#135",
+    "tile_land3#136",
+    "tile_land3#104"
+   ],
+   "ersetzt": "Vorher von Hand auf tile_land3#119 gesetzt (05.09.2026). Zurueckgenommen am 06.09.2026, weil die Zuordnung jetzt aus dem Programm gelesen ist."
+  },
+  "19": {
+   "bild": "tile_land3#133",
+   "name": "Treppe 6",
+   "kacheln": 1,
+   "pos": 1,
+   "beleg": "Aus dem Programm gelesen (06.09.2026, SVS): updateGfxLayer (0x00509180) setzt fuer eine Treppenkachel GfxLayer = GMTotalPicturesProcessed[0xc] + {104, 133, 134, 135, 136}. GmID 12 ist GID_TILE_LAND_3, die Aufzaehlung ist 1-basiert. 133-136 sind die vier Blickrichtungen (die vier Aufrufe von hasHigherNeighborWithStairs mit 0/2/4/6), 104 ein freistehendes Treppenfeld ohne hoeheren Nachbarn. Gegengeprueft an Datei 5 (GID_TILE_SEA_8, Versaetze ab 204 = unsere Wassergrabenbilder). Bilder angesehen: vier hoelzerne Treppen. Ganze Kette in doku/Wissensstand.md.",
+   "hinweis": "Die Grafik haengt an der RICHTUNG, nicht an der Stufennummer: 14 bis 19 bekommen dieselben vier Bilder, ausgewaehlt danach, auf welcher Seite die hoehere Nachbarkachel liegt. Ein Bildersatz von hoch nach niedrig existiert nicht.",
+   "gruppe": [
+    "tile_land3#133",
+    "tile_land3#134",
+    "tile_land3#135",
+    "tile_land3#136",
+    "tile_land3#104"
+   ],
+   "ersetzt": "Vorher von Hand auf tile_land3#98 gesetzt (05.09.2026). Zurueckgenommen am 06.09.2026, weil die Zuordnung jetzt aus dem Programm gelesen ist."
   }
  },
+ "vermutet": {},
  "_offen": {
   "71 Apfelplantage, 72 Milchviehhof": "Kein einziges 10x10-Bild in den 20 Gebaeude-Dateien. Das Hofgebaeude muss anderswo liegen.",
   "73 Getreidefarm, 75 Hopfenfarm": "Von den drei 9x9-Bildern sind zwei ein europaeischer Bergfried aus Stronghold 1 samt Fundament, das dritte die Kirche. Kein Farmgebaeude.",
