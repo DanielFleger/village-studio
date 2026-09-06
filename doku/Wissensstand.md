@@ -56,6 +56,66 @@ Nutzbar gemacht in `lib/karte.js` (`leseVorschau`, `vorschauAlsPng`) und in der
 Oberfläche unter *Vorlage → Karte des Spiels wählen*. Der Server findet 189
 Karten, die des Spiels und die der Plugins.
 
+## 1b2. Die Treppen (06.09.2026)
+
+**gemessen**, an allen 128 mitgelieferten AIV-Dateien:
+
+* **62 von 128** Burgen haben Treppen.
+* Eine Treppe ist immer ein **Fünfersatz 14, 15, 16, 17, 18** — in jeder Datei
+  kommen die fünf Nummern gleich oft vor, nie einzeln. Über alle Dateien je
+  **145 Felder**.
+* **Treppe 6 (AIV 19, Mapper 186) kommt in keiner einzigen Datei vor.**
+* Jedes Treppenfeld liegt **an einer Steinmauer (Bau 10)**, in drei
+  nachgesehenen Dateien ausnahmslos; nie an Holz.
+
+Nachzuvollziehen mit `lib/aiv.js` → `decode(...).bauten`, Nummern 14–18 zählen.
+
+**Was daraus folgt und was nicht:** Der Fünfersatz erklärt, warum
+Schlossgespensts AI-Toolkit die Treppe als *Rezept* führt (High Stair =
+181–185, das sind die Mapper zu 14–18). Welche **Grafik** das Spiel dafür
+zeichnet, ist damit nicht entschieden.
+
+### Die Kandidaten für die Treppengrafik
+
+**gemessen** in `tile_castle.gm1` — die einzigen Reihen der Datei, die fünf
+Bilder der Kachelbreite 30 mit gleichmäßig fallender Höhe enthalten:
+
+| Reihe | Höhen | Aussehen |
+|---|---|---|
+| `#1550`–`#1554` | 84 / 81 / 65 / 48 / 32 | Holzstufen, mit Bewuchs, Blickrichtung A |
+| `#1563`–`#1567` | 81 / 65 / 48 / 32 / 16 | dieselben, Blickrichtung B |
+| `#1547`, `#1548` | je 29 | kurze **Steintreppe**, zwei Richtungen |
+
+Jede Stufe ist genau 16 Punkte niedriger als die vorige — eine halbe Kachel.
+Ansehen mit `node _bogen.js tile_castle 1545 1568 <ziel.png> 3`.
+
+**vermutet**, nicht belegt: dass eine dieser Reihen die AIV-Treppe ist.
+**widerlegt**: die alte Notiz im Backlog, die Stufenbilder lägen bei
+`tile_buildings1` 390–393 — das sind Bodenkacheln (Gras, Sand).
+
+### Warum es heute nicht entschieden wurde
+
+Der Weg dorthin ist ein Bild aus dem laufenden Spiel. Der ist **verstellt**:
+
+* Der Foto-Zweig in `logik.lua` liegt **hinter** der Schranke
+  `if spieler == nil then return false` (Zeile 1608). Ein `{ "foto": 1 }` ohne
+  `player` kommt nie an; richtig ist `{ "foto": 1, "player": 1 }`.
+  **gemessen** — mit `player` steht die Zeile „FOTO: fordere
+  screen_capture_001.bmp an" im Log, ohne ihn „'player' fehlt im Befehl".
+* Im **Fenstermodus** (`type: window`) legt `takeScreenshot` die Datei an und
+  schreibt **0 Byte** hinein. **gemessen**, 84 Sekunden gewartet. Die Adresse
+  `WINDOW_DD 0x00F98338`, aus der das Modul liest, stimmt dort offenbar nicht.
+* Im Modus `borderlessFullscreen` — Daniels Einstellung — **stirbt der Prozess
+  beim Foto**. **gemessen**, einmal, bei Tempo 400 und laufendem Gefecht; die
+  letzte Zeile im Log ist „FOTO: vorgemerkt (Nummer 1)".
+
+Das ist der nächste Schritt für die Lua-Sitzung: eine Fassung, in der das Foto
+in beiden Fenstermodi trägt. Danach ist die Treppenfrage in fünf Minuten
+beantwortet — Gefecht starten, `{ "wandle": { "von": 10, "nach": 14 } }`,
+Kamera auf die Burg, Foto.
+
+---
+
 ## 1c. Die Bildersammlungen (.gm1)
 
 | Aussage | Marke | Beleg |
