@@ -24,6 +24,25 @@ Nummern 195–198.
 Stufenbilder 390–393 darüber, je nach Blickrichtung; die flache Fassung ist
 199 oder 201.
 
+Nachtrag 06.09.2026, gemessen: Die Nummern 390–393 in `tile_buildings1` sind
+Bodenkacheln (Gras, Sand), keine Stufen — die alte Notiz zeigt ins Leere.
+Angesehen mit `node _bogen.js tile_buildings1 388 396 <ziel.png> 3`.
+
+Gefunden habe ich stattdessen in `tile_castle` zwei Reihen, die eindeutig
+Treppen sind — Holzstufen an einer Palisade, in zwei Blickrichtungen:
+
+* `#1550`–`#1554`, Höhen 84 / 81 / 65 / 48 / 32
+* `#1563`–`#1567`, Höhen 81 / 65 / 48 / 32 / 16
+
+Jede Stufe ist genau 16 Punkte niedriger als die vorige, also eine halbe
+Kachel — fünf Stücke, so viele wie die AIV-Treppen 181–185 hat. Dazu
+`#1547`/`#1548` (30×29), eine kurze **Steintreppe** in zwei Richtungen.
+
+**Offen bleibt**, welche davon das Spiel für die AIV-Treppen zeichnet: Holz
+an der Palisade oder Stein an der Mauer. Das ist mit den Bildern allein nicht
+zu entscheiden — es braucht eine AIV mit Treppen im laufenden Spiel oder die
+Zuordnung Mapper→Grafik aus der EXE (Ghidra-Projekt OpenSHC-ref).
+
 **Der 4×4-Platz der Ölbrennerei (35).** Die Felder sind gemessen (4×4 direkt
 unter dem Gebäude), das Bild dafür fehlt.
 
