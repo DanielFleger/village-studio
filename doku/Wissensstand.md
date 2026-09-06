@@ -190,11 +190,30 @@ Punkten ist genau das, was im Spielbild obendrauf sitzt.
 Bildern: ohne Zinnen ist die Krone eine flache Platte (`tile_land3#96`–`#111`,
 30x18), mit Zinnen wechseln im Schachbrett flache Scharte (`#112`–`#119`,
 30x22) und aufgesetzter Klotz (`#120`–`#127`, 30x37/38). Der Zinnenkranz ist
-also **Feld fuer Feld gebaut**, nicht ein Bild — und `anim_castle#62`–`#75`
-sind Texturen, senkrechte Sandsteinstreifen, keine fertigen Mauerbilder.
+also **Feld fuer Feld gebaut**, nicht ein Bild.
+
+**Korrektur am selben Tag:** Ich hatte `anim_castle#48`–`#75` erst fuer blosse
+Texturstreifen gehalten — ein Fehlschluss aus einem zu kleinen Bogen. Gross
+angesehen sind es **Mauerflanken**: `#48`–`#61` (32x99) mit schraegem Abschluss
+oben, `#62`–`#75` (32x130) mit einem abgesetzten Block darueber — dem
+Zinnenkranz. Die 31 Punkte Unterschied sind genau das, was im Spielbild
+obendrauf sitzt.
+
+**Am Bild bestaetigt, mit einer Ausnahme, die im Code noch fehlt** — Daniel,
+06.09.2026: „Die Zinnen sind nicht auf jedem, sondern wirklich nur auf manchen,
+jedem 2. — bis auf die Ecken, die sind immer hoch.“
+
+Der Wechsel jede zweite Kachel ist die x/y-Paritaet aus
+`placeDefensiveStructureTile`, die war gelesen. **Die Ecken-Ausnahme ist neu**
+und aus dem Code bisher NICHT belegt. Sie passt aber zu
+`computeWallCornerRenderRotation` (`0x004fc650`), die je Kachel beide Nachbarn
+prueft — eine Ecke hat andere Nachbarn als ein gerades Stueck. Wer den
+Zinnenkranz nachbaut, braucht beide Regeln: **Ecke immer Klotz**, dazwischen
+Klotz und Scharte im Wechsel.
 
 **Folge fuer den Editor:** Ein einzelnes fertiges Bild einer Zinnenmauer gibt
-es nirgends. Wer eines zeigen will, muss es zusammensetzen.
+es nirgends. Wer eines zeigen will, muss es zusammensetzen — und wer eine ganze
+Mauer zeichnet, braucht dazu die Paritaet und die Ecken-Ausnahme.
 
 **Nebenbefund:** Bau 13 kann der Spieler gar nicht ziehen — für Mapper 35 gibt
 es keinen Menübefehl. Nur die KI setzt sie. Gemessen an 749 AIV-Dateien: Bau 12
