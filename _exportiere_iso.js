@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { leseGm1, ganzesGebaeude, pngRgba } = require('./lib/gm1');
-const { bilderIndex, vorplaetze, aufsaetze, mitAufsatz, ohneKappe } = require('./lib/webbilder');
+const { bilderIndex, vorplaetze, aufsaetze, mitAufsatz, ohneKappe, ohneBauschutt } = require('./lib/webbilder');
 
 const SPIEL = 'C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme';
 const GM = path.join(SPIEL, 'gm');
@@ -84,7 +84,7 @@ for (const [id, g] of Object.entries(gebaeude)) {
   // und die Ansicht waehlt je Feld eines davon.
   const zwei = zweiteilig[g.mapper];
   if (zwei) {
-    const koerper = ohneKappe(teilBild(zwei.koerper), zwei.kappe);
+    const koerper = ohneBauschutt(ohneKappe(teilBild(zwei.koerper), zwei.kappe));
     const fassungen = { klotz: teilBild(zwei.klotz) };
     if (zwei.scharte) fassungen.scharte = teilBild(zwei.scharte);
     for (const [welche, aufsatz] of Object.entries(fassungen)) {
