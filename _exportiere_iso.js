@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { leseGm1, ganzesGebaeude, pngRgba } = require('./lib/gm1');
-const { bilderIndex, vorplaetze } = require('./lib/webbilder');
+const { bilderIndex, vorplaetze, aufsaetze, mitAufsatz } = require('./lib/webbilder');
 
 const SPIEL = 'C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme';
 const GM = path.join(SPIEL, 'gm');
@@ -23,6 +23,7 @@ fs.mkdirSync(ziel, { recursive: true });
 const gebaeude = JSON.parse(fs.readFileSync(path.join(__dirname, 'lib', 'gebaeude.json'), 'utf8')).gebaeude;
 const bilder = bilderIndex();
 const plaetze = vorplaetze();
+const zweiteilig = aufsaetze();
 
 const geoeffnet = new Map();
 function datei(name) {
@@ -43,6 +44,13 @@ function lege(schluessel) {
   const eintrag = { datei: dateiname, breite: bild.breite, hoehe: bild.hoehe };
   abgelegt.set(schluessel, eintrag);
   return eintrag;
+}
+
+// Ein einzelnes Bild lesen, ohne es abzulegen - fuer die Teile, aus denen
+// hier erst ein Bau zusammengesetzt wird.
+function teilBild(schluessel) {
+  const [name, nr] = schluessel.split('#');
+  try { return ganzesGebaeude(datei(name), Number(nr)); } catch { return null; }
 }
 
 const verzeichnis = { erzeugt: new Date().toISOString(), feld: 32, gegenstaende: {} };
@@ -70,6 +78,30 @@ for (const [id, g] of Object.entries(gebaeude)) {
                                     bild: p.datei, breite: p.breite, hoehe: p.hoehe });
     }
   }
+  // Zweiteilige Bauten: die Zinnenmauern. Sie haben kein eigenes Bild, sondern
+  // sind Koerper plus Aufsatz - und der Aufsatz wechselt Feld fuer Feld
+  // zwischen Klotz und flacher Scharte. Darum kommen hier ZWEI Bilder heraus,
+  // und die Ansicht waehlt je Feld eines davon.
+  const zwei = zweiteilig[g.mapper];
+  if (zwei) {
+    const koerper = teilBild(zwei.koerper);
+    const fassungen = { klotz: teilBild(zwei.klotz), scharte: teilBild(zwei.scharte) };
+    for (const [welche, aufsatz] of Object.entries(fassungen)) {
+      const gebaut = mitAufsatz(koerper, aufsatz);
+      if (!gebaut) continue;
+      const name = 'zinne_' + g.mapper + '_' + welche + '.png';
+      fs.writeFileSync(path.join(ziel, name), pngRgba(gebaut.breite, gebaut.hoehe, gebaut.rgba));
+      if (welche === 'klotz') {
+        eintrag.bild = name; eintrag.breite = gebaut.breite; eintrag.hoehe = gebaut.hoehe;
+      } else {
+        eintrag.wechselBild = name;
+        eintrag.wechselBreite = gebaut.breite; eintrag.wechselHoehe = gebaut.hoehe;
+      }
+    }
+    // Die Regel, nach der die Ansicht waehlt - aus dem Spiel gelesen.
+    if (eintrag.wechselBild) eintrag.wechsel = 'x+y ungerade';
+  }
+
   verzeichnis.gegenstaende[g.mapper] = eintrag;
 }
 
