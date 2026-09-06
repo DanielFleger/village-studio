@@ -198,6 +198,220 @@ Dort reicht das Bild bis an den Rand, es gibt keinen schwarzen Rahmen zum
 Vergleichen. Der Zusammenhang ist gemessen (volle Karte → 0, 300er-Karte → 2),
 die Regel dahinter nicht gefunden.
 
+### Nachtrag 07.09.2026: Der Bergfried wird mitgedreht — und landet daneben
+
+Anlass: bei 633 von 861 Startplätzen lag der gezeichnete Bergfried **nicht**
+auf dem 7×7-Block, den die Karte selbst trägt, sondern um 7 Felder daneben.
+Die Vermutung war, er sei ein Kartengebäude und dürfe deshalb nicht mitgedreht
+werden. **Diese Vermutung ist widerlegt.**
+
+**belegt** (aus dem Programm gelesen, Adressen unten):
+
+* `applyAIV` (`0x004ef0d0`) baut den Bergfried **nicht als Bauschritt**.
+  Bauwert **38 = `AIVBT_KEEP2`** hat einen eigenen Zweig, der nur zwei Zahlen
+  setzt und das Feld als erledigt abhakt:
+  `DAT_AIVState.keepX/keepY = keepXOffset/keepYOffset + dem ERSTEN Feld mit
+  Wert 38 im GEDREHTEN Raster, zeilenweise gesucht`.
+  Schreibbefehle `0x004ef199` → `0x018a5b60` und `0x004ef1ae` → `0x018a5b64`.
+* `LaunchSkirmishGame` (`0x00441270`) liest genau diese beiden Zellen bei
+  `0x00441eb4` / `0x00441eb9` und ruft damit
+  `placeBuilding(spieler, keepX, keepY, M_MAPPER_KEEP2, 7, keepOrientation)`.
+  **Der Bergfried wird also sehr wohl gesetzt — an den gedrehten Platz.**
+* Den Bergfried, den die **Karte** mitbringt, hat es vorher zerstört:
+  dieselbe Schleife merkt sich `buildings[keep.id].x/y` als Startplatz und ruft
+  dann `destroyBuildingAndLinkedDuplicates`. Der grüne 7×7-Block der .map ist
+  also nur die Marke für `keepX/keepY`, nicht der spätere Standort.
+* Scheitert die Aufstellung (`aivSubType == 0`), setzt es den Bergfried
+  stattdessen auf die Marke der Karte, mit Ausrichtung `0xf`. Ein Mensch
+  bekommt seinen Bergfried immer so.
+
+**Warum 7 Felder.** Gedreht wird um die **Mitte des 100×100-Rasters**, nicht um
+den Bergfried. Der Bergfried belegt (43,43)–(49,49) — gemessen an allen 128
+mitgelieferten `.aiv`, je genau 49 Felder mit Wert 38, Rahmen immer
+(43,43)–(49,49) — und seine Mitte liegt damit 3,5 Felder neben der
+Rastermitte. Nach einer Vierteldrehung sitzt seine Ecke auf
+
+| Drehung | Ecke im Raster | Versatz zum Block der Karte |
+|---|---|---|
+| 0 | (43,43) | 0 / 0 |
+| 2 | (43,50) | 0 / +7 |
+| 4 | (50,50) | +7 / +7 |
+| 6 | (50,43) | +7 / 0 |
+
+`keepXOffset = keepX − 43` wird **einmal** in `setKeepOffsetAndOrientation`
+(`0x004ecf70`) gesetzt und danach von niemandem mehr angefasst — nachgesehen an
+allen Verweisen auf `aivs[].keepXOffset/keepYOffset` im ganzen Programm:
+geschrieben nur dort, gelesen nur in `applyAIV` und `computeAIVPlacementFit`
+(`0x004ef8c0`). Es gibt also **keine** Korrektur nach der Drehung. Der Versatz
+ist keine Rechenpanne des Werkzeugs, sondern das Verhalten des Spiels.
+
+**gemessen** (07.09.2026, über den echten Code-Weg des AI-Toolkits:
+`parseAiv` → `verzeichnis.json` → `geo.collectItems` → `geo.rotateGrid` →
+`geo.mapTileForGrid`, verglichen gegen den Schleifen-Nachbau von `rotateAIV`
+plus die Suche aus `applyAIV`):
+
+* 189 Karten, **861 Startplätze**, 128 Burgen → **110.208 Vergleiche, 0 Abweichungen.**
+* Versatz zum 7×7-Block der Karte: `0/0` 228× (alle Drehung 0), `0/7` 188×
+  (Drehung 2), `7/0` 214× (Drehung 6), `7/7` 231× (Drehung 4). Zusammen 861.
+* Auf dem Block liegt er also **228 von 861** Mal — vorher wie nachher, denn
+  genau das tut das Spiel. Wer auf 861 von 861 „korrigiert", baut den Fehler
+  erst ein.
+* Gegenprobe, dass der Test etwas taugt: mit einem absichtlichen Fehler in
+  `rotateGrid` (7-Feld-Bauten nicht drehen) schlägt er sofort fehl.
+
+**Achtung bei der Tabelle in 1a oben.** Sie ist die **Rückwärts**-Lesart
+(woher kommt der Wert im gedrehten Feld). **Vorwärts** — wohin wandert ein Feld —
+lauten dieselben vier Fälle:
+
+```
+0: (x, y)      2: (y, 99-x)      4: (99-x, 99-y)      6: (99-y, x)
+```
+
+Wer die Rückwärts-Tabelle vorwärts benutzt, vertauscht 2 und 6 und stellt die
+halbe Karte quer. Und: ein Bauwerk aus n Feldern hängt an seiner Ecke mit dem
+kleinsten x und y; nach der Drehung ist das eine **andere** Ecke, also rechnet
+die Drehung mit `last = 100 − n` statt 99 (Bergfried: 93).
+
+**offen:** Ob die 7 Felder im laufenden Spiel wirklich so aussehen, ist hier
+**nicht** nachgesehen worden — das Spiel wurde nicht gestartet. Belegt ist der
+Weg im Programm und die Rechnung, nicht das Bild auf dem Bildschirm.
+
+Probebilder je Drehung (grün = 7×7 der Karte, magenta = gezeichneter
+Bergfried), Sitzung 07.09.2026, im Sitzungsordner unter
+`…/scratchpad/dreh0.png`, `dreh2.png`, `dreh4.png`, `dreh6.png`.
+Festgehalten im Werkzeug: `AI-Toolkit/src/js/iso-geometry.js` (Kommentar über
+`rotateGrid`), `AI-Toolkit/src/node/game-map.js` (über `findKeeps`) und der
+Test „der Bergfried landet dort, wo LaunchSkirmishGame ihn hinsetzt" in
+`AI-Toolkit/tests/iso-view.test.js`.
+
+### Gegenprobe 07.09.2026 (zweite, unabhängige Sitzung): der Befund hält
+
+Auftrag war, den Befund oben zu **widerlegen**. Er hält. Alles hier ist selbst
+gelesen und selbst gemessen, nicht vom ersten Durchgang übernommen — die
+Ghidra-Läufe sind eigene Skripte auf demselben Programm, die Messung geht
+einen anderen Weg als seine.
+
+**belegt (selbst aus dem Programm gelesen, `~/ghidra-scripts/PruefRot.java`,
+`PruefApply.java`, `PruefKeep.java`, `PruefOff.java`):**
+
+* `rotateAIV` (0x004ed0b0) — die drei Kopierschleifen aus der Zeigerarithmetik
+  zurückgerechnet. Zielbasis der gedrehten Bauwerte ist in allen drei Zweigen
+  dieselbe: 0x018B45D0 (aus 0x018b4696 − 99·2 und 0x018b9328 − 9900·2
+  unabhängig gerechnet). Daraus **vorwärts**
+  `0:(x,y) 2:(y,99−x) 4:(99−x,99−y) 6:(99−y,x)` — genau die Tabelle oben.
+* Gegenprobe im selben Programm, an einer **anderen** Stelle: der
+  Truppenplatz-Zweig in `applyAIV` rechnet dieselben vier Fälle offen aus
+  (Dekompilat-Zeilen 191–213: `4: 99−y/99−x`, `6: y'=x, x'=99−y`,
+  `2: y'=99−x, x'=y`). Zwei unabhängige Ableitungen, dasselbe Ergebnis.
+* Welche Schleife x ist und welche y: in `applyAIV` läuft der **innere** Zähler
+  0…99 und schiebt den `constructions`-Zeiger um 1 weiter (also x), der äußere
+  ist y. Damit ist `constructions[y·100+x]` belegt, nicht angenommen.
+* `setKeepOffsetAndOrientation` (0x004ecf70): `keepXOffset = keepX − 0x2b`,
+  Drehung `& 0xfffe` und danach der Tausch 2↔6 — Zeile für Zeile gegen
+  `iso-geometry.keepOrientation` gehalten, stimmt überein, einschließlich der
+  vier Diagonalfälle aus `calculatePreferredRelativeOrientation` (0x0046c9e0).
+* `applyAIV` (0x004ef0d0), Zeilen 61–68: Bauwert 38 legt **keinen** Bauschritt
+  an, sondern setzt einmalig `keepX/keepY = keepXOffset/keepYOffset + (x,y)`
+  des ersten 38ers im gedrehten Raster.
+* **Eigene Referenzsuche über alle 4581 Funktionen** des Programms:
+  `keepXOffset`/`keepYOffset` der AIV-Struktur kommen in genau drei Funktionen
+  vor — geschrieben nur in `setKeepOffsetAndOrientation`, gelesen nur in
+  `applyAIV` und `computeAIVPlacementFit` (0x004ef8c0). (Ein vierter Treffer,
+  `renderWideText` 0x004742f0, ist ein gleichnamiger Parameter, keine
+  AIV-Struktur.) Der Versatz wird also nirgends nachkorrigiert.
+* `DAT_AIVState.keepX` (0x018a5b60) / `keepY` (0x018a5b64): genau ein Schreiber
+  und ein Leser, aus der Referenzliste des Programms —
+  WRITE 0x004ef199 / 0x004ef1ae in `applyAIV`, READ 0x00441eb9 / 0x00441eb4 in
+  `LaunchSkirmishGame`.
+* `LaunchSkirmishGame` (0x00441270) selbst gelesen: es merkt sich
+  `buildings[keep.id].x/y`, **zerstört** das Kartengebäude
+  (`destroyBuildingAndLinkedDuplicates`), ruft damit
+  `setKeepOffsetAndOrientation`, dann `applyAIV`, dann
+  `placeBuilding(Spieler, DAT_AIVState.keepX, DAT_AIVState.keepY,
+  M_MAPPER_KEEP2, 7, keepOrientation)`. Der **menschliche** Spieler und der
+  Notfall „AIV-Aufstellung misslungen" bekommen stattdessen die Marke der
+  Karte mit Ausrichtung 0xf.
+* Die offene Stelle Nr. 2 des ersten Durchgangs ist damit geschlossen:
+  `placeKeep` (0x005146d0) holt die 49 Fußabdruck-Versätze aus
+  `getBuildingSizeIndexMappingData(index, size)` — **ohne** den
+  Orientierungswert; der geht erst später in die Grafikwahl
+  (`orientation / 2`). Der Anker ist für alle vier Drehungen dieselbe Ecke.
+
+**gemessen (eigener Weg, `scratchpad/P_gegen.mjs`):** Verglichen wird der echte
+Code-Weg des Werkzeugs (`parseAiv` → `verzeichnis.json` → `geo.collectItems` →
+`geo.rotateGrid` → `geo.mapTileForGrid`) gegen eine Nachbildung von `applyAIV`,
+die auf dem **rohen** 100×100-Raster arbeitet: alle Felder drehen, zeilenweise
+durchgehen, je Bauschritt gewinnt das erste Feld (das ist die
+`quantity < 1`-Sperre in `applyAIV`). Das ist bewusst ein anderer Weg als der
+des ersten Durchgangs, der nur die Formel „Ecke (43,43), 7 Felder" nachrechnet.
+
+* **861 Startplätze** auf **172** Karten mit Startplatz (189 `.map`-Dateien
+  gescannt — die Zahl „189 Karten" oben ist die Dateizahl, nicht die Zahl der
+  Karten mit Startplatz). Drehungen: 0 → 228, 2 → 188, 4 → 231, 6 → 214.
+* Bergfried **auf** dem 7×7-Block der Karte: **228 von 861**. Versatz
+  `0/0` 228×, `0/7` 188×, `7/0` 214×, `7/7` 231×. Bestätigt.
+* Bergfried gegen die Spielregel: **110 208 Vergleiche, 0 Abweichungen**
+  (861 Startplätze × 128 Burgen).
+* **Die ganze Burg**, nicht nur der Bergfried: 128 Burgen × 4 Drehungen =
+  512 Vergleiche der **vollständigen** Feldliste (600–1100 Bauwerke je Burg).
+  **506 davon deckungsgleich**, Feld für Feld.
+* Das jeweils **entfernteste** Bauwerk vom Bergfried (bis zu 50 Felder weg):
+  512 Vergleiche, **0 Abweichungen**. Der Rest der Burg wird also mitgedreht,
+  und er wird richtig gedreht.
+* Alle 128 `.aiv` haben genau 49 Felder mit Bauwert 38, Rahmen immer
+  (43,43)–(49,49) — selbst nachgezählt.
+* `AI-Toolkit/src/js/iso-geometry.js` ist gegenüber der Sicherung
+  `scratchpad/iso-geometry.bak.js` **ohne Kommentare zeichengleich**: am
+  Rechenweg wurde nichts geändert, es kann also nichts „gerettet" und dabei
+  anderes verschoben worden sein.
+* Testlauf: `tests/iso-view.test.js` 47 von 47 grün. Im Gesamtlauf
+  (`node --test "tests/*.test.js"`) 201 von 228 grün, 20 rot — alle 20 mit
+  `ENOENT` in acht anderen Dateien, weil `examples/`, `web/`, `ucp-module/`,
+  `ucp-ai-editor/` und `dist/` fehlen. Keiner fasst `iso-geometry`,
+  `iso-view` oder `game-map` an.
+
+Eigene Probebilder, **andere Karte** (Arnon River statt A Friend Indeed),
+selbst angesehen: `scratchpad/Q_dreh0.png`, `Q_dreh2.png`, `Q_dreh4.png`,
+`Q_dreh6.png`. Grün = 7×7-Block der Karte, Magenta = gezeichneter Bergfried,
+Cyan = wohin die `applyAIV`-Nachbildung ihn setzt, Orange + weißer Umriss = ein
+5×5-Bauwerk 46 Felder vom Bergfried entfernt (Werkzeug bzw. Nachbildung). Bei
+Drehung 0 liegen Grün, Cyan und Magenta ineinander; bei 2, 4 und 6 stoßen Grün
+und Magenta Kante an Kante aneinander, und Cyan liegt in jedem der vier Bilder
+**im** Magenta. Das ferne Bauwerk wandert je Drehung in eine völlig andere
+Ecke — bei Arnon River von (221,305) über (346,171) und (200,18) nach
+(126,145) — und Orange und Weiß decken sich jedes Mal.
+
+**gemessen, aber ein anderer Fund — kleine echte Abweichung bei Treppen.**
+Die 6 von 512 Burg-Vergleichen, die nicht deckungsgleich sind, haben nichts mit
+dem Bergfried zu tun: In `frederick2.aiv`, `saladin2.aiv` und `snake1.aiv`
+teilen sich **vier** Bauschritte je **zwei** Treppenfelder (4 Felder
+auseinander, Bauwerte 14 und 18). Von 725 Treppenfeldern in 721 Bauschritten
+sind das die einzigen vier. `parseAiv` behält je Bauschritt das erste Feld in
+der **ungedrehten** Reihenfolge, `applyAIV` nimmt das erste in der
+**gedrehten** — bei Drehung 2/4/6 sind das verschiedene Enden. Folge: das
+Werkzeug zeichnet dort die falsche Treppenstufe, bis zu 4 Felder daneben.
+Tritt nur bei Drehung ≠ 0 auf, in 3 von 128 Burgen. **Nicht behoben** — der
+Auftrag war die Gegenprobe, nicht der Umbau; der Ort wäre `parseAiv` in
+`AI-Toolkit/src/node/aiv-codec.mjs`, nicht `rotateGrid`.
+
+**offen:**
+
+* **Das Spiel lief auch in dieser Sitzung nicht.** Die ganze Kette ist am
+  ruhenden Programm gelesen. Wer sie schließen will: ein Gefecht auf einer
+  Karte mit Drehung 4 starten und `DAT_AIVState.keepX` (0x018a5b60) sowie
+  `buildings[keep.id].x/y` der KI gegen den 7×7-Block der Karte halten.
+* Bauwert **1** ist der Randring des 100×100-Rasters (396 Felder, alle
+  Bauschritt 1). `parseAiv` lässt ihn weg. Was `applyAIV` daraus macht, ist
+  **nicht** nachgesehen — `convertAIVBuildingTypeToCommandBuildingType(1)`
+  wurde nicht gelesen. Ohne Belang für die Drehung, aber offen.
+* Ein Startplatz genau auf (200,200) ergäbe Drehung 0xf; `rotateAIV` kennt den
+  Fall nicht und kopierte dann ein **stehengebliebenes** Raster zurück. Auf den
+  861 gemessenen Startplätzen kommt nur 0/2/4/6 vor, auf einer selbstgebauten
+  Karte könnte es anders sein.
+* Die Zahl **7** gilt nur, solange der Bergfried in der `.aiv` auf
+  (43,43)–(49,49) sitzt. Die Regel („um die Rastermitte drehen, dann erstes
+  Feld zeilenweise") gilt allgemein, die Zahl nicht.
+
 ---
 
 ## 1b2. Die Treppen (06.09.2026)
