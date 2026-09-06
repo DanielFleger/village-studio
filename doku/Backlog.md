@@ -74,6 +74,50 @@ abgedeckten Felder sind auch in der Datei Baufläche). Für die Gebäudebilder
 selbst gibt es keine solche Gegenprobe — sie sind von Daniel angesehen, aber
 nicht vermessen.
 
+## Das grosse Ziel: ein echter Karten-Editor (07.09.2026)
+
+Daniel, im Gespraech: „spaeter wollen wir ja aus dem AI-Toolkit ein wirkliches
+Map-Bearbeitungstool machen — mit Hoehenveraenderung, mit Landschaften und
+allem, was Stronghold-Crusader-Map-Editing kann, zusaetzlich dann noch den
+Grhin Map Editor, also spiegeln, und Editing-Tools wie Splash, Geometry-Edits
+(Kreise/Formen etc. hinzufuegen)."
+
+**Was dafuer schon da ist** (Stand 07.09.2026, alles belegt und dokumentiert):
+
+* Der Aufbau der `.map`: Verzeichnis mit 150 Plaetzen, je Abschnitt 12 Byte
+  Kopf, PKWare-DCL gepackt. Von 114 Eintraegen tragen nur 50 IDs Daten.
+* **Die Schichten sind benannt**, nicht geraten — ueber die Adresstabelle
+  `DAT_MapSectionAddressArray` (`0x00b92a58`) laesst sich jede weitere
+  nachschlagen. Siehe Wissensstand 1b6:
+  1001 `GfxLayer` (die gezeichnete Bildnummer), 1002 `PillarGFXLayer`,
+  1003 `LogicLayer`, 1004 `OrganismLayer`, **1005/1045 `HeightLayer` —
+  das ist die Hoehe, die fuer die Hoehenveraenderung gebraucht wird**,
+  1013 Gebaeude, 1014 Baumliste, 1033 `AlphaGFXLayer`, 1036 `MacroLayer`,
+  1037 `Logic2Layer`, 1038 Felsliste.
+* Die Geometrie: das Spielfeld ist eine **Raute** in einem 400x400-Rahmen,
+  80.400 Felder, `kachel = addX(y) + x`. Vorschau = die um 45 Grad gedrehte
+  Raute. Siehe Wissensstand 1b5.
+* Vom Wert zum Bild: Ladereihenfolge aller `.gm1`, Zaehler ab 1.
+* Zeichnen von Boden, Baeumen und Felsen: `lib/gelaende.js`, `lib/karte.js`.
+
+**Was fehlt:**
+
+1. **Schreiben.** Wir lesen nur. Noetig: Zurueckpacken (PKWare-DCL — `blast.js`
+   entpackt nur), die Pruefsumme im Abschnittskopf, und die Frage, welche
+   Schichten bei einer Aenderung mitwandern muessen. Das ist der Schluessel zu
+   allem Weiteren; ohne ihn bleibt es ein Betrachter.
+2. **Hoehe.** `HeightLayer` ist gefunden, aber der Zeichner ist noch flach: das
+   Spiel verschiebt jede Kachel um `heightBasedScreenYOffset[Hoehe]` nach oben.
+   Auf 79,4 % der Felder steht Hoehe 8, auf 7,2 % Hoehe 0 — was die Werte in
+   Punkten bedeuten, ist **nicht** gemessen (die Tabelle wird erst beim Laden
+   gefuellt).
+3. **Landschaft setzen.** Der `GfxLayer` traegt fertige Bildnummern. Wer
+   Gelaende malen will, muss wissen, welche Nummer zu welchem Untergrund passt
+   und wie das Spiel die Uebergaenge waehlt — `MacroLayer` (1036) sagt, zu
+   welchem Flecken ein Feld gehoert, das ist vermutlich der Ansatz.
+4. Werkzeuge: Spiegeln, Splash, Kreise und Formen. Reine Oberflaeche, sobald
+   1 bis 3 stehen.
+
 ## Karten (07.09.2026)
 
 **Startplätze verschieben.** Daniels Ziel, im Gespräch entstanden: „ich will die
