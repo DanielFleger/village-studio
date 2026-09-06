@@ -74,6 +74,26 @@ abgedeckten Felder sind auch in der Datei Baufläche). Für die Gebäudebilder
 selbst gibt es keine solche Gegenprobe — sie sind von Daniel angesehen, aber
 nicht vermessen.
 
+## Karten (07.09.2026)
+
+**Startplätze verschieben.** Daniels Ziel, im Gespräch entstanden: „ich will die
+Startgebäude sehen können, die könnten ja dann auch wieder mit dem AI-Toolkit
+verschoben werden." Das Lesen ist damit erledigt — die Startplätze stehen in
+Abschnitt 1013 der `.map` (Building-Feld, 812 Byte je Eintrag: Bautyp +210,
+Besitzer +214, x +238, y +240), und der Besitzer bei +214 ist die Spielernummer.
+
+Was dafür noch fehlt: **in die `.map` schreiben**. Bisher lesen wir sie nur.
+Nötig wären das Zurückpacken eines Abschnitts (PKWare-DCL, `lib/blast.js` kann
+nur entpacken), die Prüfsumme im 12-Byte-Kopf und die Frage, welche anderen
+Schichten mitwandern müssen, wenn ein Bergfried umzieht — mindestens der
+Geländebelag (Abschnitt 1001 trägt die Gebäudekacheln mit, gemessen: sechs
+Bergfriede = 294 Felder aus `tile_buildings1`) und der Lord in der
+Einheitenschicht.
+
+**Die Startgebäude bleiben im Kartenbild sichtbar** — ausdrücklich so gewollt,
+kein Ausblender. Wer eine KI-Burg darauf setzt, sieht den Bergfried der Karte
+darunter; das ist die Wahrheit der Karte, nicht ein Fehler.
+
 ## Aus dem Discord (05.09.2026)
 
 Wünsche von Monsterfish und Schlossgespenst, gesammelt in der Nachricht vom
