@@ -28,8 +28,11 @@ Nachtrag 06.09.2026, gemessen: Die Nummern 390–393 in `tile_buildings1` sind
 Bodenkacheln (Gras, Sand), keine Stufen — die alte Notiz zeigt ins Leere.
 Angesehen mit `node _bogen.js tile_buildings1 388 396 <ziel.png> 3`.
 
-Gefunden habe ich stattdessen in `tile_castle` zwei Reihen, die eindeutig
-Treppen sind — Holzstufen an einer Palisade, in zwei Blickrichtungen:
+**Widerlegt** (06.09.2026, ein paar Stunden später): Ich hatte in
+`tile_castle` zwei Reihen für die Treppen gehalten, weil sie wie Treppen
+aussehen und die Höhen passen. Sie sind es nicht — das Spiel zeichnet aus
+`tile_land3`. Die Reihen stehen hier nur noch, damit niemand denselben Weg
+zweimal geht:
 
 * `#1550`–`#1554`, Höhen 84 / 81 / 65 / 48 / 32
 * `#1563`–`#1567`, Höhen 81 / 65 / 48 / 32 / 16
