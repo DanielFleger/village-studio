@@ -50,11 +50,69 @@ gesichert halten.
 | Danach folgen Beschreibung, vier einfache Abschnitte und ein Verzeichnis mit 150 Plätzen | **abgelesen** | `map_structure.h`; selbst noch nicht durchgelesen — meine eigene Abtastung der Kette bricht nach der Vorschau ab |
 | Eine Karte hat **114 Abschnitte**, IDs 1001–1118, im Verzeichnis mit 150 Plätzen (4 Byte Verwaltung mehr als in `map_structure.h` steht: 3036 statt 3032) | **gemessen** | `A Friend Indeed.map` durchgezählt |
 | Das Kachelgitter der Karte hat **80.400 Felder**, nicht 400×400. Die Abschnitte sind genau 80.400 · 1, · 2 oder · 4 Byte groß | **gemessen** | Alle Abschnittslängen sind 80.400, 160.800 oder 321.600. 80.400 = 400 · 201 |
-| Wie das 100×100-Dorfraster auf der Karte liegt | **offen** | Das Werkzeug startet mit „Vorschau deckt 400 Felder" und lässt von Hand ausrichten. Der Wert ist **geraten**, nicht gemessen. Erschwerend: das Kachelgitter ist keine Quadratfläche (80.400 Felder), die Vorschau dagegen schon (200×200). Der Zusammenhang zwischen beiden ist **nicht gemessen**. Ansatzpunkt: der Bergfried steht im Dorfraster fest auf (43,43)–(49,49) |
+| Wie das 100×100-Dorfraster auf der Karte liegt | **belegt** (06.09.2026) | Aus dem Programm gelesen und an 10,3 Millionen Dorffeldern durchgerechnet — siehe den Abschnitt „1b5. Wo das Dorf auf der Karte liegt". Die alte Zeile stand hier als offen und ist damit erledigt |
 
 Nutzbar gemacht in `lib/karte.js` (`leseVorschau`, `vorschauAlsPng`) und in der
 Oberfläche unter *Vorlage → Karte des Spiels wählen*. Der Server findet 189
 Karten, die des Spiels und die der Plugins.
+
+## 1b5. Wo das Dorf auf der Karte liegt (06.09.2026)
+
+**belegt**, aus dem Programm gelesen, von einem zweiten Leser unabhängig
+nachgebaut und an Millionen Feldern durchgerechnet.
+
+**Das Spielfeld ist eine Raute, kein Rechteck.** Die 80.400 Felder sind nicht
+400 × 201, sondern die Fläche einer Raute in einem 400 × 400 großen Rahmen:
+Zeile y trägt 2·(y+1) Felder für y ≤ 199 und 800 − 2·y darunter. Aufsummiert
+40.200 + 40.200 = **80.400**. Damit ist die krumme Zahl erklärt.
+
+**Die Umrechnung**, in drei Schritten:
+
+```
+1) Dorfkoordinate:  vx = versatz % 100      vy = versatz / 100
+1a) Dreht die KI (rotateAIV 0x004ed0b0), wird das ganze Raster VORHER gedreht:
+      0: vx, vy    2: 99-vy, vx    4: 99-vx, 99-vy    6: vy, 99-vx
+2) Kartenkoordinate: mx = keepX - 43 + vx     my = keepY - 43 + vy
+3) Kachelnummer:     addX(y) = y*y + 2*y - 199              fuer y <= 199
+                     addX(y) = 40200 + 400*k - k*k, k=y-200 fuer y >= 200
+                     kachel = addX(my) + mx
+```
+
+Die `−43` steht wörtlich in `setKeepOffsetAndOrientation` (`0x004ecf70`):
+**Dorffeld (43,43) sitzt auf dem Startplatz der Karte.** Der bisherige
+„Ansatzpunkt" war also nicht nur eine Vermutung, sondern die Rechenregel
+selbst. Die Zeilentabelle füllt `setTileSystemMemoryLookupArrays`
+(`0x004e2050`), das Abschreiten des Rasters macht `applyAIV` (`0x004ef0d0`).
+
+**Die Vorschau ist die um 45 Grad gedrehte Raute** — Punkt für Punkt, ohne
+Verkleinerung:
+
+```
+nur fuer x+y ungerade:   px = (x - y + 199) / 2      py = (x + y - 199) / 2
+zurueck:                 x  = px + py                y  = py - px + 199
+```
+
+Von den 80.400 Kacheln haben genau 40.200 ein ungerades x+y; davon liegen
+40.000 = 200 × 200 im Bild, ohne eine Doppelbelegung und ohne einen leeren
+Punkt. Die anderen liegen zwischen den Punkten. **Ein 100×100-Dorf erscheint
+auf der Vorschau darum als Raute mit rund 99 Punkten Diagonale, nicht als
+Quadrat** — wer es als Quadrat einpasst, liegt zwangsläufig schief.
+
+**Wie belastbar das ist:** Bergfried auf (43,43)–(49,49) in **128 von 128**
+AIV-Dateien; sechs 7×7-Bergfriede in der Bautyp-Schicht einer echten Karte
+gefunden; Bijektion über alle 80.400 Felder ohne Lücke und ohne Doppelung;
+Belastungsprobe über sechs Karten × 128 Burgen = 4096 Aufstellungen und
+**10.266.592 Dorffelder** — keine Kachel außerhalb, kein zerrissenes Gebäude,
+Bergfried trifft den Startplatz 4096 von 4096 Mal. Auch die Extremwerte
+(Versatz 0, 99, 9900, 9999, Bergfried an der Rautenspitze, `keepX` kleiner 43).
+
+**Offen geblieben:** Bei 19 der 113 Karten — den kleinen Formaten 98×99 und
+78×79 — ist nicht entschieden, ob die Vorschau um zwei Punkte versetzt liegt.
+Dort reicht das Bild bis an den Rand, es gibt keinen schwarzen Rahmen zum
+Vergleichen. Der Zusammenhang ist gemessen (volle Karte → 0, 300er-Karte → 2),
+die Regel dahinter nicht gefunden.
+
+---
 
 ## 1b2. Die Treppen (06.09.2026)
 
