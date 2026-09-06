@@ -38,10 +38,10 @@ Jede Stufe ist genau 16 Punkte niedriger als die vorige, also eine halbe
 Kachel — fünf Stücke, so viele wie die AIV-Treppen 181–185 hat. Dazu
 `#1547`/`#1548` (30×29), eine kurze **Steintreppe** in zwei Richtungen.
 
-**Offen bleibt**, welche davon das Spiel für die AIV-Treppen zeichnet: Holz
-an der Palisade oder Stein an der Mauer. Das ist mit den Bildern allein nicht
-zu entscheiden — es braucht eine AIV mit Treppen im laufenden Spiel oder die
-Zuordnung Mapper→Grafik aus der EXE (Ghidra-Projekt OpenSHC-ref).
+**ERLEDIGT am 06.09.2026**, über die EXE statt über das Bild: Es ist keine
+von beiden. Die AIV-Treppe kommt aus `tile_land3.gm1`, Bilder #133–#136 (je
+Blickrichtung) und #104 (freistehend). Die ganze Kette steht im Wissensstand
+unter „Die Treppengrafik — gefunden".
 
 **Der 4×4-Platz der Ölbrennerei (35).** Die Felder sind gemessen (4×4 direkt
 unter dem Gebäude), das Bild dafür fehlt.

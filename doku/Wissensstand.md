@@ -75,44 +75,49 @@ Schlossgespensts AI-Toolkit die Treppe als *Rezept* führt (High Stair =
 181–185, das sind die Mapper zu 14–18). Welche **Grafik** das Spiel dafür
 zeichnet, ist damit nicht entschieden.
 
-### Die Kandidaten für die Treppengrafik
+### Die Treppengrafik — gefunden (06.09.2026)
 
-**gemessen** in `tile_castle.gm1` — die einzigen Reihen der Datei, die fünf
-Bilder der Kachelbreite 30 mit gleichmäßig fallender Höhe enthalten:
+**belegt**, aus dem Programm gelesen und im Bild bestätigt:
 
-| Reihe | Höhen | Aussehen |
-|---|---|---|
-| `#1550`–`#1554` | 84 / 81 / 65 / 48 / 32 | Holzstufen, mit Bewuchs, Blickrichtung A |
-| `#1563`–`#1567` | 81 / 65 / 48 / 32 / 16 | dieselben, Blickrichtung B |
-| `#1547`, `#1548` | je 29 | kurze **Steintreppe**, zwei Richtungen |
+> Die AIV-Treppe wird aus **`tile_land3.gm1`** gezeichnet, Bilder
+> **#133, #134, #135, #136** — eine je Blickrichtung — und **#104** für ein
+> Treppenfeld, neben dem nichts Höheres steht.
 
-Jede Stufe ist genau 16 Punkte niedriger als die vorige — eine halbe Kachel.
-Ansehen mit `node _bogen.js tile_castle 1545 1568 <ziel.png> 3`.
+Die Kette, jedes Glied nachprüfbar:
 
-**vermutet**, nicht belegt: dass eine dieser Reihen die AIV-Treppe ist.
-**widerlegt**: die alte Notiz im Backlog, die Stufenbilder lägen bei
-`tile_buildings1` 390–393 — das sind Bodenkacheln (Gras, Sand).
+1. `convertCommandBuildingTypeToBuildingType` (`0x00409370`) bildet Mapper auf
+   Bautypen ab. Die Sprungtabelle bei `0x004097c4` liefert für die Mapper
+   **181–189 den Wert 91**, die Funktion hat aber nur die Fälle 0–90.
+   **Treppen sind also keine Gebäude** und haben keine Sprite-ID.
+2. Stattdessen sind sie eine Eigenschaft der Kachel: `LogicLayer & 0x800`,
+   in `hasHigherNeighborWithStairs` (`0x004f8a40`) als `L_STAIRS` kommentiert.
+3. Diese Funktion wird an genau vier Stellen gerufen, alle in
+   **`updateGfxLayer`** (`0x00509180`) — mit den Richtungen 0, 2, 4, 6.
+4. Dort steht die Zuweisung
+   `GfxLayer[kachel] = GMTotalPicturesProcessed[0xc] + {104, 133, 134, 135, 136}`.
+5. `GMTotalPicturesProcessed[i]` ist der laufende Bildindex je Grafikdatei;
+   `i` ist die **GmID**, und die Aufzählung ist **1-basiert**:
+   `GID_TILE_LAND_3 = 12`. Also `tile_land3.gm1`.
+6. **Gegenprobe**, unabhängig: Im selben `updateGfxLayer` steht Datei **5**
+   (`GID_TILE_SEA_8 = tile_sea8`) mit Versätzen ab **204**. Genau dort liegen
+   unsere Wassergraben-Bilder (`tile_sea8#204`–`#235`, seit dem 05.09. im
+   Bildvorrat). Zwei Wege, dieselbe Rechnung.
+7. **Augenschein**: `node _bogen.js tile_land3 133 136 <ziel.png> 4` zeigt vier
+   hölzerne Treppen in vier Richtungen, `104` ein flaches Holzpodest.
 
-### Warum es heute nicht entschieden wurde
+**Was das für die Anzeige heißt:** Die Grafik hängt an der **Richtung**, nicht
+an der Stufennummer. Die fünf AIV-Nummern 14–18 sind kein Bildersatz von hoch
+nach niedrig — sie bekommen alle dieselben vier Bilder, ausgewählt danach, auf
+welcher Seite die höhere Nachbarkachel liegt.
 
-Der Weg dorthin ist ein Bild aus dem laufenden Spiel. Der ist **verstellt**:
+**widerlegt** damit: die Kandidaten aus `tile_castle` (#1550–#1554,
+#1563–#1567), die ich am selben Tag über die Höhenstaffelung gefunden hatte —
+sie sehen aus wie Treppen, werden für AIV-Treppen aber nicht benutzt. Ebenso
+die alte Backlog-Spur `tile_buildings1` 390–393 (Bodenkacheln).
 
-* Der Foto-Zweig in `logik.lua` liegt **hinter** der Schranke
-  `if spieler == nil then return false` (Zeile 1608). Ein `{ "foto": 1 }` ohne
-  `player` kommt nie an; richtig ist `{ "foto": 1, "player": 1 }`.
-  **gemessen** — mit `player` steht die Zeile „FOTO: fordere
-  screen_capture_001.bmp an" im Log, ohne ihn „'player' fehlt im Befehl".
-* Im **Fenstermodus** (`type: window`) legt `takeScreenshot` die Datei an und
-  schreibt **0 Byte** hinein. **gemessen**, 84 Sekunden gewartet. Die Adresse
-  `WINDOW_DD 0x00F98338`, aus der das Modul liest, stimmt dort offenbar nicht.
-* Im Modus `borderlessFullscreen` — Daniels Einstellung — **stirbt der Prozess
-  beim Foto**. **gemessen**, einmal, bei Tempo 400 und laufendem Gefecht; die
-  letzte Zeile im Log ist „FOTO: vorgemerkt (Nummer 1)".
-
-Das ist der nächste Schritt für die Lua-Sitzung: eine Fassung, in der das Foto
-in beiden Fenstermodi trägt. Danach ist die Treppenfrage in fünf Minuten
-beantwortet — Gefecht starten, `{ "wandle": { "von": 10, "nach": 14 } }`,
-Kamera auf die Burg, Foto.
+Der Weg dorthin war reines Lesen: Ghidra headless auf `OpenSHC-ref`, kein
+Spielstart, keine Sperre. Skripte in `werkzeug/`, Aufruf in Abschnitt
+„So findet man das selbst".
 
 ---
 
