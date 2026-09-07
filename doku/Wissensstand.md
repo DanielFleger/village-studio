@@ -142,6 +142,187 @@ eine Zahl zu einem Bild wird.
 
 ---
 
+## 1b7. Das echte Gelände unter der 2.5D-Ansicht des Toolkits (07.09.2026)
+
+**gemessen.** Das Zeichnen selbst steht in 1b6 und ist dort **belegt**; neu ist
+hier nur, wie es in die Burgansicht des AI-Toolkits kommt und wie groß es dabei
+werden darf.
+
+Im Toolkit steht neben der Kartenauswahl ein Knopf, der zwischen zwei Böden
+umschaltet — er zeigt an, was gerade liegt:
+
+| Knopf | was darunterliegt | woher |
+|---|---|---|
+| **Preview** | ein Farbpunkt je Feld | das 200×200-Vorschaubild, das in jeder `.map` steckt |
+| **Terrain** | die echten Kacheln des Spiels | Abschnitt 1001 plus die Baumliste, wie in 1b6 |
+
+### Die Größe war der Knackpunkt
+
+Ein Feld ist beim Spiel 30 Punkte breit und 16 hoch, und ein Vorschaupunkt ist
+genau ein Feld. Daraus folgt die Rechnung, die vor dem Bauen stand:
+
+| Was | Punkte | roh | als PNG |
+|---|---|---|---|
+| ganze Karte in Kachelauflösung | 6000×3200 = 19,2 Mio | 76,8 MB | nicht machbar |
+| Rahmen um das 100×100-Dorf | 3030×1616 = 4,90 Mio | 18,7 MB | **5,07 MB** gemessen |
+| nur die Raute darin, Rest durchsichtig | 2,45 Mio sichtbar | — | **3,02 MB** gemessen |
+
+Die Raute reicht, weil die Ansicht den Grund ohnehin an ihr abschneidet
+(`paintGround` klippt auf das 100×100-Viereck). Alles außerhalb wäre gemalt und
+nie zu sehen. Das Dorf deckt 5.000 der 40.000 Vorschaupunkte einer Karte ab —
+ein Achtel.
+
+**Warum ein Bild und nicht viele Kacheln:** in 10×10-Punkt-Kacheln zerlegt
+bräuchte man 76 der 100 Kacheln (eine fällt nur weg, wenn sie ganz außerhalb
+der Raute liegt). Das spart ein Viertel der Punkte und kostet 76 Bilder statt
+einem. Nicht die Mühe wert.
+
+Gemessen über fünf Karten (A Friend Indeed 3,02 · Crete Peninsula 2,77 ·
+Cactus Valley 3,60 · A Mighty Oasis 3,58 · Canyons 3,25 MB): Zeichnen
+197–317 ms, Packen 193–254 ms. Im Toolkit von Anfang bis Ende
+**383–411 ms** je Ruf, die `data:`-Adresse **4,10–4,31 MB**. Deflate-Stufe 9
+brachte gegenüber Stufe 6 keinen messbaren Gewinn (gleiche Größe auf zwei
+Nachkommastellen), also bleibt es beim vorhandenen PNG-Schreiber.
+
+> **Das Bild darf nicht in `localStorage`.** 3 MB PNG sind gut 4 MB Text,
+> `localStorage` hält üblicherweise 5 MB für alles zusammen — die gemerkte
+> Karte läge danach nicht mehr drin. Gemerkt wird nur, **dass** der Nutzer das
+> Gelände sehen will; das Bild wird beim nächsten Start neu geholt.
+
+### Dass es an derselben Stelle liegt wie die Vorschau
+
+Vorschau und Gelände sind Ausschnitte **desselben** Rasters. Beide werden
+darum von einer einzigen Rechnung hingelegt (`mapImageRect`), und die Vorschau
+ist nur ihr Sonderfall „Ausschnitt ab 0,0 über 200 Punkte". Ein Feld des
+Geländes sitzt bei `15·(x−y)` / `8·(x+y)`; für den Vorschaupunkt `(px,py)` sind
+das `30·px−2985` und `16·py+1592`, also genau der Punkt `(px−px0, py−py0)` im
+Bild.
+
+Nachgemessen, nicht geglaubt — Wasser ist das scharfe Merkmal, weil es in
+beiden Quellen eindeutig ist:
+
+1. **Mein Bild gegen den GfxLayer.** Für jeden 30×16-Block wird gefragt, ob er
+   ganz Wasser ist, und mit der gm-Datei des Feldes verglichen, das die Formel
+   dort nennt. Ergebnis auf vier Karten (Cyclades, A New Land, Antioch, Crete
+   Peninsula): Versatz (0,0) gewinnt jedes Mal — auf Cyclades mit 96,51 %. Der
+   Test in `tests/iso-view.test.js` fordert zusätzlich, dass **jeder** der
+   sechs Versätze um ein Feld schlechter abschneidet; sonst misst er nichts.
+2. **Der Bergfried als Maßstab.** Seine 7×7 Felder stehen auf den Punkt genau
+   im Gebäudefeld, und er sieht auf jeder Karte gleich aus. Über 486
+   Bergfriede auf 96 Karten, 11.900 Vorschaupunkte: bei Versatz (0,0) haben
+   **57,1 %** dieser Punkte dieselbe Farbe, beim nächstbesten der 49 geprüften
+   Versätze nur 48,0 %. Die Formel aus 1b5 ist also die richtige.
+
+### Was dabei offenblieb
+
+**offen.** Der in 1b6 notierte Versatz von zwei Spalten auf 31 Karten ist von
+dieser Seite noch einmal bestätigt worden, aus einer anderen Richtung: misst
+man, wie gut die Farbnummer der Vorschau die gm-Datei des Feldes vorhersagt
+(Reinheit der Kreuztabelle, ohne jeden Schwellwert), so gewinnt auf **55 von
+113** Karten der Versatz (0,0) und auf **31** der Versatz „zwei Spalten
+weiter" — dieselbe Zahl 31 wie in 1b6, und dieselben Karten (Cyclades,
+Antioch). Der Sieger ist je Karte deutlich, 3 bis 5 Punkte vor dem Zweiten.
+
+Was das für den Umschalter heißt: **auf diesen 31 Karten liegen Preview und
+Terrain um ein Feld auseinander.** Das Gelände ist dabei das richtige — es kommt
+aus derselben Schicht, aus der das Spiel zeichnet, und passt zum Startplatz aus
+dem Gebäudefeld. Die Vorschau ist die, die daneben liegt. Woher der Versatz
+kommt, ist weiter unbekannt.
+
+Zwei Sackgassen, damit sie niemand zweimal geht:
+
+* **Mittlere Farben vergleichen sagt nichts.** Vorschau und Gelände haben
+  eigene Farbtafeln; der Abstand wird von einem festen Farbstich beherrscht,
+  und Nachbarfelder sehen einander ohnehin ähnlich. Der Unterschied zwischen
+  richtigem und falschem Versatz lag unter 2 %, mit falschem Sieger.
+* **„Wie stark hebt sich der Bergfried von seinem Ring ab" ist der falsche
+  Maßstab.** Das belohnt jede Farbkante, nicht den Bergfried: der Sieger lag am
+  Rand des Suchfensters (41 % der Blöcke bei (2,2)). Erst die Frage „ist die
+  Farbe **über alle Karten hinweg dieselbe**" trennt sauber.
+
+### Wo der Code steht
+
+`AI-Toolkit/src/node/game-map.js` (`readMapTerrain`, `renderTerrain` — das
+Lesen der gm-Dateien ist aus `VillageStudio/lib/gm1.js` und `lib/gelaende.js`
+übernommen, damit das Toolkit kein Fremdmodul nachlädt),
+`src/js/iso-geometry.js` (`mapImageRect`, `villageWindow`),
+`src/js/iso-view.js` (`setMapMode`, `setTerrain`, `groundPicture`),
+`src/js/castle-editor.js` (`ensureTerrain`).
+
+Der Abschnittsleser des Toolkits (`readSection`) und der von VillageStudio
+(`abschnittsDaten`) liefern **byteweise dasselbe**: geprüft an den Abschnitten
+1001, 1004 und 1014 über alle 113 Karten, 339 von 339 gleich, keine Abweichung.
+Deshalb gibt es im Toolkit nur einen Leser und keine zweite Kopie.
+
+---
+
+## 1b8. Gegenprobe zu 1b7: was von außen nachgemessen wurde (07.09.2026)
+
+**gemessen.** Abschnitt 1b7 ist von einer zweiten Seite geprüft worden, mit
+eigenen Verfahren, anderen Karten und anderen Startplätzen. Was dabei hielt und
+was noch offen ist:
+
+### Was hielt
+
+* **Der Anker sitzt richtig.** Auf allen 21 geprüften Startplätzen von
+  Cyclades, Antioch, A Friend Indeed und Crete Peninsula tragen die 49 Felder
+  ab `(keep.x, keep.y)` im GfxLayer **49 von 49** Bildern aus `tile_castle`.
+  Der Bergfried, den die Karte mitbringt, liegt also genau auf Dorffeld
+  (43,43)–(49,49). Im gezeichneten Bild liegt er innerhalb der vier
+  eingezeichneten Eckpunkte (Cyclades, Startplatz 2).
+* **Der Versatz auf 31 Karten stimmt, und das Gelände ist die richtige Seite.**
+  Unabhängig nachgemessen mit gegenseitiger Information zwischen dem Farbwert
+  eines Vorschaupunkts und der gm-Datei des Feldes, das die Formel dort nennt —
+  alle 113 Karten, alle 40.000 Punkte, ohne Schwellwert und ohne Wasser als
+  Merkmal. Ergebnis: auf **33** Karten gewinnt ein anderer Versatz als (0,0)
+  mit mehr als 5 % Abstand, davon **31** der Versatz „zwei Spalten weiter",
+  Cyclades und Antioch darunter. Dieselbe Zahl, dieselben Karten wie in 1b6
+  und 1b7.
+* **Ein Rahmen für alle Karten.** Über **503** Fälle (113 Karten × jeder
+  Startplatz, Karten ohne Startplatz mit der Mitte) ist das Bild **immer**
+  3030×1616 Punkte. Eine „größte Karte" gibt es nicht — jede `.map` hat
+  dieselbe 200×200-Vorschau, und das Dorffenster ist immer 101 Punkte breit.
+* **Der Sitzungsspeicher bleibt klein.** Im laufenden Programm gemessen: nur
+  `castle.panels.v2` und `castleIsoMapMode` (7 Byte). Das Gelände liegt nicht
+  darin.
+* **Tests:** 233 Tests, 206 grün, 20 rot. Alle 20 sind ENOENT auf die
+  fehlenden Ordner `web/`, `ucp-module/`, `tools/`, `examples/`, `dist/`,
+  `ucp-ai-editor/`. `iso-view` + `iso-geometry` + `game-map` allein: 52 von 52
+  grün.
+
+### Was dabei aufgefallen ist
+
+* **offen — Speicher.** Kontrollversuch im laufenden Programm, dieselbe Karte
+  zehnmal neu gewählt: nur mit Vorschau wächst der Arbeitsspeicher aller
+  Prozesse um **55 MB**, mit Gelände um **190 MB** (rund 19 MB je Kartenwahl).
+  Das x und fünf erzwungene Aufräumläufe geben davon nur etwa **37 MB**
+  zurück; nach zehn Kartenwechseln liegt das Programm rund **200 MB** über dem
+  Start. Zweimal gemessen, gleiches Ergebnis. Arbeitsspeicher ist kein Beweis
+  für festgehaltene Objekte — Chromium gibt Seiten nicht sofort zurück —, aber
+  der Abstand zur Vorschau ist das Dreieinhalbfache und wächst gleichmäßig.
+  Wer viele Karten durchsieht, sollte das im Blick behalten.
+* **gemessen — „0 Felder ohne Bild" gilt nur für A Friend Indeed.** Über die
+  503 Fälle haben **51** Felder, die der GfxLayer leer lässt (Wert 0), bis zu
+  463 Stück (2,09 %). Die meisten liegen außerhalb der gezeichneten Raute; auf
+  Cyclades, Startplatz 2, liegen **17** davon im 100×100-Dorf und bleiben dort
+  durchsichtig.
+* **gemessen — die Zeitspanne ist weiter als in 1b7 genannt.** Über alle 503
+  Fälle: **233–525 ms** (Mittel 382 ms), `data:`-Adresse **2,07–4,93 MB**
+  (Mittel 3,94 MB). Im laufenden Programm einmal 539 ms gemessen (Crete
+  Peninsula, Startplatz 5).
+* **vermutet — der Statustext bleibt stehen.** Schaltet man auf ein Gelände
+  zurück, das schon geladen ist, meldet die Statuszeile weiter „Ground back to
+  the quick preview of the map", obwohl das Gelände liegt. Kosmetisch.
+* **Sackgasse, damit sie niemand zweimal geht:** zwei Aufnahmen des Fensters
+  (einmal Vorschau, einmal Gelände) gegeneinander zu verschieben und die
+  kleinste Abweichung zu suchen, misst **nicht** die Lage des Bodens — die
+  Burg steht in beiden Aufnahmen an derselben Stelle und zieht das Ergebnis
+  auf (0,0), auch auf einer der 31 verschobenen Karten. Ebenso stumpf ist der
+  Vergleich mittlerer Helligkeiten zwischen Vorschaubild und Gelände: die
+  Sieger wechselten bei unter 3 % Abstand.
+
+---
+
 ## 1b5. Wo das Dorf auf der Karte liegt (06.09.2026)
 
 **belegt**, aus dem Programm gelesen, von einem zweiten Leser unabhängig
