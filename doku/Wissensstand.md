@@ -1767,3 +1767,203 @@ Die Skripte liegen in `doku/ghidra/`. Zwei Stolpersteine: `Enum` ist mehrdeutig
 
 An den Dateien messen: `_pruefe_gebaeude.js`, `_pruefe_schreiben.js`,
 `_untersuche_nummer.js <Nr>`.
+
+---
+
+## 8. Kosten, Zeit und Bevölkerung je Bauschritt im AI-Toolkit (07.09.2026)
+
+*Auftrag von Krarilotus aus dem Discord: „ich möchte zu einem Bauschritt gehen
+und sehen, was die Burg bis hierhin gekostet hat, wie viel Bevölkerung ich habe
+und wie viel Zeit vergangen ist." Monsterfish ergänzte: die Balance muss
+einlesbar sein. Gebaut ist Punkt 1 und 2 sowie die Zeit aus Punkt 3; die
+Produktionsschätzung ist offen und steht unten begründet.*
+
+### 8a. Die Brücke zwischen zwei Nummernsätzen — der eigentliche Fund
+
+Das AI-Toolkit nummeriert seine Bauarten **nicht** nach dem AIV-Typ aus
+Abschnitt 2, sondern nach dem **Mapper-Typ**. `config/aiv_constants.json` sagt
+61 = Keep; die AIV-Nummer 61 ist dagegen die Holzfällerhütte. Wer die
+Kostentabelle direkt an die Editornummer hängt, rechnet systematisch falsch,
+ohne dass es auffällt — die Zahlen sehen plausibel aus.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Die Typnummern des AI-Toolkits sind Mapper-Nummern | **gemessen** | Über `gebaeude.json` (Mapper→AIV) auf `kosten.json` gelegt: 34 unabhängige Namenspaare decken sich vollständig — Fletcher/Bogenmacher, House/Hütte, Stables/Stall, Windmill/Mühle, Healers/Apotheke, Keep/Bergfried, Stockpile/Lagerplatz, High Wall/Steinmauer, Stair/Treppe, Tower3/Geschützturm … keine einzige Abweichung |
+| Der Rechenweg Editor-Typ → AIV-Nummer → Baukosten trägt | **gemessen** | 128 AIV-Dateien aus `SHC KCC 2024/aiv` gelesen, 65 verschiedene Bauarten. 64 davon sind bepreist oder ausdrücklich als kostenlos begründet |
+| Beide Torhaus-Durchfahrten teilen sich einen Preis | **abgeleitet** | Die Laufzeit-Kostentabelle hat je Torhausgröße nur **eine** Nummer (rt 45, rt 46), die AIV kennt zwei Ausrichtungen (40/41, 42/43). N-S bekommt darum den Preis von O-W |
+| **Der Stadtgarten (AIV 94, Mapper 169) hat keinen Preis** | **offen** | In der Laufzeit-Kostentabelle ist ihm kein Eintrag zugeordnet. Es gibt zwei namenlose Zeilen mit je 30 Gold (rt 102, rt 105), aber nichts entscheidet zwischen ihnen. Nicht geraten: die Anzeige meldet „Price unknown, not counted: 2x Town Garden" |
+
+### 8b. Was die Anzeige rechnet, und woher jede Zahl kommt
+
+| Zahl | Quelle | Marke |
+|---|---|---|
+| Holz / Stein / Eisen / Pech / Gold bis Schritt N | Kostentabelle aus der exe bei `0x005C21D0`, Summe über die Schritte 1..N | **belegt** (Tabelle), **gerechnet** (Summe) |
+| Mauern, Zinnen, Treppen, Wassergraben | kosten die KI nichts, siehe Abschnitt 5 | **abgelesen** |
+| Bergfried, Lagerplatz | stehen beim Start schon da, kein Abzug | **abgeleitet** |
+| Vergangene Spielzeit | `Tage = Schritte − 1`, ein Schritt = 50 Ticks = ein Spieltag; Monat = 16 Tage, Jahr = 192 Tage | **belegt** (Bautempo, 445 von 445 Schritten) |
+| Bevölkerung gestellt / gebraucht | `config/aiv_gamedata.json`, nur bis Schritt N gezählt | **übernommen** aus dem Toolkit |
+| Arbeiterbedarf der AIC | der vorhandene Rechenweg der Figuren-Seite (`window.characterPopulation.calculateAt`), gefüttert mit der Bevölkerung **bis zu diesem Schritt** statt mit der Gesamtzahl | **übernommen** |
+| Hopfenfarmen | Anzahl aus demselben Rechenweg, Art aus `Farm1..Farm8` der AIC | **abgeleitet** |
+
+Die Zeitangabe ist ausdrücklich eine **Untergrenze**: ein Schritt, der nicht
+gebaut werden kann, verbraucht seinen Tag zwar trotzdem (belegt), aber eine
+klamme KI wartet. Das steht auch so in der Oberfläche, damit niemand die Zahl
+für eine Zusage hält.
+
+### 8c. Balance-Dateien einlesen
+
+Die Oberfläche liest eine Balance-JSON (Ascension, Team-Liga) im Browser ein —
+`<input type="file">` plus `FileReader`, ohne Änderung am Hauptprozess — und
+merkt sie sich im `localStorage`. Gebraucht wird nur der Abschnitt `buildings`:
+je Gebäudename ein Feld `cost` mit fünf Zahlen in der Reihenfolge Holz, Stein,
+Eisen, Pech, Gold (siehe Abschnitt 3, *Balance-Dateien*).
+
+**Die Falle, die der Test gefunden hat:** ein Gebäude kann in der Balance stehen
+und trotzdem **kein** `cost` haben — in `ascension.json` gilt das für sechs
+Gebäude (Fletcher, Mill, Hunters hut, Armory, Drawbridge, Water pot), sie haben
+dort nur `health`. Dann bleibt der Vanilla-Preis stehen. Wer das übersieht,
+rechnet diese Gebäude als kostenlos.
+
+Die Namenszuordnung Editor → Balance ist von Hand gemacht, weil sie sich nicht
+ableiten lässt: House/Hovel, Healers/Apothecary, Windmill/Mill, Trading
+Post/Marketplace, Rack/Stretching rack, Dunking Pool/Dunking stool. **49 Namen,
+alle 49 in beiden Balance-Dateien wiedergefunden** — hätte ich Namen erfunden,
+wären sie nicht in zwei unabhängig gepflegten Dateien vollständig vorhanden.
+
+### 8d. Ein Totschlagtest, der zuerst danebengriff
+
+Vorher aufgeschrieben war unter anderem: *„Für die Namenszuordnung müssen die
+Balance-Werte in der Mehrheit mit Vanilla übereinstimmen; unter 50 Prozent
+verwerfe ich die Zuordnung."* Ergebnis: Ascension 5 von 45, Team-Liga 3 von 48.
+Nach dem eigenen Maßstab: durchgefallen.
+
+Der Test war falsch gebaut, nicht die Zuordnung — **beide Balancen ändern fast
+jeden Preis**, der Test konnte „Zuordnung richtig, Balance stark verändert"
+nicht von „Zuordnung falsch" unterscheiden. Das ist genau der Fehler aus dem
+Fehlerhub mp-16, nur beim Test statt beim Urteil: sauber gemessen, aber eine
+andere Frage beantwortet als die gestellte.
+
+Der Ersatz unterscheidet: **geordnete Familien.** Kapelle < Kirche < Kathedrale
+(Gold), kleines < großes Torhaus (Stein), Turm3 < Turm4 < Turm5 (Stein) — in
+Vanilla **und** in beiden Balancen, 12 Ordnungsvergleiche. Eine verwürfelte
+Zuordnung überlebt das nicht. Dazu die Handnachrechnung an `Abbot1.aiv`: ein
+zweiter, unabhängiger Zählweg im Test selbst trifft an vier Stellen der
+Bauliste aufs Stück genau dieselbe Summe.
+
+Am Bildschirm nachgezählt (Schritt 40 von `Abbot1.aiv`, Vanilla): Holz
+9×6 + 3×10 + 20 + 20 + 20 + 5 + 5 = **154**, Stein 15, Gold 1000 + 7×50 + 100 +
+100 + 2×60 + 45 = **1.715**. Die Anzeige nennt dieselben Zahlen.
+
+### 8e. Was NICHT gebaut ist, und warum
+
+**Punkt 3 aus dem Auftrag ist nur zur Hälfte beantwortet.** Die vergangene Zeit
+steht da, der Produktionswert nicht.
+
+- **Produktionsraten sind nirgends gemessen.** Wie viel Stein ein Steinbruch je
+  Spieltag liefert, wie lange ein Holzfäller für eine Ladung braucht, wie stark
+  ein Ochsenkarren das ändert — dazu steht in diesem Wissensstand keine Zahl.
+  Ohne Messung wäre jede Produktionsangabe geraten.
+- **Das Kartenfitting fehlt.** „Auf einer konkreten Karte" heißt: wie viele
+  Stein- und Baumfelder in Reichweite des Dorfes liegen. Die Kartendaten sind
+  im Toolkit vorhanden (`iso-view`, `game-map`), aber die Auswertung ist eine
+  eigene Baustelle.
+- **Der „Hopfarm fix on/off"**, den Krarilotus nennt, ist hier nicht abgebildet.
+  Sichtbar ist nur, wie viele der geöffneten Farmen laut `Farm1..Farm8`
+  Hopfenfarmen sind. Was der Fix am Verhalten ändert, ist ungemessen.
+
+Der nächste Schritt für die Produktion wäre eine Messung im laufenden Spiel:
+Warenstand eines Spielers über eine feste Zahl Ticks mitschreiben, bei bekannter
+Gebäudezahl — dieselbe Methode wie beim Bautempo.
+
+### 8f. Wo der Code steht
+
+Alles im AI-Toolkit unter `Tools/AI-Toolkit`:
+
+| Datei | Was drin ist |
+|---|---|
+| `src/js/castle-cost-data.js` | **erzeugte** Tabelle: je Editor-Typ Vanilla-Preis, Balance-Name, Begründung bei Nullpreis |
+| `src/js/castle-cost-model.js` | der Rechenteil, ohne Oberfläche — deshalb ohne Fenster testbar |
+| `src/js/castle-cost-panel.js` | die Anzeige; hängt sich selbst in die Bauleiste |
+| `src/css/castle-cost-panel.css` | eigene Stildatei |
+| `tests/castle-cost-panel.test.js` | die Totschlagtests, 11 Stück |
+
+`castle-editor.js` ist nur an zwei Stellen angefasst: ein Nachlader für die drei
+Dateien und ein Aufruf am Ende von `renderBuildList()`. `index.html` und
+`combined.css` bleiben unberührt — die Oberfläche wird im Code gebaut und
+eingehängt, das Stylesheet per `<link>` nachgeladen.
+
+Die Tabelle erzeugt `src/js/castle-cost-data.build.js` — ein Node-Skript, das
+die Oberfläche nie lädt — aus `aiv_constants.json`, `gebaeude.json` und
+`kosten.json`. Ändert sich eine der drei Quellen, wird die Tabelle neu erzeugt
+statt von Hand nachgepflegt: `node src/js/castle-cost-data.build.js`.
+
+## 9. Gruppen, Kopierspeicher und Tastenkürzel im Burgeneditor (07.09.2026)
+
+Aus Krarilotus' Wunschliste; alles im AI-Toolkit, alles neben `castle-editor.js`
+statt darin.
+
+### 9a. Die Tastenkürzel ließen sich nie speichern
+
+Das Fenster zum Umlegen gab es schon (Menü *Edit → Customize Castle
+Shortcuts…*, nur solange der Burgeneditor vorn ist), samt Merken im `localStorage` unter `aiv.castleToolShortcuts.v1`.
+Nur speichern ließ es sich nie: `DEFAULT_TOOL_SHORTCUTS` in `castle-editor.js`
+kennt **sieben** Werkzeuge, das Gitter in `index.html` zeigt **sechs** — das
+Füllwerkzeug (`bucket`) fehlt. Beim Speichern läuft `validateToolShortcuts`
+über alle sieben und wirft für das fehlende `bucket` "needs a primary
+shortcut". Die Meldung nennt sogar nur den nackten Schlüssel `bucket`, weil
+`toolLabel()` diesen Namen gar nicht kennt — ein Hinweis darauf, dass die Zeile
+beim Nachrüsten des Füllwerkzeugs schlicht vergessen wurde.
+
+Repariert wird das von außen: `editor-extras.js` hängt die fehlende Zeile beim
+Start ins Gitter, mit demselben Tastenverhalten wie die vorhandenen Felder
+(Buchstabe/Ziffer schreibt, Rücktaste leert). Danach speichert das vorhandene
+Fenster, und die Wahl überlebt das Schließen — das erledigt der Editor selbst.
+
+### 9b. Gruppen
+
+Mehrfachauswahl und gemeinsames Verschieben gab es schon; es fehlte der Name
+und das Wiederfinden. Eine Gruppe merkt sich **Bautyp und Feld** ihrer
+Mitglieder, nicht die Nummer des Bauschritts — die verschiebt sich beim
+Umsortieren, das Feld nicht. Abgelegt wird je Burg unter
+`aiv.castleGroups.v1`, Schlüssel ist der Dateipfad in Kleinschrift mit
+Schrägstrichen (sonst wären derselbe Pfad in zwei Schreibweisen zwei Burgen).
+Wird eine noch ungespeicherte Burg gespeichert, wandern ihre Gruppen mit.
+
+Nach einem Zug prüft das Modul, ob **alle** Mitglieder um denselben Betrag
+gewandert sind. Nur dann lernt die Gruppe die neuen Felder. Wurde stattdessen
+gelöscht, ersetzt oder umsortiert, bleibt sie unverändert stehen, statt sich
+still etwas Falsches zu merken.
+
+### 9c. Kopieren zwischen zwei Burgen
+
+`state.copyBuffer` wird beim Laden einer anderen Burg auf `null` gesetzt
+(`loadDocument`, `newFile`), dazu bei Rückgängig, bei Escape und bei jedem
+Werkzeugwechsel weg vom Kopierwerkzeug. Der Kopierspeicher liegt deshalb
+zusätzlich unter `aiv.castleClipboard.v1` und wird vor dem Einfügen
+zurückgereicht — in der **Anfassphase** des `keydown`, damit er dem Editor
+schon vorliegt, wenn dessen eigener Hörer am Fenster drankommt. Eingefügt wird
+danach von ihm selbst über `placeCopy`, also mit denselben Prüfungen wie beim
+Setzen: Kartenrand, Höchstzahl, Überlappung, gesperrte Bauschritte. Das Modul
+baut keinen zweiten Einfügeweg.
+
+Was aus dem Speicher zurückkommt, wird vorher Feld für Feld geprüft
+(`sanitizeClipboard`); passt etwas nicht, gilt der Speicher als leer.
+
+### 9d. Die flache Ansicht gibt es schon
+
+Krarilotus' "flache Ansicht" ist die vorhandene Kartenansicht: `screenToTile`
+rechnet mit `(x - panX) / cell` in einem geraden Quadratraster, ohne jede
+Schrägstellung. Der Knopf **Map** in der Werkzeugleiste schaltet sie ein und
+aus, sie steht beim Start offen. Gebaut wurde dafür nichts.
+
+### 9e. Wo der Code steht
+
+| Datei | Was drin ist |
+|---|---|
+| `src/js/editor-extras.js` | Gruppen, Kopierspeicher, die fehlende Kürzel-Zeile; Rechenteile ohne Fenster, deshalb testbar |
+| `src/css/editor-extras.css` | eigene Stildatei, per `<link>` nachgeladen |
+| `tests/editor-extras.test.js` | 7 Tests auf die Rechenteile und die Einhängepunkte |
+
+`castle-editor.js` ist an genau zwei Zeilen angefasst: `extras: { … }` im
+`window.castleEditor`-Block und ein Nachlader für `editor-extras.js` am Ende.
+`index.html` und `combined.css` bleiben unberührt.
