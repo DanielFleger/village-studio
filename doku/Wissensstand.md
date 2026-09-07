@@ -323,6 +323,211 @@ was noch offen ist:
 
 ---
 
+## 1b9. Zeichenreihenfolge, Geländehöhe und die Frage nach dem Drehen (07.09.2026)
+
+Anlass: drei Punkte aus dem Discord — Monsterfish sah in der 2.5D-Ansicht des
+AI-Toolkits ein Torhaus vor einer Treppe liegen, wünschte sich eine drehbare
+Ansicht und merkte an, dass die Höhen nicht wiedergegeben werden. Was davon
+gebaut ist, was gemessen und was offenblieb, steht hier getrennt.
+
+### Wie das Spiel sortiert — und warum ein Torhaus die Treppe verdeckte
+
+**belegt**, aus dem Programm gelesen.
+
+> `renderMap` (`0x004e8cf0`) sortiert **gar nichts**. Es läuft den Bildschirm
+> Feld für Feld ab (`screenPointToTileNumber`, von hinten nach vorn) und malt
+> je Feld, was dessen Schichten sagen. Ein mehrfeldriges Gebäude ist dabei
+> kein Bild, sondern **n·n Bilder** — eines je Feld, jedes mit eigener Tiefe.
+
+Der Beweis steht in `updateBuildingGraphicsLayer` (`0x00506370`): die Funktion
+läuft über `constructionTileCount` Felder, holt zu jedem über
+`getBuildingSizeIndexMappingData(feldNr, größe)` den Versatz
+(`buildingX`/`buildingY`) und schreibt `GfxLayer[Feld]` **einzeln**. Und
+`getBuildingSizeIndexMappingData` (`0x004f9880`) selbst gelesen:
+
+```
+constructionTileCount        = größe * größe
+buildingX / buildingY        = DAT_BuildingSizeIndexMapping[größe][feldNr][0..1]
+buildingRotationRelatedValue = [...][2] bei mapOrientation 0, [3] bei 2,
+                               [4] bei 4, [5] bei 6
+```
+
+Die Bildnummer ist dann `GMTotal[Blatt] + spriteID + buildingRotationRelatedValue
++ größe² · ((variation − mapOrientation) & 7) − 1`. Also: **je Feld ein eigenes
+Bild, und je Kartendrehung ein eigener Satz davon.**
+
+**Was das für das Toolkit heißt.** Unsere Bilder sind ganze Gebäude, nicht
+Teilbilder — Feld für Feld malen geht also nicht. Gebraucht wird eine Zahl je
+Gegenstand, die dieselbe Reihenfolge ergibt. Bis zum 07.09.2026 stand in
+`iso-geometry.js` `tiefe = gx + gy + 2·(n−1)` — die Diagonale durch die
+**vordere Spitze** des Grundrisses. Richtig ist
+
+```
+tiefe = gx + gy + (n − 1)
+```
+
+also die Diagonale durch die **Ost- und die Südecke**, die breiteste Zeile des
+Gebäudes. Durchgerechnet für quadratische Grundrisse: Gegenstand A (n Felder ab
+x,y) liegt hinter B (Feld a,b), wenn a ≤ x−1 oder b ≤ y−1. Im ersten Fall ist
+b ≤ y+n−1 (sonst berühren sich die Bilder auf dem Bildschirm gar nicht), also
+a+b ≤ x+y+n−2 < x+y+n−1. Liegt B davor (a ≥ x+n), ist a+b ≥ x+y+n > x+y+n−1.
+Für die y-Achse dasselbe, für zwei mehrfeldrige Bauten ebenso. Die Fälle, in
+denen beide Richtungen zugleich gälten, sind genau die ohne Überlappung auf dem
+Bildschirm — dort ist die Reihenfolge gleichgültig.
+
+Das trägt, **weil ein Bild genau so breit ist wie sein Grundriss**: der Katalog
+führt `breite = 32·n − 2`, an allen **322 Bildern** der 73 Einträge
+nachgezählt, keine einzige Abweichung. Ein Bild, das
+seitlich über seine Felder hinausragte, wäre davon nicht gedeckt.
+
+**Am Bild bestätigt**, selbst angesehen: eine Szene aus großem Torhaus (7×7),
+Treppe an seiner Ostseite und eckigem Turm (6×6) mit einer Mauer davor, durch
+die echte `iso-view.js` gemalt. Vorher war die ganze Treppe hinter dem Torhaus
+verschwunden und die Mauer vom Turm halb abgeschnitten; nachher stehen beide
+davor. Bilder: `scratchpad/1_sortierung_vorher.png` und `…nachher.png`.
+Test: „ein Bau verdeckt nichts mehr, was seitlich davor steht" in
+`tests/iso-view.test.js`, mit Gegenprobe gegen die alte Zahl.
+
+### Die Höhe des Geländes — die Tabelle ist gemessen
+
+**belegt** (aus dem Programm) und **gemessen** (an allen Karten).
+
+`renderMap` hebt jede Kachel um `heightBasedScreenYOffset[HeightLayer[Feld]]`
+Punkte an. Was in dieser Tabelle steht, war offen — sie wird erst beim Laden
+gefüllt, von `updateShowHiLayerOrResetChangedLayer` (`0x00501a20`). Diese
+Funktion läuft über alle 256 Plätze und kennt vier Betriebsarten
+(`DAT_TileMapState.refreshCertainTileMap`):
+
+| Wert | was die Tabelle bekommt |
+|---|---|
+| 1 | `(h >> 2) + 1` — die abgesenkte Ansicht |
+| **2** | **`h`** — die normale Ansicht |
+| 3 / 4 | die Zwischenschritte, die von der einen zur anderen wandern |
+
+**Welche gilt normalerweise: 2.** `Constructor_TileMapState` (`0x00515f40`)
+setzt `refreshCertainTileMap = 2`, und geschrieben wird das Feld außer dort nur
+noch von `triggerLoweredView` (`0x004f6fd0`). Also:
+
+> **Hebung in Bildpunkten = HeightLayer[Feld], eins zu eins.**
+
+Gegenprobe im selben Programm: dieselbe Funktion schreibt danach
+`ShowHiLayer[i] = tabelle[HeightLayer[i]]`, und die Zieladresse liegt `0x4e840`
+über dem HeightLayer — genau der Abstand der beiden Felder in der Struktur
+(`HeightLayer +0x29fa30`, `ShowHiLayer +0x2ee270`).
+
+**Gemessen an allen 189 Karten, 15.195.600 Feldern:** Höhe 8 auf 72,9 % (der
+ebene Grund), 130 auf 7,1 %, 0 auf 7,1 %, 80 auf 3,0 %; größter Wert 140 auf
+Rock Face. Über **878 Startplätze** ist der Unterschied zwischen höchstem und
+tiefstem Feld im 100×100-Dorf im Mittel **64 Punkte** — vier Kachelhöhen —, und
+**genau ein** Startplatz von 878 ist völlig flach. Flach zeichnen war also
+nicht „fast richtig", sondern falsch. (Die ältere Angabe „79,4 % auf Höhe 8,
+7,2 % auf 0" aus 1b6 bezog sich auf einen kleineren Kartensatz; die
+Größenordnung stimmt.)
+
+**Die Steilkante gehört dazu.** Ohne sie stünde jede erhöhte Kachel auf nichts.
+`renderMap` zeichnet dafür `PillarGFXLayer` (Abschnitt 1002), aber nur wo die
+Hebung nicht null ist, mit `BlitMapImageWithVerticalClip` (`0x00453b00`): ein
+30 Punkte breiter Streifen, der **9 Punkte** unter der gehobenen Kachel
+anfängt und genau so viele Zeilen hoch ist wie die Hebung; reicht das Bild
+nicht, fängt es von vorn an. Die Streifen liegen in `tile_cliffs` — 30×167,
+9600 Byte = 160 Zeilen zu 60 Byte, also **unverpackt** zwei Byte je Punkt, und
+`imh.height − 7 = 160` geht genau auf.
+
+**gemessen:** Von 4.611.642 erhöhten Feldern auf 60 Karten nennen 66 % ein Bild
+aus `tile_cliffs`, 12 % eines aus `tile_land8`, 9 % aus `tile_chevrons`, 12 %
+gar keines. Nur die aus `tile_cliffs` sind unverpackte Streifen; für alle
+anderen nimmt das Werkzeug `tile_cliffs #0`. **Das ist ein Ersatz, keine
+Messung** — sichtbar ist die Kante ohnehin nur an einer Stufe.
+
+**Eingebaut** in `AI-Toolkit/src/node/game-map.js` (`renderTerrain`) und
+`src/js/iso-view.js`. Gelände, Bäume, Felsen und die Burg benutzen **dieselbe**
+Zahl: das Bild bringt ein Byte je Dorffeld mit (`terrain.village`, 10.000 Byte
+als Text), und die Ansicht hebt jedes Bauwerk um die Höhe **seiner vorderen
+Ecke** — derselben Ecke, auf der auch sein Bild sitzt.
+
+Drei Stellen, an denen es sonst schiefginge, alle gelöst:
+
+* **Das Bild braucht oben Luft.** Es ist jetzt `cells·16 + top` Punkte hoch,
+  `top` = höchstes Feld des Dorfes; sonst sägte der Bildrand die Bergkuppe ab.
+  `mapImageRect` setzt es um genau dieses Maß höher an.
+* **Der Beschnitt ist kein Viereck mehr.** Die Ansicht schneidet den Grund an
+  der Raute des Dorfes ab; der Boden liegt aber zwischen `floor` (tiefstes
+  Feld) und `top` darüber. Aus der Raute wird ein Sechseck — oben um `top`
+  angehoben, unten um `floor`. Ohne den unteren Teil blieb am Südrand ein
+  dunkler Saum.
+* **Die Maus muss zurückrechnen.** Ein Punkt gehört zu dem Feld, das bei
+  **seiner** Höhe dorthin fällt. Geraten wird nicht, sondern durchprobiert: 64
+  Schritte zu 4 Punkten decken jede Höhe von 0 bis 255 ab. An einer Steilkante
+  passen zwei Felder — genommen wird das **vordere**, das ein Mensch dort
+  sieht.
+
+**Gemessen, was es kostet:** Rock Face 653 ms und 4,69 MB, Canyons 595 ms und
+4,31 MB (vorher 293 bzw. 333 ms). Die Steilkanten werden nur gemalt, wo
+mindestens ein Nachbar tiefer liegt — auf einer Hochebene fällt die Arbeit ganz
+weg (Rock Face: 2163 von rund 28.000 Kacheln). Nur nach vorn zu sehen reicht
+dabei nicht: fällt das Gelände nach hinten ab, schaut man von oben in die
+Lücke. Mit dem Blick nur nach vorn blieben auf Rock Face 8066 durchsichtige
+Punkte mitten im Dorf stehen.
+
+**offen:**
+
+* **Der Rand des Dorfes franst aus.** Die Raute ist ein Schnitt durch eine
+  Fläche, die jetzt Höhen hat; an der Schnittkante fehlt die Seitenwand.
+  Gemessen auf Rock Face: 3524 durchsichtige Punkte innerhalb von drei Feldern
+  am Rand, 2099 weiter innen — zusammen unter 1 % der Dorffläche. Vorher waren
+  es 274.
+* **Der Auswahlkasten bleibt flach.** `marqueeOutline` rechnet ohne Höhe; über
+  einem Hang liegt der Rahmen darum neben dem Boden. Auf ebenem Grund — und
+  Startplätze liegen fast immer eben — fällt es nicht auf.
+* **Das Spiel lief auch hier nicht.** Belegt ist der Weg im Programm und das
+  Bild im Werkzeug, nicht der Vergleich mit einem laufenden Gefecht.
+
+### Die Ansicht drehen — gemessen, aber NICHT gebaut
+
+**gemessen.** Der Wunsch war ein Knopf, der die 2.5D-Ansicht um 90 Grad dreht,
+vier Stellungen. Was sich dabei mitdrehen muss, ist nachgesehen worden — und
+daran scheitert es vorerst:
+
+| was | dreht sich mit? |
+|---|---|
+| die Lage der Felder | ja, `rotateGrid`/`unrotateGrid` gibt es schon |
+| die Zeichenreihenfolge | ja, sie hängt nur an gx+gy und dreht automatisch mit |
+| die Höhe | ja, sie hängt am Dorffeld |
+| Mauern (längs/quer) und Treppen (r0/r2/r4/r6) | **ja**, der Katalog führt je Richtung ein Bild |
+| **alle Gebäude** | **nein — es gibt nur EIN Bild je Gebäude** |
+
+Das Spiel hat die anderen Ansichten: `getBuildingSizeIndexMappingData` liefert
+je Kartendrehung eine andere Feldnummer, und die Bildnummer enthält
+`größe² · ((variation − mapOrientation) & 7)`. In den `.gm1` liegen also
+**4 · n·n** Bilder je Gebäude. Unser Bildvorrat hat davon eine Stellung.
+
+**Wie groß der Schaden wäre**, an allen 128 mitgelieferten `.aiv` gezählt:
+113.555 gesetzte Felder, davon **51.287 (45,2 %) Mauern und Treppen** — die
+drehen sich von allein — und **62.268 (54,8 %) Gebäude**, die stehen bleiben
+würden, wie sie sind. Mehr als die halbe Burg sähe nach dem Drehen falsch aus.
+Von 73 Katalogeinträgen tragen 10 Bilder je Richtung, 63 nur eines.
+
+**Darum ist der Knopf nicht gebaut.** Er wäre eine halbe Sache. Was fehlt, ist
+kein Code, sondern der Bildvorrat: die Gebäudebilder müssen für alle vier
+Stellungen neu aus den `.gm1` geschnitten und der Katalog um drei weitere
+Bilder je Eintrag ergänzt werden. Die Rechnung dafür steht oben und ist
+belegt. Erst danach lohnt der Knopf — und dann ist er klein, weil Lage,
+Reihenfolge und Höhe schon mitdrehen.
+
+### Wo der Code steht
+
+`AI-Toolkit/src/js/iso-geometry.js` (`depth`, `isoPoint`, `tileFromPoint`,
+`spriteRect`, `mapImageRect`), `src/node/game-map.js` (`renderTerrain`, die
+Abschnitte 1005 und 1002), `src/js/iso-view.js` (`bodenHoehe`, `bauHoehe`,
+`paintGameMap`). Tests in `tests/iso-view.test.js`, **59 von 59 grün**. Im
+Gesamtlauf (`node --test "tests/*.test.js"`) 240 von 267 grün, 20 rot — 18 mit
+`ENOENT` und 2 mit „definition.yml is missing", alle wegen der fehlenden Ordner
+`web/`, `ucp-module/`, `dist/`, `examples/`, `tools/`, `ucp-ai-editor/`.
+Dieselben 20 wie in 1b8; keiner davon fasst `iso-view`, `iso-geometry` oder
+`game-map` an.
+
+---
+
 ## 1b5. Wo das Dorf auf der Karte liegt (06.09.2026)
 
 **belegt**, aus dem Programm gelesen, von einem zweiten Leser unabhängig
@@ -1967,3 +2172,90 @@ aus, sie steht beim Start offen. Gebaut wurde dafür nichts.
 `castle-editor.js` ist an genau zwei Zeilen angefasst: `extras: { … }` im
 `window.castleEditor`-Block und ein Nachlader für `editor-extras.js` am Ende.
 `index.html` und `combined.css` bleiben unberührt.
+
+## 10. Gegenprüfung der 2.5D-Ansicht: Zeichenreihenfolge und Geländehöhe (07.09.2026)
+
+Nachgeprüft wurde die Arbeit an `src/js/iso-geometry.js` und `src/js/iso-view.js`
+im AI-Toolkit — unabhängig gemessen, nicht nachgelesen. Nichts hier ist geändert
+worden, das ist ein Prüfbericht.
+
+### 10a. Die neue Tiefenzahl trägt — in allen vier Kartendrehungen
+
+`depth(item) = gx + gy + (kacheln − 1)` (vorher `+ 2·(kacheln − 1)`).
+
+Ausgezählt über alle 128 mitgelieferten `.aiv` mit 113.555 gesetzten Feldern, je
+Datei in allen vier Drehungen (`rotateGrid` 0/2/4/6), also so, wie die Ansicht
+eine Burg auf einen Startplatz legt:
+
+| Drehung | Paare „b liegt vor a" | alt falsch | neu falsch | Paare „b liegt hinter a" | alt falsch | neu falsch |
+|---|---|---|---|---|---|---|
+| 0 | 275.869 | 6.689 | 0 | 312.471 | 217 | 0 |
+| 2 | 280.541 | 7.031 | 0 | 311.024 | 229 | 0 |
+| 4 | 312.471 | 7.271 | 0 | 275.869 | 257 | 0 |
+| 6 | 311.024 | 6.903 | 0 | 280.541 | 219 | 0 |
+
+Maßstab: zwei Gegenstände zählen nur, wenn sich ihre Bilder auf dem Bildschirm
+seitlich überhaupt berühren; „vor" heißt, der eine hat ein größeres gx oder gy
+als der ganze Grundriss des anderen. Die Voraussetzung dafür — jedes Bild ist so
+breit wie sein Grundriss, `breite = 32·n − 2` — an allen 311 Bildern und 11
+Bodenplatten des Katalogs nachgezählt, null Abweichungen.
+
+Im Bild: ein 7×7-Torhaus mit je einer Zinnenmauer an allen vier Seiten. Mit der
+alten Zahl verschwinden **alle vier** Mauern hinter dem Torhaus; mit der neuen
+verdecken die beiden vorderen das Torhaus, die beiden hinteren bleiben dahinter —
+und das in jeder der vier Drehungen gleich.
+
+### 10b. Die Höhentabelle ist richtig gelesen
+
+Selbst dekompiliert, nicht übernommen:
+
+* `Constructor_TileMapState` (0x00515f40) setzt `refreshCertainTileMap = 2`.
+* In `updateShowHiLayerOrResetChangedLayer` (0x00501a20) heißt Betriebsart 2
+  `tabelle[h] = h`, Betriebsart 1 `tabelle[h] = (h>>2)+1`; 3 und 4 fahren die
+  Tabelle zwischen beiden hin und her (das ist die „gesenkte Ansicht").
+* `renderMap` (0x004e8cf0) setzt `DAT_RenderMap_YOffset =
+  heightBasedScreenYOffset[HeightLayer[Feld]]` und **zieht** ihn von der
+  Bildschirmzeile ab.
+
+Die normale Gefechtsansicht hebt eine Kachel also um genau so viele Bildpunkte,
+wie ihr HeightLayer-Byte sagt. Auf *Rock Face* sind das im Dorf 130 gegen 8 —
+122 Punkte, gut siebeneinhalb Kachelhöhen.
+
+### 10c. WAS NICHT STIMMT: ein Bauwerk kennt nur EINE Bodenhöhe
+
+`bauHoehe` in `iso-view.js` nimmt die Höhe **eines** Feldes — der Südecke — für
+das ganze Bauwerk. Der Kommentar dort begründet das mit „das Spiel lässt auf
+einer Kante ohnehin nicht bauen". Das ist eine Annahme über die Bauregeln des
+**Spiels**; die Ansicht legt aber eine `.aiv` auf eine **rohe** Karte und ebnet
+den Boden nicht ein. Gemessen über alle 128 Burgen auf allen Startplätzen:
+
+| Karte | mehrfeldrige Bauten | auf unebenem Boden | davon Stufe ≥ 16 Punkte |
+|---|---|---|---|
+| Rock Face | 41.225 | 3.166 (7,7 %) | 2.537 (6,2 %) |
+| Craggy Cliffs + Crete Peninsula + A Friend Indeed | 181.390 | 6.338 (3,5 %) | 409 (0,2 %) |
+
+Größter Unterschied unter einem einzigen Grundriss: 130 Punkte. Im Bild hängt
+eine Hütte dann zur Hälfte in der Luft über der Steilkante, die nächste steckt
+zur Hälfte im Fels. Auf felsigen Karten ist das ein sichtbarer Fehler, auf
+sanften Karten selten.
+
+Einzelfeldrige Sachen sind davon nicht betroffen, und Bäume erst recht nicht:
+die malt `game-map.js` mit der Hebung **ihrer eigenen** Kachel ins Geländebild
+(`paintTree(sx, sy, hit, hebung)`), sie können gar nicht schweben.
+
+### 10d. Was sonst geprüft wurde und hält
+
+* **Maus über Höhen.** Für jedes der 10.000 Dorffelder den Bildpunkt seiner Mitte
+  ausgerechnet, dort geklickt und nachgesehen, welches Feld der Editor bekommt:
+  Drehung 0 → 9.787 genau richtig, 211 richtig verdeckt (an einer Steilkante
+  liegt das tiefe Feld hinter einem höheren), 2 echte Fehltreffer um ein Feld.
+  Drehung 4 → 9.377 / 614 / 9.
+* **Löcher im Gelände.** An der Mitte jeder Dorfkachel geprüft: Rock Face
+  0,00–0,33 % ohne Boden, Craggy Cliffs und Crete Peninsula 0,00 %.
+
+### 10e. Wo die Prüfstücke liegen
+
+Skripte und Bilder im Ablageordner der Sitzung, Unterordner `pruef2`:
+`scan2.mjs` / `scan3.mjs` (Reihenfolge in vier Drehungen), `uneben.mjs`
+(unebener Boden unter Bauten), `loecher.mjs`, `maus.html` (Maus-Gegenprobe),
+`probe.html` + `srv.js` (zeichnet durch die **echte** `iso-view.js` im Browser).
