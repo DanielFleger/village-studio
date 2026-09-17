@@ -2259,3 +2259,74 @@ Skripte und Bilder im Ablageordner der Sitzung, Unterordner `pruef2`:
 `scan2.mjs` / `scan3.mjs` (Reihenfolge in vier Drehungen), `uneben.mjs`
 (unebener Boden unter Bauten), `loecher.mjs`, `maus.html` (Maus-Gegenprobe),
 `probe.html` + `srv.js` (zeichnet durch die **echte** `iso-view.js` im Browser).
+
+## 11. Die drei Rahmen der Drehung, und wo der Bergfried sitzt (17.09.2026)
+
+Beim Bauen der Startplatz-Marken im AI-Toolkit hätte ich mich fast verrannt:
+zwei Rechenwege für dieselbe Frage, und der eine sah falsch aus. Er war es
+nicht — ich hatte die Drehungen verwechselt. Damit das niemandem noch einmal
+passiert, stehen die Rahmen hier.
+
+### 11a. Drei Rahmen, nicht zwei
+
+* **Weltfeld** — so steht es in der `.aiv`, ungedreht. Der Bergfried sitzt dort
+  immer auf (43,43) und ist 7×7 Felder groß.
+* **Kartenlage** — dasselbe Feld, gedreht wie das Spiel das Dorf auf die Karte
+  legt. Die Drehung bringt der Startplatz mit (`keepOrientation`, Spielwerte
+  0/2/4/6); die `.aiv` weiß nichts davon.
+* **Anzeigefeld** — was auf dem Schirm an dieser Stelle liegt: Kartenlage plus
+  die Handdrehung (Taste C nach links, X nach rechts).
+
+**Ohne Handdrehung sind Kartenlage und Anzeigefeld dasselbe.** Genau deshalb
+fällt eine Verwechslung so lange nicht auf: der Standardfall verdeckt sie.
+
+Die beiden Seiten rechnen unterschiedlich, und das muss man wissen:
+
+| Was | Rechnung | Feldzahl in `rotateGrid` |
+|---|---|---|
+| Bauwerke (`turnedTiles`) | EIN Schritt: Karte + Hand | die des Bauwerks (7 beim Bergfried) |
+| Kachelgrund (`mapTileForView`) | ZWEI Schritte: Handdrehung heraus, dann auf den Startplatz schieben | die des Bergfrieds (7), über `keepAnchor` |
+
+`rotateGrid` rechnet mit `last = 100 - Feldzahl`, `unrotateGrid` immer mit
+`last = 99`. Dass beide Wege trotzdem aufeinandertreffen, folgt **nicht** aus
+der Formel — es ist gemessen.
+
+### 11b. GEMESSEN: der Bergfried sitzt auf jedem Startplatz richtig
+
+Alle 861 Startplätze der 189 Karten, mal vier Handdrehungen = 3.444 Fälle. Für
+jeden: das Anzeigefeld, auf dem der Bergfried des Dokuments sitzt, durch
+`mapTileForView` geschickt und in Schicht 1049 nachgesehen.
+
+* **3.444 von 3.444** landen auf Bautyp 41 — dem Bergfried der Karte.
+* Die Ecke wandert mit der Handdrehung (0/0, 6/0, 6/6, 0/6), die 7×7-Fläche
+  bleibt dieselbe.
+* Hin- und Rückweg (`mapTileForView` / `viewTileForMap`) treffen in allen 3.444
+  Fällen dasselbe Feld — auch für Kartenfelder weit außerhalb des Dorfes, auf
+  denen die Marken der anderen Startplätze hängen.
+
+Am Bild gegengelesen: die 49 Felder des Kartenbergfrieds als Punkte über die
+Ansicht gelegt, „A Friend Indeed" Startplatz 1 (84/223, Drehung 6) — die Raute
+deckt den Turmfuß.
+
+### 11c. GEMESSEN: der Bergfriedblock ist flach, der Ring darum nicht
+
+Zu Abschnitt 10c (ein Bauwerk kennt nur EINE Bodenhöhe): den Bergfried trifft
+das nicht.
+
+* **0 von 861** Startplätzen haben einen unebenen Bergfriedblock — die 49
+  Felder tragen immer dieselbe Höhe.
+* **847 von 861** haben im Ring rings um den Block eine andere Höhe. Auf
+  „A Friend Indeed" steigt es unmittelbar östlich von 8 auf 18, und dort liegt
+  der Lagerplatz der Karte (Bautyp 10, 5×5).
+
+Die Stufe direkt neben dem Bergfried ist also der Normalfall, nicht die
+Ausnahme. Was im Bild wie ein Fehler am Bergfried aussieht, ist meist diese
+Kante.
+
+### 11d. Wo der Code steht
+
+`src/js/iso-geometry.js`: `mapTileForGrid` (Kartenlage → Kartenfeld),
+`mapTileForView` (Anzeigefeld → Kartenfeld), `viewTileForMap` (zurück),
+`mapTileHeight` (nimmt ohne `viewRotation` Kartenlage, mit ihr Anzeigefeld).
+Sonst rechnet das keine Stelle mehr selbst. Die Prüfung steht in
+`tests/iso-view.test.js` unter „der Grund liegt unter der Burg".
