@@ -2403,12 +2403,8 @@ Vorschaupunkt):
 Am Bild gegengelesen: zwei markierte Kaktusfelder bei (75,249) und (78,253)
 zeigen leeren Boden, ein markiertes Baumfeld bei (59,223) zeigt den Baum.
 
-**NICHT belegt:** was `picture = 0` bedeutet. Zwei Lesarten bleiben —
-entweder ein geräumter Platz (dann ist das Überspringen richtig, und die
-grüne Vorschau kommt nur aus der Organismus-Schicht), oder das Bild wird aus
-der Art abgeleitet (dann fehlen 15 % der Gewächse im Bild). Das entscheidet
-nur der Spielcode: die Funktion, die `LandscapeState.trees` zeichnet, im
-Ghidra-Projekt OpenSHC-ref. Vorher wird hier keine Zahl geraten.
+**Am 17.09.2026 im Spielcode aufgelöst** (war bis dahin offen): `picture = 0`
+heißt „noch nicht gewürfelt". Siehe 12e.
 
 ### 12d. Wo die Prüfstücke liegen
 
@@ -2416,3 +2412,51 @@ Ablageordner der Sitzung: `dunkel.js` (Helligkeit je Bildnummer),
 `baeume_felsen.js` (Organismen gegen treeSprites, mit Kontrollgruppe),
 `kaktus_art.js` (Art → Bildnummer über alle Karten), `vorschau_probe.js`
 (Vorschaufarbe je Gruppe), `quelle.js` (woher jede Kachel kommt).
+
+### 12e. AUFGELÖST: Kakteen würfeln ihr Bild aus dem gemerkten Zufallswert
+
+Im Ghidra-Projekt OpenSHC-ref steht die Antwort in vier winzigen Funktionen.
+Die Struktur `Tree` (156 Byte) ist dort benannt — `animationFrameUnk` bei
+0x00 (unser `picture`), `treeType` bei 0x46, `state` bei 0x44, **`rng1` bei
+0x88**. Und:
+
+| Funktion | Adresse | Rechnung | Bilder |
+|---|---|---|---|
+| `Map::Trees::UpdateTree16` | 0x004f28f0 | `(rng1 & 7) + 10` | 10–17 |
+| `Map::Trees::UpdateTree17` | 0x004f2920 | `(rng1 & 3) + 1`, 4 → 3 | 1–3 |
+| `Map::Trees::UpdateTree18` | 0x004f2970 | `(rng1 & 3) + 4`, 7 → 6 | 4–6 |
+| `Map::Trees::UpdateTree19` | 0x004f29c0 | `(rng1 & 3) + 7`, 10 → 9 | 7–9 |
+
+Das Bild steht also nicht in der Datei, sondern entsteht beim ersten Zug aus
+dem gespeicherten Zufallswert. Die Deckelung erklärt auch die Häufigkeiten aus
+12b: das höchste Bild einer Art kommt doppelt so oft heraus wie die anderen.
+
+**Totschlagtest vor dem Einbau, über alle 189 Karten:** wo die Bildnummer
+gespeichert IST, muss die Rechnung genau sie treffen — **67.903 von 67.903,
+also 100,00 %**. Erst danach auf die 10.169 ohne Nummer angewandt.
+
+Gebaut in `game-map.js` (`cactusPicture`, aufgerufen in `readTrees`), geprüft
+in `tests/iso-view.test.js` („Kakteen holen ihr Bild aus dem Zufallswert" und
+„jedes Gewächsfeld der Karte bekommt sein Bild"). Wirkung auf
+„A Friend Indeed": 961 statt 549 gemalte Gewächse, also jedes Gewächsfeld der
+Karte; der Vorrat bleibt gleich groß. Am Bild gegengelesen: auf (75,249) und
+(78,253) steht jetzt ein Kaktus, vorher lag dort nur sein Schatten.
+
+**Merksatz für andere Schichten:** eine fehlende Zahl in der Kartendatei muss
+nicht fehlen — sie kann auch erst im Spiel entstehen. Wer sie überspringt,
+verliert ein Sechstel der Landschaft, ohne dass ein Fehler auffällt.
+
+### 12f. Wie man dieselbe Frage wieder stellt
+
+Ghidra headless, ohne die Analyse anzufassen (`-readOnly -noanalysis`):
+
+```
+set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.12.8-hotspot
+analyzeHeadless.bat C:\Users\danie\ghidra-projects OpenSHC-ref ^
+  -process StrongholdCrusader.exe -readOnly -noanalysis ^
+  -scriptPath C:\Users\danie\ghidra-scripts -postScript DekompGewaechs.java <adresse...>
+```
+
+`FindTree.java` sucht Funktionen nach Namensmuster, `GewaechsStruktur.java`
+druckt die Strukturen samt Versätzen, `DekompGewaechs.java` dekompiliert
+Adressen. Alle drei liegen in `C:\Users\danie\ghidra-scripts`.
