@@ -2330,3 +2330,89 @@ Kante.
 `mapTileHeight` (nimmt ohne `viewRotation` Kartenlage, mit ihr Anzeigefeld).
 Sonst rechnet das keine Stelle mehr selbst. Die Prüfung steht in
 `tests/iso-view.test.js` unter „der Grund liegt unter der Burg".
+
+## 12. Die dunklen Flächen im Boden — und was wirklich fehlt (17.09.2026)
+
+Daniel sah auf den Bildern der 2.5D-Ansicht dunkle Flecken rings um die Burg,
+die wie ein Fehler aussehen. Sie sind keiner. Was an derselben Stelle wirklich
+fehlt, sind Kakteen.
+
+### 12a. GEMESSEN: die dunklen Flecken stecken in der Karte
+
+Für jede vorkommende Bildnummer der Schicht 1001 die mittlere Helligkeit ihrer
+Kachel aus der gm1 gerechnet („A Friend Indeed", 956 Bildnummern, keine
+unlesbar):
+
+| Gruppe | Felder | woher die Bodenkachel kommt |
+|---|---|---|
+| dunkel (Helligkeit < 60) | 1.220 | `tile_land_macros` 1.196×, `tile_castle` 24× |
+| Felsfeld (Organismus ≥ 2000) | 314 | `tile_rocks8` 314× |
+| Rest | 78.866 | `tile_land_macros` 73.341×, `tile_land3` 3.251×, `tile_land8` 1.596× |
+
+Die dunklen Kacheln sind also gewöhnliche Bodenkacheln des Spiels mit
+eingebackenem Schatten. Mit Kontrollgruppe: **81,0 %** der dunklen Felder haben
+einen Organismus im Umkreis von zwei Feldern, aber nur **15,9 %** der hellen
+(> 100). Der Schatten gehört zum Gewächs daneben. Die Ansicht malt die Kachel
+1:1 wie das Spiel — hier ist nichts zu reparieren.
+
+**Und die Felsen fehlen nicht.** Alle 314 Felsfelder bekommen ihre Kachel aus
+`tile_rocks8`, sind also Teil des Bodens. Die Pfeilerschicht 1002 trägt auf
+4.668 Feldern („A Friend Indeed") einen Wert ohne Höhenkante, gleichmäßig über
+`tile_cliffs#1..30` gestreut — ein Vorratswert für den Fall einer Kante, kein
+Objekt. `buildTileAtlas` liest ihn deshalb richtig nur an echten Kanten (dort
+85 Felder auf dieser Karte, 3.508 auf „Rock Face").
+
+### 12b. WAS FEHLT: 15 % der Gewächse werden übersprungen
+
+Die Liste 1014 hat **genau 2000 Einträge** — Kennungen ab 2000 (FIRST_ROCK)
+sind Felsen und haben dort keinen Eintrag. Von den Einträgen darunter:
+
+* `picture` (Versatz 0x00) ist die Bildnummer in der gm1 der Art — bei 1.014
+  von 1.014 Baumeinträgen stimmt das Wort bei 0x00 mit ihr überein.
+* Versatz 0x46 ist die **Art**, 0x44 die Gattung (2 = Baum, 4 = Kaktus).
+* Kakteen gehören zu `tree_cactii` (gmId 200, 17 Bilder). Über alle 189 Karten:
+
+| Art (0x46) | Bildnummern | Einträge mit Bild | ohne Bild |
+|---|---|---|---|
+| 16 | 10–17 | 15.491 | 2.274 |
+| 17 | 1, 2, 3 | 9.959 | 1.486 |
+| 18 | 4, 5, 6 | 24.876 | 4.578 |
+| 19 | 7, 8, 9 | 17.577 | 1.831 |
+
+Je Art kommt die höchste Bildnummer doppelt so oft vor wie die anderen — das
+sieht nach Wachstumsstufen aus (ausgewachsen häufiger).
+
+**10.169 Kaktus-Einträge (15 %) haben `picture = 0`** und werden von
+`buildTileAtlas` übersprungen (`if (!tree || !tree.alive || !tree.picture)`).
+Auf „A Friend Indeed" sind das 412 von 961 Gewächsfeldern; gemalt werden 549.
+
+### 12c. Was belegt ist und was nicht
+
+**Belegt:** An diesen Feldern malt das Spiel in seine eigene Kartenvorschau
+Grün. Die Vorschaufarbe je Gruppe („A Friend Indeed", nur Felder mit eigenem
+Vorschaupunkt):
+
+| Gruppe | Felder | deutlich grün |
+|---|---|---|
+| Kaktus ohne Bildnummer | 198 | 100,0 % |
+| Kaktus mit Bildnummer | 20 | 100,0 % |
+| Baum | 260 | 100,0 % |
+| Felsen | 149 | 4,0 % |
+| leeres Feld | 39.373 | 4,1 % |
+
+Am Bild gegengelesen: zwei markierte Kaktusfelder bei (75,249) und (78,253)
+zeigen leeren Boden, ein markiertes Baumfeld bei (59,223) zeigt den Baum.
+
+**NICHT belegt:** was `picture = 0` bedeutet. Zwei Lesarten bleiben —
+entweder ein geräumter Platz (dann ist das Überspringen richtig, und die
+grüne Vorschau kommt nur aus der Organismus-Schicht), oder das Bild wird aus
+der Art abgeleitet (dann fehlen 15 % der Gewächse im Bild). Das entscheidet
+nur der Spielcode: die Funktion, die `LandscapeState.trees` zeichnet, im
+Ghidra-Projekt OpenSHC-ref. Vorher wird hier keine Zahl geraten.
+
+### 12d. Wo die Prüfstücke liegen
+
+Ablageordner der Sitzung: `dunkel.js` (Helligkeit je Bildnummer),
+`baeume_felsen.js` (Organismen gegen treeSprites, mit Kontrollgruppe),
+`kaktus_art.js` (Art → Bildnummer über alle Karten), `vorschau_probe.js`
+(Vorschaufarbe je Gruppe), `quelle.js` (woher jede Kachel kommt).
