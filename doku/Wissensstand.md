@@ -2484,6 +2484,11 @@ ZEIT-Logzeilen, Ticks je Sekunde = Tickdifferenz / Zeitdifferenz.*
 | `eigenesGefecht` setzt **immer** einen Menschen auf Platz 1 und daneben N KIs **desselben** Typs (`ki` = aiType+1; 1 = Rattenplatz, in diesem Mod Rotkäppchen) | **abgelesen** | `logik.lua`, Handler `eigenesGefecht` |
 | Die Startpositionen verteilt `eigenesGefecht` **zufällig** (`playerPositionsArray` 0x01A275D0 auf 0xF6, dann „zufällig platzieren" je Platz) — feste Positionen oben/unten sind damit noch nicht möglich | **abgelesen** | derselbe Handler |
 | Die Karte „Liga_Grumpy Neighbors" liegt als Datei in `ucp/plugins/Mod-KI-Team-Liga-2.0.2/resources/maps/`; der Kartenlader ist auf diesen Ordner eingestellt | **gemessen** | Dateisuche und `ucp-config.yml` |
+| **Die UCP3-GUI schreibt die Config beim Spielstart aus der GUI** — Änderungszeit der `ucp-config.yml` 20:21:34 = Startzeit des Spiels, auf die Sekunde | **gemessen** | `LastWriteTime` der Config gegen `StartTime` des Spielprozesses |
+| **Beim Schließen schreibt die GUI die Config nicht** — Prüfsumme vorher und nachher gleich (`58591298a2e027cc`) | **gemessen** | `Selfaware-AI/werkzeug/gui.py schliessen`, 20:59 |
+| Die GUI läuft auf derselben Rechtestufe wie die Claude-Sitzung (Pfad lesbar) und lässt sich freundlich schließen (`CloseMainWindow`) | **gemessen** | ein Lauf, Prozess nach < 15 s weg |
+| Ein **aus der GUI gestartetes Spiel** hat unser Modul nicht (0 × `villagestudio` im Log) und läuft auf höherer Rechtestufe — von hier aus also **weder per Befehl noch von außen beendbar** | **gemessen** | Log ohne `villagestudio`; Programmpfad des Prozesses nicht lesbar |
+| Die installierte `liga_ai.json` ist inhaltlich identisch mit SBAs Quelle (Commit 5e9a83f): 942 von 942 Werten gleich, nur die Schreibweise der Datei weicht ab. Das Startgold steht nicht darin, sondern in der Erweiterung `startResources` | **gemessen** | Vergleich aller Blattwerte beider Dateien |
 
 **Was daraus für die Lernschleife folgt:** Eine Spielinstanz schafft — gerechnet
 aus rund 22 s Gefecht bei Tempo 1000 plus Neustart — grob 100 bis 120 Spiele pro
