@@ -2525,3 +2525,19 @@ Rezept als Werkzeug: `Selfaware-AI/werkzeug/speichern.py "<Name>"`.
 | **Widerlegt:** „Beim Öffnen leert das Spiel das Namensfeld." Nach einem Speichern steht der alte Name beim nächsten Öffnen noch drin | **gemessen** | Länge 31 nach erneutem Öffnen |
 | Die Liste im Dialog zeigt **Weltzeit** (zwei Stunden hinter der Ortszeit im Sommer) | **gemessen** | Datei 22:08, Liste 20:08 |
 | Derselbe pausierte Stand, dreimal gespeichert: 1.056.101 / 1.056.104 / 1.056.104 Byte — die Datei ist nicht immer gleich lang. Verlustfreiheit also im Speicher prüfen (Schnappschuss nach dem Laden), nicht an der Datei | **gemessen, Ursache offen** | Dateigrößen |
+
+### 13c. Spielstand laden per Name, mit Lade-Pause (30.09.2026, 22:16)
+
+Rezept als Werkzeug: `Selfaware-AI/werkzeug/laden.py "<Name>"` (Grundlage: Menü-Handbuch, „Einen bestimmten Spielstand laden").
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `{ "optionen": 2 }` öffnet im laufenden Spiel den Lade-Dialog | **gemessen** | Liste danach lesbar |
+| Die Liste im Speicher: Anzahl `0x0112661C`; Eintrag n (0 = oben) = Namensnummer k bei **`0x01126E28 + 4n`**; Name bei **`0x11BFCF8 + k × 0x3E9`** (`getLoadedMapNameForIndex` 0x0046C2E0). Die Strukturliste nennt `DAT_ArrayOfMapIndices` bei `0x01126E2C` — das Spiel liest aber Feld[n−1], die Liste beginnt also effektiv 4 Byte davor | **gemessen** (Funktion abgelesen) | 30 Namen gelesen, Reihenfolge = Liste im Dialog |
+| Die Liste ist nach einem **eigenen Datum** sortiert, nicht nach der Dateizeit (Walltest 3: Datei 19:21, Liste 17:28 Weltzeit) — Zeilen also aus dem Speicher lesen, nicht aus dem Ordner ableiten | **gemessen** | Bild der Liste gegen `ls` |
+| Laden ist **tick-genau**: der erste Tick nach dem Laden ist die gespeicherte Spielzeit (M7-01 gespeichert bei 1100 → geladen bei 1100) | **gemessen** | Logzeile „LADEPAUSE: Spielzeit sprang um −17888 auf Tick 1100" |
+| **Lade-Pause** `{ "ladepause": true }`: hält beim ersten Tick an, an dem die Spielzeit springt — in beide Richtungen. Die Tick-Pause „jetzt + 1" taugt dafür nicht: sie greift nur, wenn der geladene Stand später liegt | **gemessen** | vier Ladevorgänge, alle beim ersten Tick angehalten |
+| Geladen: Walltest 4 → Tick 18.988; Waffengebäude_test → 24.604; Tiberias 4 LUL (ältester, 12.04.2020) → 83.339 — alle ohne Absturz | **gemessen** | Bilder `Selfaware-AI/daten/bilder/m7-02_*` (nicht im Repo) |
+| Das Menü-Handbuch nennt für „Wallrest 4" 40.524 Ticks; der erste Tick nach dem Laden von Walltest 4 ist 18.988. Vermutlich wurde damals nach dem Weiterlaufen gemessen (die Pause kam zu spät) | **gemessen / Ursache vermutet** | `laden.py "Walltest 4"` |
+| Nach dem Anhalten kommen noch drei Tick-Aufrufe mit **derselben** Spielzeit an — der Taktgeber ruft kurz weiter, ohne dass die Zeit vorrückt | **gemessen, Ursache offen** | dreimal „LADEPAUSE: nachgehalten bei Tick …" je Ladevorgang |
+| Nach dem Laden von Tiberias stand das Tempo auf **20** — vermutlich bringt der Spielstand sein Tempo mit | **gemessen, Ursache vermutet** | `peek` GameCore+0xC8 |
