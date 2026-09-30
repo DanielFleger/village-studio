@@ -2509,3 +2509,19 @@ ZEIT-Logzeilen, Ticks je Sekunde = Tickdifferenz / Zeitdifferenz.*
 aus rund 22 s Gefecht bei Tempo 1000 plus Neustart — grob 100 bis 120 Spiele pro
 Stunde. Das ist **gerechnet, nicht gemessen**; gemessen wird es erst mit einem
 vollständigen eigenen Spiel.
+
+### 13b. Spielstand speichern ohne Klick (30.09.2026, 22:03)
+
+Rezept als Werkzeug: `Selfaware-AI/werkzeug/speichern.py "<Name>"`.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `{ "optionen": 3 }` öffnet im laufenden Spiel den **Speichern-Dialog**; die Ansichtsnummer bleibt dabei 14 (ein Dialog legt sich nur darüber) | **gemessen** | Bild `{ "bild": "karte" }`; Daniel live gesehen 21:58 |
+| `DAT_UserTextHandlerState` liegt bei **0x01652740**: +0x0 aktives Textfeld, Längen ab **0x016527D0** (int[16]), Cursor ab **0x01652810**, Texte ab **0x01652890** (16 × 250 Byte) | **gemessen** (aus `strukturen.txt` abgeleitet, dann bestätigt: aktives Feld = 2 bei offenem Dialog) | `peek 0x01652740` |
+| Speichern ohne Klick: Name ins aktive Feld schreiben, Länge und Cursor auf die Namenslänge, dann `{ "laden": 3 }` (Knopf Speichern) → neue `.sav` in `Dokumente\Stronghold Crusader\Saves` | **gemessen** | Datei „M7-01 Speichertest Grumpy T1100.sav", 1.056.101 Byte |
+| Gegenlauf: Name sichtbar im Feld, **Länge 0** → Knopf Speichern tut nichts, keine Datei. Die Länge ist die einzige Sperre des Knopfs | **gemessen** | 31 Dateien vorher und nachher |
+| Gibt es den Namen schon, fragt das Spiel „Datei überschreiben?" — `{ "dialogJa": true }` beantwortet das, die Datei wird neu geschrieben | **gemessen** | Dateizeit 22:03 → 22:07 |
+| Speichern klappt **in der Pause**: der Knopf reiht einen Spielbefehl (Speichern, mit Tick und Prüfsumme der Einheiten) ein, der sofort ausgeführt wird; der Tick bleibt stehen | **gemessen** (Befehlsart abgelesen im Dekompilat) | Tick 1100 vor und nach dem Speichern |
+| **Widerlegt:** „Beim Öffnen leert das Spiel das Namensfeld." Nach einem Speichern steht der alte Name beim nächsten Öffnen noch drin | **gemessen** | Länge 31 nach erneutem Öffnen |
+| Die Liste im Dialog zeigt **Weltzeit** (zwei Stunden hinter der Ortszeit im Sommer) | **gemessen** | Datei 22:08, Liste 20:08 |
+| Derselbe pausierte Stand, dreimal gespeichert: 1.056.101 / 1.056.104 / 1.056.104 Byte — die Datei ist nicht immer gleich lang. Verlustfreiheit also im Speicher prüfen (Schnappschuss nach dem Laden), nicht an der Datei | **gemessen, Ursache offen** | Dateigrößen |
