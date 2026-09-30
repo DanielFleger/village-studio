@@ -2569,3 +2569,21 @@ Werkzeug `Selfaware-AI/werkzeug/navigation.py`; Dekompilate `Selfaware-AI/daten/
 | **Abgesenkte Ansicht** (Rechtsklick unten, Strg+Runter): `triggerLoweredView` (0x004F6FD0) mit 3; normal = 4. Der Auftrag bei 0x01FE7AC0 wird sofort verbraucht, der Stand steht bei 0x01FE7AC4. Das Rechtsklick-Menü setzt in jedem Bild auf 4 zurück, solange nichts gehalten wird → per Befehl bisher nur einen Augenblick | **abgelesen / gemessen** (Modul las 3, danach 4) | navigation_234749.json |
 | Die Kamerafelder ViewportState+0x9C/+0xA0 (0x021AEC74/78) sind nicht dieselben Koordinaten wie `kamera [x, y]` (Befehl (162,104) → Felder (138,133)) | **gemessen** | ein Fall |
 | `{ "bild": "menue" }` zeigt im Spiel nur die zuletzt gezeichnete Leiste — als Beleg für „Leiste weg" untauglich | **gemessen** | Vorher-/Nachher-Bild gleich |
+
+### 13f. Lord-Duell: befehligen, festhalten, Treffer, Tod, Endbildschirm (01.10.2026, 00:00–00:14)
+
+Werkzeug `Selfaware-AI/werkzeug/lordduell.py`; Modulbefehle `lords`, `lordwacht` (Ziel festhalten, Treffen, erster Treffer, Tod, Halt), `zielsuche`. Karte Liga_Grumpy Neighbors, Start `M7-01 Speichertest Grumpy T1100`.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **Ort einer Einheit = Mikro-Position / 8** (+0xB6/+0xB8, short) — dasselbe System wie `einheit_ziel` und das Einheitenziel (+0xC8/+0xCA). Das Feld +0xD4 („Kachel") ist **nicht** y × 400 + x; so gelesen „sprang" ein Lord in 50 Ticks um 270 Felder | **gemessen** | Lords stehen bei (172,113) und (227,284) = ihr KI-Ziel; laufen dann Feld für Feld zum befohlenen Ziel |
+| **Widerlegt/zu prüfen:** `woSind` und `dichteste` im Modul rechnen mit +0xD4 als y × 400 + x — deren Ortsangaben sind auf dieser Karte vermutlich falsch | **abgeleitet** | gleiche Umrechnung wie oben |
+| Die **KI holt ihre Lords zurück**: ein einmaliges `einheit_ziel` hält nur kurz, danach steht wieder die Burg als Ziel | **gemessen** | Ziel nach dem Lauf (172,113) bzw. (230,287) statt (170,100) |
+| `setDestinationForUnit` trägt das Ziel in der **Pause** nicht in +0xC8 ein (erst mit dem nächsten Tick) — wer in der Pause „bis es stimmt" nachsetzt, ruft es tausendfach | **gemessen** | über 21.000 Aufrufe bei Tick 1106 |
+| Platz 0 der Einheitenliste kann eine Lord-Kopie (Typ 55) halten — kein echter Lord | **gemessen** | `lords` fand drei, darunter Platz 0 |
+| Die Kartenmitte von Grumpy (200,199) ist kein gültiges Ziel (Oase); das nächste gültige Feld ist (194,193) | **gemessen** | `zielsuche`, Rückgabe 0 bzw. 1 |
+| Weg zur Mitte: Lord 137 (Spieler 3) 1.917 Ticks, Lord 3 (Spieler 2) 2.277 Ticks (Umweg). Mit 360 Ticks Versatz treffen sie sich bei Tick 3329 nahezu gleichzeitig | **gemessen** | lordduell_probe*.txt, lordduell_duell.txt |
+| Zwei gleiche Lords (Rotkäppchen, 150.000 Leben): **beide treffen im selben Tick**, 150 Leben je Tick, im Gleichschritt; Lord 137 stirbt bei Tick 4353, Lord 3 überlebt mit **150** — Sieg um einen Schlag | **gemessen** (Grund der Reihenfolge vermutet: kleinere Einheitennummer zuerst) | Lord-Wacht |
+| Aus dem Spielstand beim ersten Treffer (`M4-04 Lordduell Treffer T3354`) wiederholt sich der Kampf **exakt** (Tod wieder bei Tick 4353) | **gemessen** | zweiter Lauf |
+| Endbildschirm **„Mächtigster Fürst"** (Ansicht 30) kam erst **6.906 Ticks nach dem Lord-Tod** (Tick 11.259); Ursache offen | **gemessen** | Ansicht 14 → 30; Bild `m4-04_BEWEIS_endbildschirm_maechtigster_fuerst.png` |
+| Nach dem Tod wird der Platz des Lords neu vergeben (später Typ 44, 2.500 Leben) | **gemessen** | Platz 137 |
