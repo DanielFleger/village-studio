@@ -2587,3 +2587,11 @@ Werkzeug `Selfaware-AI/werkzeug/lordduell.py`; Modulbefehle `lords`, `lordwacht`
 | Aus dem Spielstand beim ersten Treffer (`M4-04 Lordduell Treffer T3354`) wiederholt sich der Kampf **exakt** (Tod wieder bei Tick 4353) | **gemessen** | zweiter Lauf |
 | Endbildschirm **„Mächtigster Fürst"** (Ansicht 30) kam erst **6.906 Ticks nach dem Lord-Tod** (Tick 11.259); Ursache offen | **gemessen** | Ansicht 14 → 30; Bild `m4-04_BEWEIS_endbildschirm_maechtigster_fuerst.png` |
 | Nach dem Tod wird der Platz des Lords neu vergeben (später Typ 44, 2.500 Leben) | **gemessen** | Platz 137 |
+
+### 13g. Was nach dem Lord-Tod passiert (01.10.2026, 00:18)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `checkSkirmishGameDefeat` (0x00486600, aus `processGameTick`) zählt je Team die toten Lords; lebt höchstens noch ein Team, setzt es sofort `MapAndTime.gameOver` (**0x0117D500**) = 1, `gameOverTime` (**0x0117C888**) = `timeGetTime()` (Rechneruhr, ms) und `playerIsAlive[9]` (short, ab **0x0117EF40**); das Sieg/Niederlage-Fenster erscheint | **abgelesen** | `Selfaware-AI/daten/dekomp_spielende.c` |
+| Der Endbildschirm (Ansicht 30, „Mächtigster Fürst") folgt **rund 9–10 s Rechnerzeit** nach „Spiel vorbei", unabhängig vom Tempo: Tempo 1000 → 4.844 Ticks / 9.245 ms, Tempo 300 → 1.799 Ticks / 9.698 ms | **gemessen** (Ticks grob, Abfrage etwa sekündlich) | `Selfaware-AI/werkzeug/spielende.py` |
+| Sieger aus dem Speicher: `playerIsAlive` = [0, 0, 1, 0 …] → Spieler 2; das Fenster im Spiel nennt denselben („Niederlage – Rotkäppchen, & die Großmutter gewinnt", aus Sicht des Geist-Menschen) | **gemessen** | Bild `m4-04_BEWEIS_sieg_fenster_im_spiel.png` |
