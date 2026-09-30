@@ -2555,3 +2555,17 @@ Werkzeuge: `Selfaware-AI/werkzeug/verlusttest.py`, `verlust_eingrenzen.py`; Beri
 | **Der geladene Stand ist die Welt einen Tick weiter**, der Tickzähler zeigt aber den gespeicherten Wert: A gegen B 1.655 Abweichungen, B gegen „A plus ein Tick" nur 60; einen Tick später bleibt der Versatz (76) | **gemessen**; ob Speichern oder Laden den Tick dazugibt: **offen** | verlust_eingrenzen |
 | Die 60 Reststellen: Kopf der Gebäudeliste (+0x8 nach jedem Laden 2000, im Lauf 69; +0x10), Zähler an vier Gebäuden, +0x2AE4 bei allen Spielern (2 statt 1), Spieler 2/3 +0x6C/+0x2AEC/+0x2B08, ein Einheitenfeld, Kern +0x98/+0xA0/+0xB8, 23 Stellen Grafikschicht. **Gold, Vorräte und die übrigen Einheitendaten gleich** | **gemessen** | verlust_eingrenzen_233135.json |
 | Kern +0xA0 = Tick des letzten Ladens + 1 (Lade-Merker, kein Spielzustand) | **gemessen** (zwei Fälle: 1101, 1201) | A und B |
+
+### 13e. Navigation auf der Karte per Befehl (30.09.2026, 23:47)
+
+Werkzeug `Selfaware-AI/werkzeug/navigation.py`; Dekompilate `Selfaware-AI/daten/dekomp_navigation*.c`. Tasten: `WindowMsgProcessingFunc` 0x004B2AE0; Rechtsklick-Menü: `MenuItemActionHandler_InGameMenu_PeasantBuildAndRightClickMenuSelection` 0x00434350.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| **Tab** ruft `hideOrUnhideUI` (0x00471AA0, ECX = GameCore); `{ "leiste": true }` schaltet um: Menüreiter (GameCore+0x10) 48 ↔ 60, sichtbare Breite (ViewportState+0x8C) 246 ↔ 278 Felder | **gemessen** | Kartenbild nach Kamera-Anstoß: Beraterkapuze unten weg und wieder da (gleicher Ausschnitt oben 0,0 %, unten 1,7 % anders) |
+| **Drehen:** `setMapRotation` (0x004F70E0) setzt nur den Auftrag (TileMapState+0x5548A0); Ausrichtung steht bei 0x01FE7AA4. Strg+Links = +2, Strg+Rechts = +6 (mod 8), Rechtsklick oben = +6. `{ "drehen": "links" \| "rechts" }` | **gemessen** (0 → 6 → 0, Bild > 60 % anders) | navigation_234749.json |
+| **Abflachen** (Leertaste, Rechtsklick links): `toggleFlatView` (0x004F70B0) mit Wert 0/1, Stand bei 0x01FE7AD4. Das Spiel stellt dabei die Absenk-Stufe selbst auf 2 bzw. zurück auf 4 | **gemessen** | Bild 14 % anders |
+| **Zoom** (Strg+Hoch, Rechtsklick rechts): `resetupViewport` (0x004E7770, ECX = 0x021AEBD8) mit 1 = raus, 0 = rein, danach WindowAndDirectDraw+0xC0 (0x00F983F8) = 2 und MenuView_TriggerInitial (0x00B48EE4) = 1. Raus = 246 × 130 Felder sichtbar, rein = 123 × 65; Stand bei 0x021AEC68 | **gemessen** | Bild 70 % anders |
+| **Abgesenkte Ansicht** (Rechtsklick unten, Strg+Runter): `triggerLoweredView` (0x004F6FD0) mit 3; normal = 4. Der Auftrag bei 0x01FE7AC0 wird sofort verbraucht, der Stand steht bei 0x01FE7AC4. Das Rechtsklick-Menü setzt in jedem Bild auf 4 zurück, solange nichts gehalten wird → per Befehl bisher nur einen Augenblick | **abgelesen / gemessen** (Modul las 3, danach 4) | navigation_234749.json |
+| Die Kamerafelder ViewportState+0x9C/+0xA0 (0x021AEC74/78) sind nicht dieselben Koordinaten wie `kamera [x, y]` (Befehl (162,104) → Felder (138,133)) | **gemessen** | ein Fall |
+| `{ "bild": "menue" }` zeigt im Spiel nur die zuletzt gezeichnete Leiste — als Beleg für „Leiste weg" untauglich | **gemessen** | Vorher-/Nachher-Bild gleich |
