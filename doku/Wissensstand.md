@@ -2498,6 +2498,11 @@ ZEIT-Logzeilen, Ticks je Sekunde = Tickdifferenz / Zeitdifferenz.*
 | `eigenesGefecht` setzt einen **echten Menschen** ein: Spieler 1 hatte Lord, 12 Einheiten, 4000 Gold und eine Burg. Über die Lobby ist der Mensch in der Team-Liga dagegen nur ein Geist (Daniel) | **gemessen** | Einheitenbericht, Warenfelder |
 | Von zwei Rotkäppchen (Spieler 2 und 3) hatte **Spieler 2 keinen Lord**, 0 Gold, 0 Holz, 4 Einheiten; Startplatz-Liste `[246,0,246,2,1,246,246,246]` (246 = frei). Vermutet, ungeprüft: Spieler 2 landete auf Startplatz 4, den die Karte nicht hat | **gemessen, Ursache vermutet** | Einheitenbericht, `peek 0x01A275D0` |
 | `peek` gibt negative Speicherwörter 16-stellig aus (LuaJIT `%08X` auf eine negative Zahl) — beim Auswerten auf 32 Bit kürzen | **gemessen** | Lauf 1 |
+| **Tick-genaue Pause:** Ein Wächter in `everyTick()` (läuft jeden Tick) schreibt die Pause, sobald der Tickzähler das Ziel erreicht. Bei Tempo 100 und 1000 hält das Spiel **exakt** beim Ziel-Tick an (+0) — das Modul läuft also wirklich jeden Tick mit, auch wenn das Spiel 11 Ticks je Bild rechnet | **gemessen** | `{ "tickpause": { "bei": N, "alle": 100 } }`, je dreimal |
+| Im Hauptmenü kommen **nur Startbefehle** durch (`menue`, `eigenesGefecht`); `tickpause` und `pause` werden dort stillschweigend verworfen | **gemessen** | Log ohne jede Antwort |
+| Während des Gefechtsaufbaus liefert der Tickzähler kurz **Unsinn** (7.807.163), danach 0, 1, 2 … | **gemessen** | Wächter löste mit diesem Wert aus |
+| Spielbeginn im Selbstspiel, tick-genau: Tick 1–25 nur 133 neutrale Einheiten; Tick 50 je Spieler 1 Einheit ohne Lord; **Tick 100 je ein Lord**; Tick 400 rund 20 Einheiten je Spieler | **gemessen** | Pausen bei 2/5/10/25/50/100/200/400 |
+| Der Selbstspiel-Start nach Lobby-Rezept ist **wiederholbar**: drei Starts, Burgen jedes Mal bei (162,104) und (224,282), gleiche Einheitenzahlen | **gemessen** | `Selfaware-AI/werkzeug/selbstspiel.py 3` |
 | Warum das Spiel überhaupt hoch läuft, ist **offen**: kein Kompatibilitäts-Häkchen „Als Administrator ausführen" (nur XP-SP3-Modus, 16-Bit-Farben, DPI), kein `requestedExecutionLevel` im Programm | **gemessen, Ursache offen** | Registry `AppCompatFlags\Layers` (HKCU/HKLM), Programmdatei durchsucht |
 
 **Was daraus für die Lernschleife folgt:** Eine Spielinstanz schafft — gerechnet
