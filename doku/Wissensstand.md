@@ -2460,3 +2460,32 @@ analyzeHeadless.bat C:\Users\danie\ghidra-projects OpenSHC-ref ^
 `FindTree.java` sucht Funktionen nach Namensmuster, `GewaechsStruktur.java`
 druckt die Strukturen samt Versätzen, `DekompGewaechs.java` dekompiliert
 Adressen. Alle drei liegen in `C:\Users\danie\ghidra-scripts`.
+
+---
+
+## 13. Selfaware-AI Schritt 0: Tempo, Neustart und drei Fallen (30.09.2026)
+
+*gemessen von SGM im laufenden Spiel über den Dateikanal. Config: Mod-KI-Team-Liga
+2.0.2. Messweise: zweimal `{ "zeit": true }`, Ticks und Zeitstempel aus den
+ZEIT-Logzeilen, Ticks je Sekunde = Tickdifferenz / Zeitdifferenz.*
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Tempo 40 ergibt 40,0 Ticks/s, Tempo 100 ergibt 99,9 Ticks/s | **gemessen** | je ein Fenster von 6,3 s; deckt sich mit „Ticks je Sekunde = Tempowert" aus Abschnitt 3 |
+| Tempo 1000 ergibt 1009 bis 1201 Ticks/s, im Mittel rund 1100 (etwa 27-mal Echtzeit) | **gemessen** | vier Fenster zu 4,4 s in einem frischen Gefecht: 1182 / 1009 / 1033 / 1201 |
+| Tempo 400 ergab einmal 490 Ticks/s — mehr als der eingestellte Wert | **gemessen, offen** | ein einziger Lauf; Ursache ungeklärt, nicht wiederholt |
+| Oberhalb von Tempo 1000 ist nichts sauber gemessen | **offen** | der Lauf mit 3000 fiel ins Gefechtsende |
+| `{ "gefecht": 2 }` ist eine **Kampagnen-Mission** („3. Trockenes Land", Roller / Konrad I. / Florentin II.), kein eigenes Spiel | **belegt** | von Daniel im Bild erkannt |
+| Diese Mission läuft bis rund 24.000–25.000 Ticks, dann steht die Uhr — das Modul meldet trotzdem weiter „Gefecht laeuft" | **gemessen** | ZUSTAND-Zeilen über Minuten bei 24179 bzw. 25184 |
+| Neustart ohne Spiel-Neustart: `{ "menue": 41 }`, dann `{ "gefecht": 2, "trotzdem": true }` — die Uhr sprang von 24179 auf 3470 | **gemessen** | ein Lauf |
+| **Falle:** Das Modul überspringt jeden Befehl, dessen `id` es schon kennt („0 von 0 Befehlen ausgefuehrt, 1 schon erledigt"). IDs müssen über alle Läufe hinweg steigen, z. B. aus der Uhrzeit | **gemessen** | zwei Messläufe blieben wirkungslos, weil jedes Skript wieder bei derselben Nummer begann |
+| **Falle:** Eine offene UCP3-GUI hat `villagestudio` erneut aus der `ucp-config.yml` geworfen (3 → 0 Treffer) | **gemessen** | `grep -c villagestudio` vor und nach dem Öffnen der GUI |
+| Das Modul verlangt laut `definition.yml` nur `aivloader` und `files`; es lädt ohne `luajit`/`cffi` in der Ladeliste | **gemessen** | Logzeile „villagestudio aktiv" am 30.09. um 19:53 |
+| `eigenesGefecht` setzt **immer** einen Menschen auf Platz 1 und daneben N KIs **desselben** Typs (`ki` = aiType+1; 1 = Rattenplatz, in diesem Mod Rotkäppchen) | **abgelesen** | `logik.lua`, Handler `eigenesGefecht` |
+| Die Startpositionen verteilt `eigenesGefecht` **zufällig** (`playerPositionsArray` 0x01A275D0 auf 0xF6, dann „zufällig platzieren" je Platz) — feste Positionen oben/unten sind damit noch nicht möglich | **abgelesen** | derselbe Handler |
+| Die Karte „Liga_Grumpy Neighbors" liegt als Datei in `ucp/plugins/Mod-KI-Team-Liga-2.0.2/resources/maps/`; der Kartenlader ist auf diesen Ordner eingestellt | **gemessen** | Dateisuche und `ucp-config.yml` |
+
+**Was daraus für die Lernschleife folgt:** Eine Spielinstanz schafft — gerechnet
+aus rund 22 s Gefecht bei Tempo 1000 plus Neustart — grob 100 bis 120 Spiele pro
+Stunde. Das ist **gerechnet, nicht gemessen**; gemessen wird es erst mit einem
+vollständigen eigenen Spiel.
