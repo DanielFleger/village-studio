@@ -2635,3 +2635,12 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 | `checkBuildingCanBePlacedHere` (0x005037B0, thiscall TileMapState 0x01A93208; Spieler, x, y, Bau-Nummer, Groesse) setzt `buildingPlacementFail` (0x01FE7B3C; 0 = geht). **Vorher die Bau-Drehung (0x01FE7BBC) setzen** wie `placeBuilding` - sonst prueft es einen anderen Grundriss | **gemessen**: 12 von 12 Stellen stimmen mit echtem Bauen ueberein | `Selfaware-AI/daten/platzpruefung_gegenprobe.txt`; Modulbefehle `platz`, `platzsuche` |
 | Beliebtheit = PlayerData + 0x60 in Hundertsteln | **abgelesen, plausibel** (93,25 / 98,25), gegen die Anzeige noch nicht verglichen | M13 |
 | Gebaeude lassen sich nicht drehen; Ein-/Ausgang nur ueber Blockieren des ueblichen Platzes lenkbar | **Daniel** (Spielkenntnis) | Spielwissen.md |
+
+### 13k. Steuern, Rationen, Handel per Spielbefehl; Beliebtheit (04.10.2026, 20:10)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Befehlsnummern = Lage in der Handler-Tabelle 0x00B38E10 + 4·Nr: 28 Bauen, 31 Anwerben, **34 Steuern** (`ChangeTaxes(Spieler, Stufe)`), **35 Rationen** (`ChangeRations`), **38 Kaufen/Verkaufen** (`ProcessBuyOrSell(Spieler, 0 kaufen / 1 verkaufen, Ware)`) | **abgelesen**; 38 **gemessen** | `Selfaware-AI/daten/dekomp_handel_steuer.c`, `dekomp_kaufen.c` |
+| Ein Kauf bringt 5 Stück, nur mit genug Gold **und** freiem Lager (Essen → Kornspeicher) | **gemessen** | ohne Kornspeicher keine Wirkung |
+| Beliebtheits-Teilwerte (PlayerData +): Bier 0x2110, Religion 0x2114, Angst 0x2118, Steuer 0x215C, Essen 0x2160, Enge 0x2164, Jahrmarkt 0x222C; Steuerstufe 0x2188, Rationen 0x218C | **abgelesen + gemessen** (Essen −250 → +125 nach Apfelkauf) | M13a |
+| Kornspeicher + 50 Äpfel: Beliebtheit 93,25 → 95,25 nach 600 Ticks → 100 nach 1500 Ticks | **gemessen** | `Selfaware-AI/daten/beliebtheit_95.txt` |
