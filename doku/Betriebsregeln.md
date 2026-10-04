@@ -519,6 +519,17 @@ bis das Modul laeuft, und uebergibt dann an die Wacht im Spiel.
 
 ---
 
+### Nach jedem Laden eines Menschen-Spielstands: `eigenerPlatz` schicken (04.10.2026)
+
+Ein geladener Spielstand traegt den Menschen nicht als Teilnehmer ein. Das Spiel
+erklaert dann im ersten Takt den Gegner zum Sieger (gameOver 0x0117D500 = 1) -
+manchmal laeuft die Zeit trotzdem weiter, manchmal kommt der Endbildschirm
+(Ansicht 30). Beides sieht von aussen nach "laeuft" aus. `{ "eigenerPlatz": 1 }`
+direkt nach dem Laden, VOR dem ersten Takt, traegt ihn ein. Pruefen: gameOver = 0.
+Ein Lauf, dessen Spielzeit steht, bricht jetzt laut ab (`laufe()` in Selfaware-AI).
+
+---
+
 ### Start von Hand
 
 Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":

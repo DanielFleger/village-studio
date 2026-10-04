@@ -2644,3 +2644,17 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 | Ein Kauf bringt 5 Stück, nur mit genug Gold **und** freiem Lager (Essen → Kornspeicher) | **gemessen** | ohne Kornspeicher keine Wirkung |
 | Beliebtheits-Teilwerte (PlayerData +): Bier 0x2110, Religion 0x2114, Angst 0x2118, Steuer 0x215C, Essen 0x2160, Enge 0x2164, Jahrmarkt 0x222C; Steuerstufe 0x2188, Rationen 0x218C | **abgelesen + gemessen** (Essen −250 → +125 nach Apfelkauf) | M13a |
 | Kornspeicher + 50 Äpfel: Beliebtheit 93,25 → 95,25 nach 600 Ticks → 100 nach 1500 Ticks | **gemessen** | `Selfaware-AI/daten/beliebtheit_95.txt` |
+
+### 13l. Farmland, Platzkarte, Hoechstzahl Farmen; Spielende nach dem Laden (04.10.2026, 20:15–21:22)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Farmen (Weizen, Hopfen, Apfel, Kuehe): jedes Feld fruchtbar (Logic2Layer 0x10 Gras, 0x80 dichtes, 0x01 duennes Gestruepp; nicht bei LogicLayer 0x100000) und >= 50 Felder Gras/dichtes Gestruepp | **abgelesen** + **gemessen** (Modell deckt alle 658 Spiel-Stellen) | `Selfaware-AI/daten/dekomp_platzpruefung.c` |
+| Bau-Stelle = obere linke Ecke des Grundrisses (Apfel 10x10: x..x+9, y..y+9) | **gemessen** (einziger Versatz ohne Abweichung) | `Selfaware-AI/daten/platzkarte_apfel_M7-04_basis.txt` |
+| Je Feld sperren ausserdem (isBuildingPlacementAllowedAtTile 0x004F9A60): Hoehe/Hang, Gebaeude, Wasser, Fluss, Baeume (LogicLayer 0x3000 + Baum), **jede Einheit ausser Huehnern** (bei Menschen; bei KI nur Lords und fremde Einheiten) | **abgelesen**; Einheit **gemessen** + Daniel bestaetigt | `Selfaware-AI/daten/dekomp_feld_bauerlaubnis.c`, `farm_ueber_einheit.txt` |
+| Der Grund-Speicher 0x01FE7B40 wird bei diesen Feld-Sperren nicht neu gesetzt - er zeigt dann einen alten Wert | **abgelesen** | dieselbe Datei, Zeilen 356-360 |
+| Modulbefehl `platzkarte`: Spielpruefung fuer jede Stelle eines Rechtecks; ganze Karte (160.000 Stellen) unter 1 s; Wiederholung deckungsgleich | **gemessen** | Selfaware-AI M13b |
+| Farmen duerfen sich lueckenlos beruehren | **gemessen** (9 von 9 gebaut, 5 Paare beruehren sich) | Selfaware-AI M13b, 21:20 |
+| 9 Apfelplantagen: erste Aepfel gut 2.000 Ticks nach dem Bau, Kornspeicher 14 -> 93 in 4.000 Ticks, Beliebtheit 100 | **gemessen** | `Selfaware-AI/daten/apfel_lauf_9_gepackt.txt` |
+| **Geladener Spielstand: Mensch fehlt in currentPlayerFullIDArray (0x0191DE10, alles -1)** -> Platz zaehlt nicht als Teilnehmer -> checkSkirmishGameDefeat sieht nur eine Mannschaft -> gameOver im ersten Takt. Abhilfe: fullID[Platz] = 1 (wie `eigenesGefecht`), jetzt im Modulbefehl `eigenerPlatz` | **gemessen** (3 von 3 nachgestellt; mit Abhilfe 2.020 Ticks ohne Ende) | Selfaware-AI M13b „FEHLER GEFUNDEN“ |
+| Mannschaften der Spieler: int[9] bei 0x0117D548 (Grumpy-Stand: Spieler 1 -> 2, Spieler 2 -> 1) | **abgelesen** (aus checkSkirmishGameDefeat errechnet) + gelesen | `Selfaware-AI/daten/dekomp_spielende.c` |
