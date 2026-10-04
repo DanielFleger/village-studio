@@ -2661,3 +2661,14 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 | 9x9-Farmen (Weizen, Hopfen): Bau-Stelle oben links, dieselbe 50-Gras-Regel; 9er und 10er Farmen duerfen sich beruehren | **gemessen** (Modellvergleich; 13 von 13 gemischt gebaut) | Selfaware-AI M13c |
 | Beste Farm-Mischung je Karte: OR-Tools CP-SAT ueber die Platzkarten, ganze Karte (12.744 Stellen) OPTIMAL in 2,7 s; Gegenprobe mit eigener Suche 5 von 5 gleich | **gemessen** | `Selfaware-AI/werkzeug/farmen_mischen.py` |
 | Hopfen: erster Ertrag gut 7.000 Ticks nach dem Bau (Aepfel gut 2.000) | **gemessen** (3 Farmen, 1 Lauf) | `Selfaware-AI/daten/mischung_apfel_hopfen_lauf.txt` |
+
+### 13m. Truppen wie der Mensch befehligen, Lagebild, Lenker-Takt (04.10.2026, 22:40-23:03)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Befehlstabelle 0x00B38E10: 16 Auswahl, 17 Bewegen (Gruppe), 29 Gebaeude abreissen (Nr, Rueckgabe-%, uid; Besitzer wird NICHT geprueft), 31 Anwerben, 36 Einheiten-Befehl (Gruppe, Art 4 Einheit / 9 Gebaeude / 31 Halt, Ziel-Nr, Ziel-uid) | **abgelesen** | `Selfaware-AI/daten/befehlstabelle.txt`, `dekomp_befehl_16/36.c`, `dekomp_abreissen.c` |
+| Auswahl: Bits bei UnitsState 0x01387F38 +116 (Bit je Einheitennummer); Befehl 16 legt die Gruppe unter der mitgegebenen Nummer an (createPlayerTribe); freie Gruppe = tribeState (+24) 0, Gruppen ab 0x01667F78 + 40, je 0x334 Byte | **abgelesen + gemessen** (8 Speertraeger toeten 2 Angreifer ohne Verlust) | `Selfaware-AI/daten/angriff_probe.txt` |
+| KI-Angriffe stehen nicht in den Befehlsfeldern der Einheit (+924/+926/+928 = 0), sondern im Laufziel (+0xC8/+0xCA) - so erkennt man frueh, welches Gebaeude angegriffen wird | **gemessen** | `Selfaware-AI/daten/lagebild_T14719.txt` |
+| Holzfaeller nimmt nur Baeume mit Zustand 2, Stufe < 4, Holz (+120) > 0 (findTree 0x004F3B90) | **abgelesen** + Beobachtung Daniel | `Selfaware-AI/daten/dekomp_baum_004f3b90.c` |
+| Modulbefehle `status` (alles in einer Zeile) + `lagebild` (Einheiten + Gebaeude als Dateien) in EINER Liste und Warten bis zur Antwortzeile: eine Lenker-Runde 0,04 s (vorher 1,1 s mit fester Wartezeit) | **gemessen** | Selfaware-AI M15 |
+| Ein geladener Spielstand traegt den Menschen nicht ein -> gameOver im ersten Takt; Abhilfe `eigenerPlatz` (siehe 13l, Betriebsregel) | **gemessen** | Selfaware-AI M13b |
