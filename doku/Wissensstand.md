@@ -2595,3 +2595,21 @@ Werkzeug `Selfaware-AI/werkzeug/lordduell.py`; Modulbefehle `lords`, `lordwacht`
 | `checkSkirmishGameDefeat` (0x00486600, aus `processGameTick`) zählt je Team die toten Lords; lebt höchstens noch ein Team, setzt es sofort `MapAndTime.gameOver` (**0x0117D500**) = 1, `gameOverTime` (**0x0117C888**) = `timeGetTime()` (Rechneruhr, ms) und `playerIsAlive[9]` (short, ab **0x0117EF40**); das Sieg/Niederlage-Fenster erscheint | **abgelesen** | `Selfaware-AI/daten/dekomp_spielende.c` |
 | Der Endbildschirm (Ansicht 30, „Mächtigster Fürst") folgt **rund 9–10 s Rechnerzeit** nach „Spiel vorbei", unabhängig vom Tempo: Tempo 1000 → 4.844 Ticks / 9.245 ms, Tempo 300 → 1.799 Ticks / 9.698 ms | **gemessen** (Ticks grob, Abfrage etwa sekündlich) | `Selfaware-AI/werkzeug/spielende.py` |
 | Sieger aus dem Speicher: `playerIsAlive` = [0, 0, 1, 0 …] → Spieler 2; das Fenster im Spiel nennt denselben („Niederlage – Rotkäppchen, & die Großmutter gewinnt", aus Sicht des Geist-Menschen) | **gemessen** | Bild `m4-04_BEWEIS_sieg_fenster_im_spiel.png` |
+
+### 13h. Einheiten steuern: wer gehorcht, was haelt, wie schnell (04.10.2026)
+
+Werkzeuge in `Selfaware-AI/werkzeug/` (`einheiten_steuern.py`, `gruppe_halten.py`, `arbeit_pruefen.py`, `aufloesen_ersetzen.py`, `zickzack.py`), Ergebnisse in `Selfaware-AI/daten/`, Tabelle in `Selfaware-AI/Meilensteine.md` (M10).
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `setDestinationForUnit` wird von **allen 32 Einheitentypen** in Walltest 4 angenommen (erstes Ziel danach = befohlenes) | **gemessen** | Einheiten-Wacht je Tick |
+| `setDestinationForUnit` schreibt das Ziel (+0xC8/+0xCA) **sofort** - wer das alte Ziel braucht, muss es VORHER lesen | **gemessen** | gemerktes "altes Ziel" war sonst schon das neue |
+| Lords laufen nach ~65-135 Ticks von selbst zur Burg zurück - **auch der Lord des Menschen** (kein KI-Spieler) | **gemessen** | M10.01/M10.02 |
+| Einheiten des Menschen (Bauer, Bogenschütze, Speerträger, Narr) bleiben am befohlenen Ort; KI-Soldaten werden zurückgeschickt, KI-Arbeiter bekommen neue Arbeitswege | **gemessen** | M10.01/M10.02 |
+| Einheit +0x338 = **Arbeitsgebäude** (Gebäudenummer); +0x2C0 Zustand; +0x388 getragene Ware (>0 = trägt); +0x98 Kennnummer (wechselt bei Neubelegung des Platzes) | **gemessen** (+0x338: 24 Apfelbauern → Apfelplantagen, Milchbauern → Milchhöfe, Holzfäller → Hütten) | `arbeitsplatz` |
+| Gebäudeeintrag (Basis 0xF98520 + i·0x32C, Referenz-Offsets + 0x14): Ort x/y +0x102/+0x104, **Eingang +0x112/+0x114**; Typen: Kornspeicher 19, Lager 10, Apfelplantage 32, Milchhof 33 | **gemessen/abgelesen** | `gebaeude` |
+| Warenvorrat je Spieler: PlayerData + 0x4D0 + Ware·4, Ware = `ResourceType` (Apfel 13, Gold 15) | **abgelesen + Gegenprobe Gold** | Enum aus der Referenz |
+| Nach Zurückrufen + Loslassen nimmt die KI ihre Arbeiter **nicht** neu in Dienst; zum eigenen Arbeitsgebäude (+0x338) geschickt arbeiten alle wieder, Lieferungen nach ~1200 Ticks wieder im Takt | **gemessen** | M10.03 |
+| `disbandUnit` (0x0052EDC0, thiscall UnitsState, 1 Argument): mit Lagerfeuer → Bauer, sonst verschwindet die Einheit. Die KI wirbt Verluste in ~100 Ticks je Einheit nach | **abgelesen + gemessen** | `aufloesen`, M10.04 |
+| **Eine laufende Einheit liest ihr Ziel nur an Feldgrenzen** (Bogenschütze: 16 Ticks je Feld). Zielwechsel schneller als ein Feld verpuffen; Reaktionszeit 0-16 Ticks | **gemessen, Totschlagtest bestanden** (Wechsel alle 8 Ticks: 0 Umkehrungen; alle 16: Umkehr an jeder Grenze; alle 3: unregelmäßig) | `zickzack` |
+| Nach dem Laden von `M7-04 Mensch Grumpy T600` bewegte sich der Bogenschütze erst ab Tick 50 | **gemessen, Ursache offen** | alle Zickzack-Läufe |
