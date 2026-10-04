@@ -2613,3 +2613,17 @@ Werkzeuge in `Selfaware-AI/werkzeug/` (`einheiten_steuern.py`, `gruppe_halten.py
 | `disbandUnit` (0x0052EDC0, thiscall UnitsState, 1 Argument): mit Lagerfeuer → Bauer, sonst verschwindet die Einheit. Die KI wirbt Verluste in ~100 Ticks je Einheit nach | **abgelesen + gemessen** | `aufloesen`, M10.04 |
 | **Eine laufende Einheit liest ihr Ziel nur an Feldgrenzen** (Bogenschütze: 16 Ticks je Feld). Zielwechsel schneller als ein Feld verpuffen; Reaktionszeit 0-16 Ticks | **gemessen, Totschlagtest bestanden** (Wechsel alle 8 Ticks: 0 Umkehrungen; alle 16: Umkehr an jeder Grenze; alle 3: unregelmäßig) | `zickzack` |
 | Nach dem Laden von `M7-04 Mensch Grumpy T600` bewegte sich der Bogenschütze erst ab Tick 50 | **gemessen, Ursache offen** | alle Zickzack-Läufe |
+
+### 13i. Bauen und Anwerben per Befehl - wie ein Klick des Menschen (04.10.2026, 19:55)
+
+Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat`, `eigenerPlatz`.
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Spielbefehle absetzen: Werte nach `GameCommandParam0..5` (**0x01997FB8 … 0x01997FCC**, je 4 Byte), dann `queueCommand(0x0191D768, Nr)` (0x00489100, thiscall, 1 Argument). Der Befehl kommt mit Zeit „jetzt + commandDelay" (hier 0 → nächster Tick) in die Liste `GameCommandArray` (+0x3C67C, 200 × 0x4F8) | **abgelesen + gemessen** (Eintrag gelesen: Typ 28, x 178, y 112, Bau-Nummer 51, Größe 3, Zeit 661) | `daten/dekomp_queuecommand.c` |
+| **Bauen** = Befehl 28 `ClickPlaceBuilding`: P0 x, P1 y, P2 Bau-Nummer (Mapper), P3 Größe, P4 Drehung, P5 Trupp → `placeBuilding`; im Gefecht vorher Kostenprüfung | **gemessen** | 5 Holzfällerhütten, Holz −5 je Hütte = Kostentabelle |
+| **Anwerben** = Befehl 31 `ClickRecruitUnit`: P0 Einheitentyp, P1 Gebäudenummer → `ProcessRecruitUnit(Spieler, Typ, Gebäude)` | **gemessen** | 1 arabischer Bogenschütze im Söldnerposten |
+| **Falle:** Nach unserem `eigenesGefecht` steht `currentPlayerSlotID` (0x01A275DC) auf **0**; Befehle laufen dann still für Spieler 0. Auf 1 setzen | **gemessen** | ohne: nichts gebaut; mit: gebaut |
+| Kosten im Spiel: Holzfällerhütte 5 Holz, Söldnerposten 120 Gold, Kaserne 12 Stein (Tabelle 0x01124CF4) | **gemessen** (Abzug stimmte) | `bauen.py` |
+| Belegter Platz → kein Gebäude, kein Abzug | **gemessen** | Gegenlauf auf dem Lager |
+| Eine neue Holzfällerhütte wird sofort besetzt (Bauer → Holzfäller) | **gemessen** | Typen-Zählung |
