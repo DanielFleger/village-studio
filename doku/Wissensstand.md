@@ -2627,3 +2627,11 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 | Kosten im Spiel: Holzfällerhütte 5 Holz, Söldnerposten 120 Gold, Kaserne 12 Stein (Tabelle 0x01124CF4) | **gemessen** (Abzug stimmte) | `bauen.py` |
 | Belegter Platz → kein Gebäude, kein Abzug | **gemessen** | Gegenlauf auf dem Lager |
 | Eine neue Holzfällerhütte wird sofort besetzt (Bauer → Holzfäller) | **gemessen** | Typen-Zählung |
+
+### 13j. Bauplatz pruefen ohne zu bauen (04.10.2026, 20:04)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| `checkBuildingCanBePlacedHere` (0x005037B0, thiscall TileMapState 0x01A93208; Spieler, x, y, Bau-Nummer, Groesse) setzt `buildingPlacementFail` (0x01FE7B3C; 0 = geht). **Vorher die Bau-Drehung (0x01FE7BBC) setzen** wie `placeBuilding` - sonst prueft es einen anderen Grundriss | **gemessen**: 12 von 12 Stellen stimmen mit echtem Bauen ueberein | `Selfaware-AI/daten/platzpruefung_gegenprobe.txt`; Modulbefehle `platz`, `platzsuche` |
+| Beliebtheit = PlayerData + 0x60 in Hundertsteln | **abgelesen, plausibel** (93,25 / 98,25), gegen die Anzeige noch nicht verglichen | M13 |
+| Gebaeude lassen sich nicht drehen; Ein-/Ausgang nur ueber Blockieren des ueblichen Platzes lenkbar | **Daniel** (Spielkenntnis) | Spielwissen.md |
