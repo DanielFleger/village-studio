@@ -2679,3 +2679,11 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 - **abgelesen:** Gruppen werden frei (`tribeState` +24 = 0), sobald keine Einheit mehr darin ist - deshalb nahm das Modul in Partie 9c immer wieder 1249/1247: jeder Befehl riss alle Einheiten in die neue Gruppe und leerte die alte.
 - **gemessen:** Bei einem Gebaeudeangriff (Art 9) steht das Laufziel (+0xC8/+0xCA) 1-2 Felder neben dem Gebaeude; `targetingType` (+924) bleibt dabei 0. Fuer die Kontrolle "laeuft er wirklich hin" taugt das Laufziel, die Zielart nicht.
 - Lagebild hat vier neue Spalten: `auswahlvon auswahlmarke gruppe gruppenuid`.
+
+### 13o. Apfelbaeume, Lieferwunsch, Wegnetz-Pruefung (05.10.2026, 00:10-00:40)
+- **abgelesen + gemessen:** Apfelbaum-Stufen 0-5 im Kreis, Dauer 500/300/200/1000/40/40 Ticks (Tabelle 0x00B484C0 je Stufe; UpdateAppleTree 0x004F26C0; ein Schritt je Spieltick gemessen). Geerntet wird nur in Stufe 3 (UpdateAppleFarmer 0x00553AE0). Stufe am Baum: LandscapeState-Baum (0x00F2CC54 + Nr*156) +0x80, Zaehler +0x84.
+- **gemessen:** Die Baeume einer Apfelplantage entstehen beim Bau (placeAppleTree 0x004F3560), Stufe 0, Zaehler 0-31 zufaellig.
+- **abgelesen:** selectClosestTree (0x004F3610) nimmt jeden Apfelbaum in Zustand 2 und Stufe 3 naeher als 30 Felder - ohne Pruefung von Plantage oder Besitzer. Ohne reifen Baum wird der Bauer untaetig (Zustand 1). Gemessen: untaetig 40 % ohne Seasoning, 11-17 % mit zwei versetzten Gruppen.
+- **abgelesen:** UpdateWoodcutter (0x0054C710): mit fertigem Holz Zustand 7, alle 21 Ticks Lagersuche; ohne Lager bleibt er in Zustand 7. Kommt er an und das Lager fasst nichts mehr, wird seine Ladung (+904) auf 0 gesetzt. Gemessen: 18 Holz je Gang.
+- **gemessen (Gegenprobe rot):** PathConnectionLayer 0x01DF6FD8 + calculateCanPlayerUnitsNavigateToAreaFromArea 0x004A5320 melden Wasser, Kartenrand und Gebaeudefelder als erreichbar - als Begehbarkeits-/Erreichbarkeitspruefung UNBRAUCHBAR (Spalte `erreichbar` in gebaeude.txt/lagebild.txt damit nicht belegt). Begehbarkeit ersatzweise aus der Rohstoffkarte (G/s/. samt Nachbarn).
+- Lagebild-Spalten neu: `ladung arbeitsplatz erreichbar`.
