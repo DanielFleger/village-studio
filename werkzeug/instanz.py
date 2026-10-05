@@ -11,7 +11,7 @@ Erkannt wird ein Prozess an seinem Programmpfad, nicht am Namen und nicht am
 Fenstertitel - beide Instanzen heissen "Stronghold Crusader" und ihre Fenster
 "Crusader". Den Pfad liest Windows auch beim erhoehten Spiel heraus
 (OpenProcess mit PROCESS_QUERY_LIMITED_INFORMATION, gemessen 05.10.2026:
-Prozess 2604 erhoeht, Pfad lesbar, 56 ms fuer alles).
+Prozess 2604 erhoeht, Pfad lesbar, rund 60 ms fuer alles).
 
 Aufruf:  python instanz.py      zeigt alle laufenden Spiele mit Instanz, Prozess, Fenster
 """
