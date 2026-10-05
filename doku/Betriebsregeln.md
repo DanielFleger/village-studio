@@ -542,22 +542,29 @@ sichere Modus das Modul, weil es als Ordner statt als ZIP vorliegt.
 
 ---
 
-## Zwei Spielinstanzen gleichzeitig (ab 05.10.2026)
+## Mehrere Spielinstanzen gleichzeitig (ab 05.10.2026, fünf seit 20:12)
 
-Instanz 2 ist eine Kopie des Spielordners:
-`C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme Instanz2`
-— mit eigenem `ucp/villagestudio` (eigene `befehl.json`, eigene Lagebilder in
-`abzug/`), eigenem `ucp3.log`, eigener `ucp-config.yml` und eigener Sperre.
-Damit stören sich zwei Läufe nicht mehr im Befehlskanal.
+Instanzen 2 bis 5 sind Kopien des Spielordners:
+`C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme InstanzN`
+— jede mit eigenem `ucp/villagestudio` (eigene `befehl.json`, eigene Lagebilder in
+`abzug/`), eigenem `ucp3.log`, eigener `ucp-config.yml` und eigener Sperre
+(`villagestudio2` … `villagestudio5`). Damit stören sich parallele Läufe nicht
+mehr im Befehlskanal.
+
+**Gemessen 05.10.2026, 20:12:** Alle fünf liefen gleichzeitig, jeder Log mit
+`villagestudio aktiv`, Instanzen 2–5 antworteten über ihren eigenen Kanal. Ein
+Spiel im Menü oder in der Pause braucht etwa ein Zehntel Kern, eines im
+laufenden Gefecht knapp einen Kern (der Rechner hat 16). Speicher je Spiel
+210–240 MB, Platte je Kopie 1,5 GB.
 
 **Warum eine Kopie allein nicht reicht:** Das Spiel prüft beim Start eine
 systemweite Sperrmarke mit festem Namen, nicht den Ordner. In der Spieldatei
-der Kopie ist deshalb genau **ein Byte** geändert (Marke `…Extrem2` statt
-`…Extreme`). Ohne das bleibt die Kopie im Dialog „already running" hängen
-(Wissensstand 13q). Eine Instanz neu anlegen — Kopie, Eingriff, leerer
-Kanal in einem Schritt: `python werkzeug/instanz_anlegen.py 3 --tun`
-(ohne `--tun` zeigt es nur an). Rückweg: den neuen Ordner wegschieben,
-Instanz 1 wird dabei nicht angefasst.
+jeder Kopie ist deshalb genau **ein Byte** geändert (Marke `…Extrem2`,
+`…Extrem3` … statt `…Extreme`). Ohne das bleibt die Kopie im Dialog „already
+running" hängen (Wissensstand 13q). Eine Instanz neu anlegen — Kopie, Eingriff,
+leerer Kanal in einem Schritt: `python werkzeug/instanz_anlegen.py 6 --tun`
+(ohne `--tun` zeigt es nur an; möglich bis 9). Rückweg: den neuen Ordner
+wegschieben, Instanz 1 wird dabei nicht angefasst.
 
 ### Instanz wählen
 
@@ -584,7 +591,7 @@ Fenstertitel — beide Instanzen heißen „Stronghold Crusader" und ihre Fenste
 Befehlskanal nicht an VillageStudio hängt; `spiel.py` prüft bei jedem Aufruf,
 dass beide denselben Ordner nennen, und bricht sonst laut ab.
 
-### Ablauf für einen Lauf auf Instanz 2
+### Ablauf für einen Lauf auf Instanz 2 (3, 4, 5 genauso mit ihrer Zahl)
 
 1. `sperre.py holen villagestudio2 "<zweck>"`
 2. `instanz_abgleich.py 2 --tun --als villagestudio2` — **sonst läuft dort die
@@ -610,7 +617,9 @@ verweigert deshalb, wenn die Sperre von Instanz 2 jemand anderem gehört.
 
 Instanz 2 läuft **ohne** erhöhte Rechte (gemessen: Programmpfad von außen
 lesbar; ein Prozess aus derselben Kopie ließ sich mit `Stop-Process` beenden).
-Ob Tastendrücke von außen ankommen, ist nicht geprüft. Das Fensterfoto
+Tastendrücke von außen **kommen an** (gemessen: Taste P per `PostMessage`
+drehte bei Instanz 2 zweimal die Pause um, die Spielzeit folgte jedes Mal; bei
+Instanz 1 scheitert derselbe Weg mit Fehler 5). Das Fensterfoto
 (`fenster_foto.ps1`, PrintWindow) liefert bei Instanz 2 ein echtes Bild
 (gemessen: Hauptmenü, 2560×1440). Instanz 1 läuft erhöht wie bisher.
 
