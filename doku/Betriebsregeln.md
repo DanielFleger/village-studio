@@ -550,8 +550,10 @@ Damit stören sich zwei Läufe nicht mehr im Befehlskanal.
 systemweite Sperrmarke mit festem Namen, nicht den Ordner. In der Spieldatei
 der Kopie ist deshalb genau **ein Byte** geändert (Marke `…Extrem2` statt
 `…Extreme`). Ohne das bleibt die Kopie im Dialog „already running" hängen
-(Wissensstand 13q). Wird Instanz 2 neu angelegt, muss dieser Eingriff wieder
-gemacht werden.
+(Wissensstand 13q). Eine Instanz neu anlegen — Kopie, Eingriff, leerer
+Kanal in einem Schritt: `python werkzeug/instanz_anlegen.py 3 --tun`
+(ohne `--tun` zeigt es nur an). Rückweg: den neuen Ordner wegschieben,
+Instanz 1 wird dabei nicht angefasst.
 
 ### Instanz wählen
 
@@ -566,7 +568,7 @@ Ohne Angabe gilt überall Instanz 1 — alles wie bisher.
 | `python werkzeug/instanz_abgleich.py 2 --tun --als villagestudio2` | holt `logik.lua`, Modul und Baupläne von Instanz 1 |
 
 Die Ordner-Regel („Instanz N = `<Instanz 1> InstanzN`") steht an drei Stellen:
-`sperre.py` (davon nimmt sie `instanz_abgleich.py`), `start_hinten.ps1` und
+`sperre.py` (davon nehmen sie `instanz_abgleich.py` und `instanz_anlegen.py`), `start_hinten.ps1` und
 `Selfaware-AI/werkzeug/befehl.py` (davon nehmen sie alle Selfaware-Werkzeuge).
 
 ### Ablauf für einen Lauf auf Instanz 2
