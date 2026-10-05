@@ -535,3 +535,78 @@ Ein Lauf, dessen Spielzeit steht, bricht jetzt laut ab (`laufe()` in Selfaware-A
 Nur über die Desktop-Verknüpfung „Stronghold (Entwicklermodus)":
 `Stronghold Crusader.exe --ucp-no-security`. Ohne den Schalter verweigert der
 sichere Modus das Modul, weil es als Ordner statt als ZIP vorliegt.
+
+---
+
+## Zwei Spielinstanzen gleichzeitig (ab 05.10.2026)
+
+Instanz 2 ist eine Kopie des Spielordners:
+`C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme Instanz2`
+— mit eigenem `ucp/villagestudio` (eigene `befehl.json`, eigene Lagebilder in
+`abzug/`), eigenem `ucp3.log`, eigener `ucp-config.yml` und eigener Sperre.
+Damit stören sich zwei Läufe nicht mehr im Befehlskanal.
+
+**Warum eine Kopie allein nicht reicht:** Das Spiel prüft beim Start eine
+systemweite Sperrmarke mit festem Namen, nicht den Ordner. In der Spieldatei
+der Kopie ist deshalb genau **ein Byte** geändert (Marke `…Extrem2` statt
+`…Extreme`). Ohne das bleibt die Kopie im Dialog „already running" hängen
+(Wissensstand 13q). Wird Instanz 2 neu angelegt, muss dieser Eingriff wieder
+gemacht werden.
+
+### Instanz wählen
+
+Ohne Angabe gilt überall Instanz 1 — alles wie bisher.
+
+| Werkzeug | für Instanz 2 |
+|---|---|
+| `python werkzeug/sperre.py holen villagestudio2 "<zweck>"` | der Name bestimmt die Instanz (`villagestudio` = 1); widerspricht `SHC_INSTANZ`, bricht es ab |
+| `powershell -File werkzeug/start_hinten.ps1 -Instanz 2` | findet das Fenster über die Prozessnummer, nicht über den Namen |
+| `SHC_INSTANZ=2 python Selfaware-AI/werkzeug/<lauf>.py` | `befehl.py` wählt Ordner, Kanal, Kanalsperre (`.lauf2`) und Nummernzähler (`.letzte_id2`) |
+| `SHC_INSTANZ=2 python Selfaware-AI/werkzeug/spiel.py beenden` | beendet **nur** Instanz 2 |
+| `python werkzeug/instanz_abgleich.py 2 --tun --als villagestudio2` | holt `logik.lua`, Modul und Baupläne von Instanz 1 |
+
+Die Ordner-Regel („Instanz N = `<Instanz 1> InstanzN`") steht an drei Stellen:
+`sperre.py` (davon nimmt sie `instanz_abgleich.py`), `start_hinten.ps1` und
+`Selfaware-AI/werkzeug/befehl.py` (davon nehmen sie alle Selfaware-Werkzeuge).
+
+### Ablauf für einen Lauf auf Instanz 2
+
+1. `sperre.py holen villagestudio2 "<zweck>"`
+2. `instanz_abgleich.py 2 --tun --als villagestudio2` — **sonst läuft dort die
+   alte Logik**: Instanz 2 bekommt Änderungen an `logik.lua` nicht von selbst.
+3. `start_hinten.ps1 -Instanz 2`, danach `villagestudio aktiv` im `ucp3.log`
+   **von Instanz 2** prüfen
+4. Lauf mit `SHC_INSTANZ=2`
+5. `SHC_INSTANZ=2 spiel.py beenden`, `sperre.py freigeben villagestudio2`
+
+Den Abgleich nie in eine laufende Partie eines anderen: `logik.lua` wird im
+Lauf neu geladen, alle Daueraufträge sind weg (Regel 7). Das Werkzeug
+verweigert deshalb, wenn die Sperre von Instanz 2 jemand anderem gehört.
+
+### Was weiter geteilt ist
+
+- **Spielstände:** `Documents\Stronghold Crusader\Saves` — beide Instanzen
+  lesen und schreiben denselben Ordner. Gleichnamig speichern überschreibt.
+- `crusader.cfg` im selben Ordner (Spieleinstellungen).
+- Ausgaben der Selfaware-Werkzeuge in `daten/` (Bilder, Mitschriften).
+  Getrennt ist nur `erstes_spiel_log2.txt`.
+
+### Rechtestufe ist verschieden
+
+Instanz 2 läuft **ohne** erhöhte Rechte (gemessen: Programmpfad von außen
+lesbar; ein Prozess aus derselben Kopie ließ sich mit `Stop-Process` beenden).
+Ob Tastendrücke von außen ankommen, ist nicht geprüft. Instanz 1 läuft erhöht
+wie bisher. Folge im nächsten Abschnitt.
+
+### Alte Werkzeuge kennen nur Instanz 1 — nicht benutzen, solange Instanz 2 läuft
+
+Abgelesen im Code am 05.10.2026, nicht im Lauf getestet:
+
+- `bild.py`, `lauf_burg2.py`: beenden **alle** Spielprozesse. Instanz 1 übersteht
+  das (Zugriff verweigert), **Instanz 2 nicht**.
+- `shc.py`, `starte_spiel.py`, `bis_menue.py`, `menue_erkunden.py`: zählen alle
+  Spielprozesse — mit Instanz 2 stimmt ihre Zahl nicht mehr.
+- `nach_hinten.ps1`, `stapel.ps1`, `fenster_foto.ps1`, `bild_q.ps1`: nehmen das
+  erste Fenster namens „Crusader" — beide Instanzen heißen so.
+- `werkzeug/befehl.py`, `test.py`, `gefecht.py`, `patch_*.py` (VillageStudio) und
+  `Selfaware-AI/werkzeug/gui.py`: fester Pfad Instanz 1.

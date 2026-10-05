@@ -16,11 +16,19 @@
 # Aufruf:  powershell -ExecutionPolicy Bypass -File werkzeug\start_hinten.ps1
 #          ... -Sekunden 45      (laenger nachfassen)
 #          ... -NurSchieben      (nicht starten, nur das laufende Spiel senken)
+#          ... -Instanz 2        (zweite Spielkopie; ohne Angabe gilt SHC_INSTANZ, sonst 1)
+#
+# Zwei Instanzen (05.10.2026): Instanz N liegt im Ordner "<Instanz 1> InstanzN"
+# - dieselbe Regel steht in sperre.py und in Selfaware-AI/werkzeug/befehl.py.
+# Das Fenster wird ueber die Prozessnummer gefunden, nie ueber den Namen:
+# "erster Prozess mit Crusader im Namen" waere bei zwei Instanzen die falsche.
 
 param(
     [int]$Sekunden = 40,
-    [switch]$NurSchieben
+    [switch]$NurSchieben,
+    [int]$Instanz = 0
 )
+if ($Instanz -le 0) { $Instanz = if ($env:SHC_INSTANZ) { [int]$env:SHC_INSTANZ } else { 1 } }
 
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Text;
@@ -40,13 +48,31 @@ public class Hi {
 "@
 
 $SPIEL_ORDNER = "C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme"
+if ($Instanz -gt 1) { $SPIEL_ORDNER = "$SPIEL_ORDNER Instanz$Instanz" }
+if (-not (Test-Path $SPIEL_ORDNER)) { Write-Output "Instanz $Instanz fehlt: $SPIEL_ORDNER"; exit 1 }
 $EXE = Join-Path $SPIEL_ORDNER "Stronghold Crusader.exe"
+$script:SpielPid = 0
+
+# Prozessnummer dieser Instanz: UCP legt beim Start "ucp-pid-<nummer>" in den
+# Spielordner (gemessen 0,06-0,12 s nach Prozessstart). Nach einem Absturz
+# bleibt die Datei liegen, und Windows kann die Nummer neu vergeben - deshalb
+# zaehlt nur ein lebender Spielprozess, der hoechstens 30 s vor der Datei startete.
+function PidDerInstanz {
+    if ($script:SpielPid -gt 0) { return $script:SpielPid }
+    foreach ($f in Get-ChildItem $SPIEL_ORDNER -Filter "ucp-pid-*" -ErrorAction SilentlyContinue) {
+        $n = 0
+        if (-not [int]::TryParse($f.Name.Substring(8), [ref]$n)) { continue }
+        $p = Get-Process -Id $n -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'Crusader' }
+        if ($p -and [Math]::Abs(($f.CreationTime - $p.StartTime).TotalSeconds) -le 30) { return $n }
+    }
+    return 0
+}
 
 function Spielfenster {
-    $p = Get-Process | Where-Object {
-        $_.MainWindowHandle -ne 0 -and $_.ProcessName -match 'Crusader'
-    } | Select-Object -First 1
-    if ($p) { return $p.MainWindowHandle }
+    $n = PidDerInstanz
+    if ($n -le 0) { return [IntPtr]::Zero }
+    $p = Get-Process -Id $n -ErrorAction SilentlyContinue
+    if ($p -and $p.MainWindowHandle -ne 0) { return $p.MainWindowHandle }
     return [IntPtr]::Zero
 }
 
@@ -106,8 +132,9 @@ if (-not $NurSchieben) {
     # Ein stehengebliebener Auftrag wuerde beim Start sofort erneut feuern.
     Set-Content -Path (Join-Path $SPIEL_ORDNER "ucp\villagestudio\befehl.json") `
                 -Value "{}" -Encoding Ascii
-    Start-Process -FilePath $EXE -ArgumentList "--ucp-no-security" `
-                  -WorkingDirectory $SPIEL_ORDNER
+    $p = Start-Process -FilePath $EXE -ArgumentList "--ucp-no-security" `
+                       -WorkingDirectory $SPIEL_ORDNER -PassThru
+    if ($p) { $script:SpielPid = $p.Id; Write-Output ("Instanz {0} gestartet: Prozess {1}" -f $Instanz, $p.Id) }
 }
 
 # Ab hier: eng abfragen, damit das Fenster keinen Wimpernschlag vorn steht.
