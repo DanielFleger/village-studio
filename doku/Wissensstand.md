@@ -2699,3 +2699,11 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 - **gemessen:** Instanz 2 laeuft OHNE erhoehte Rechte (Programmpfad lesbar, Stop-Process auf einen Prozess derselben Kopie wirkt), Instanz 1 mit. **Vermutet:** die Kompatibilitaetseintraege (AppCompatFlags `WINXPSP3 16BITCOLOR ...`) haengen am Pfad von Instanz 1 - nicht geprueft.
 - **gemessen:** UCP legt `ucp-pid-<nummer>` 0,06-0,12 s nach Prozessstart in den Spielordner und raeumt die Datei beim sauberen Beenden weg. Die Werkzeuge erkennen ihre Instanz daran, mit 30-s-Zeitpruefung gegen neu vergebene Nummern (Negativlauf ohne Pruefung: eine falsche `ucp-pid-2604` in Instanz 2 griff den Prozess von Instanz 1).
 - Beleg: `Selfaware-AI/daten/instanz2_einrichtung_20261005.txt`. Handhabung: Betriebsregeln, "Zwei Spielinstanzen gleichzeitig".
+
+### 13r. Welches Spiel gehoert zu welcher Instanz (05.10.2026, 19:55-20:03)
+- **gemessen:** Den Programmpfad des ERHOEHTEN Spiels liest eine normale Sitzung mit `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` + `QueryFullProcessImageNameW` (Prozess 2604, 56 ms fuer tasklist und Abfrage). `Get-Process ... .Path` bleibt beim erhoehten Spiel dagegen leer. Damit ist jede Instanz an ihrem Ordner erkennbar - `werkzeug/instanz.py` / `instanz.ps1`; die Hilfskruecke ueber `ucp-pid-<nr>` + Zeitpruefung (13q) ist abgeloest.
+- **gemessen (Negativlauf):** Mit beiden Instanzen laufend zaehlten die alten Werkzeuge (shc, starte_spiel, bis_menue, menue_erkunden, bild, lauf_burg2) je **2** Spiele; nach der Umstellung je 1, mit verschiedenen Fenstern (Instanz 1: 788524, Instanz 2: 1641010).
+- **gemessen:** `lauf_burg2.prozesse_weg()` mit SHC_INSTANZ=2 beendete nur Instanz 2 (29080); Instanz 1 (2604) lief weiter.
+- **gemessen:** `fenster_foto.ps1` (PrintWindow, Flag 0x2) liefert bei der NICHT erhoehten Instanz 2 ein echtes Bild (Hauptmenue, 2560x1440). Fuer Instanz 1 nicht neu geprueft; `bild.py` vermerkt dort seit 31.08. nur einen leeren Rahmen.
+- **gemessen:** Die zwei Spielfenster draengen sich ueber ihre Wacht im Modul abwechselnd nach ganz unten - zwei Abfragen nacheinander koennen beide "Platz 8" melden; im selben Augenblick lagen sie auf 8 und 9 von 10.
+- Beleg: `Selfaware-AI/daten/sif_altwerkzeuge_20261005.txt`.
