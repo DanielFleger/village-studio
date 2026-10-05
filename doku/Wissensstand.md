@@ -2687,3 +2687,6 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 - **abgelesen:** UpdateWoodcutter (0x0054C710): mit fertigem Holz Zustand 7, alle 21 Ticks Lagersuche; ohne Lager bleibt er in Zustand 7. Kommt er an und das Lager fasst nichts mehr, wird seine Ladung (+904) auf 0 gesetzt. Gemessen: 18 Holz je Gang.
 - **gemessen (Gegenprobe rot):** PathConnectionLayer 0x01DF6FD8 + calculateCanPlayerUnitsNavigateToAreaFromArea 0x004A5320 melden Wasser, Kartenrand und Gebaeudefelder als erreichbar - als Begehbarkeits-/Erreichbarkeitspruefung UNBRAUCHBAR (Spalte `erreichbar` in gebaeude.txt/lagebild.txt damit nicht belegt). Begehbarkeit ersatzweise aus der Rohstoffkarte (G/s/. samt Nachbarn).
 - Lagebild-Spalten neu: `ladung arbeitsplatz erreichbar`.
+
+### 13p. Wegtest ueber den Wegfinder des Spiels (05.10.2026, 18:33)
+- **gemessen (Gegenprobe gruen):** setDestinationForUnit (0x0053D3D0, thiscall UnitsState 0x01387F38, Einheit, x, y, 0) gibt FALSE, wenn es fuer diese Einheit keinen Weg gibt: Wasser 2/2 und Gebaeudefelder 2/2 -> FALSE, freies Feld -> TRUE. Modulbefehl `wegtest` {nr, punkte} setzt danach das alte Laufziel zurueck. Das ist die brauchbare Erreichbarkeitspruefung (die Wegnetz-Pruefung aus 13o ist es nicht).
