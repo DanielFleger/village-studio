@@ -32,6 +32,7 @@ import hashlib, os, shutil, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sperre
+from instanz import spielordner
 
 
 def pruefsumme(pfad):
@@ -70,7 +71,7 @@ def main(argumente):
         print("Ziel muss eine Kopie sein (2, 3, ...) - Instanz 1 ist die Quelle.")
         return 2
 
-    quelle, zielordner = sperre.spielordner(1), sperre.spielordner(ziel)
+    quelle, zielordner = spielordner(1), spielordner(ziel)
     if not os.path.isdir(zielordner):
         print("Instanz %d gibt es nicht: %s" % (ziel, zielordner))
         return 2

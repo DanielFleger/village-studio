@@ -16,7 +16,11 @@
 # Warum nicht takeScreenshot direkt aufrufen: aus dem Zeichenhaken heraus
 # stirbt der Prozess (die Funktion zeichnet selbst - Wiedereintritt), und aus
 # dem Spieltick kommt man nicht dran, sobald die Spieluhr steht.
-param([string]$Titel = "Crusader")
+#
+# Ohne -Titel nimmt es das Fenster der gewaehlten Instanz (-Instanz 2, sonst
+# SHC_INSTANZ, sonst 1) - beide Instanzen heissen "Crusader" (05.10.2026).
+param([string]$Titel = "", [int]$Instanz = 0)
+. "$PSScriptRoot\instanz.ps1"
 
 Add-Type @"
 using System;
@@ -28,9 +32,14 @@ public class Taste {
 }
 "@
 
-$p = Get-Process | Where-Object { $_.MainWindowTitle -eq $Titel } | Select-Object -First 1
-if (-not $p) { "kein Fenster '$Titel'"; exit 1 }
-$h = $p.MainWindowHandle
+if ($Titel) {
+  $p = Get-Process | Where-Object { $_.MainWindowTitle -eq $Titel } | Select-Object -First 1
+  $h = if ($p) { $p.MainWindowHandle } else { [IntPtr]::Zero }
+} else {
+  $h = Get-InstanzFenster $Instanz
+  $Titel = "Instanz $(Get-InstanzNummer $Instanz)"
+}
+if ($h -eq [IntPtr]::Zero) { "kein Fenster '$Titel'"; exit 1 }
 
 # lParam nach Windows-Vorgabe: Wiederholung 1, Scancode fuer Q (0x10)
 $down = [IntPtr]0x00100001

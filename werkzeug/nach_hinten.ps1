@@ -8,6 +8,11 @@
 #
 # SWP_NOACTIVATE ist dabei Pflicht: Sonst wandert der Tastaturfokus mit, und
 # das Fenster, in dem Daniel gerade tippt, verliert ihn.
+#
+# -Instanz 2: das Fenster der zweiten Spielkopie (ohne Angabe: SHC_INSTANZ,
+# sonst 1). Erkannt am Programmpfad, siehe instanz.ps1 (05.10.2026).
+param([int]$Instanz = 0)
+. "$PSScriptRoot\instanz.ps1"
 
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Text;
@@ -43,9 +48,8 @@ function Fensterstapel {
     return $liste
 }
 
-$spiel = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $_.ProcessName -match 'Crusader' } | Select-Object -First 1
-if (-not $spiel) { Write-Output "Kein Spielfenster gefunden."; exit 1 }
-$sh = $spiel.MainWindowHandle
+$sh = Get-InstanzFenster $Instanz   # nie "das erste Fenster namens Crusader" - beide Instanzen heissen so
+if ($sh -eq [IntPtr]::Zero) { Write-Output "Kein Spielfenster gefunden."; exit 1 }
 
 $vorher = Fensterstapel
 $platzVorher = ($vorher | ForEach-Object { $_.Handle } | Select-String -SimpleMatch $sh) # nur zur Anzeige

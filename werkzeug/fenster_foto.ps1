@@ -11,11 +11,16 @@
 # Das Fenster wird dabei NICHT angefasst: nicht nach vorn geholt, nicht
 # wiederhergestellt, nicht aktiviert. Daniel arbeitet daneben weiter.
 #
-#   fenster_foto.ps1 [-Titel "Crusader"] [-Ziel "pfad.png"]
+#   fenster_foto.ps1 [-Instanz 2] [-Titel "..."] [-Ziel "pfad.png"]
+#
+# Ohne -Titel nimmt es das Fenster der gewaehlten Instanz (-Instanz, sonst
+# SHC_INSTANZ, sonst 1) - beide Instanzen heissen "Crusader" (05.10.2026).
 param(
-  [string]$Titel = "Crusader",
-  [string]$Ziel  = "$PSScriptRoot\fenster.png"
+  [string]$Titel   = "",
+  [string]$Ziel    = "$PSScriptRoot\fenster.png",
+  [int]   $Instanz = 0
 )
+. "$PSScriptRoot\instanz.ps1"
 
 Add-Type -AssemblyName System.Drawing
 Add-Type -ReferencedAssemblies System.Drawing @"
@@ -94,9 +99,15 @@ public class FensterFoto {
 }
 "@
 
-$p = Get-Process | Where-Object { $_.MainWindowTitle -eq $Titel } | Select-Object -First 1
-if (-not $p) {
-  "Kein Fenster mit Titel '$Titel'."
+if ($Titel) {
+  $p = Get-Process | Where-Object { $_.MainWindowTitle -eq $Titel } | Select-Object -First 1
+  $hwnd = if ($p) { $p.MainWindowHandle } else { [IntPtr]::Zero }
+} else {
+  $hwnd = Get-InstanzFenster $Instanz
+  $Titel = "Instanz $(Get-InstanzNummer $Instanz)"
+}
+if ($hwnd -eq [IntPtr]::Zero) {
+  "Kein Fenster '$Titel'."
   $offen = Get-Process | Where-Object { $_.MainWindowTitle -ne "" } |
            ForEach-Object { $_.MainWindowTitle }
   "Offene Fenster: " + ($offen -join " | ")
@@ -104,7 +115,7 @@ if (-not $p) {
 }
 
 $weg = ""
-$bmp = [FensterFoto]::Hole($p.MainWindowHandle, [ref]$weg)
+$bmp = [FensterFoto]::Hole($hwnd, [ref]$weg)
 if ($null -eq $bmp) { "Aufnahme fehlgeschlagen: $weg"; exit 1 }
 $bmp.Save($Ziel, [System.Drawing.Imaging.ImageFormat]::Png)
 $b = $bmp.Width; $h = $bmp.Height

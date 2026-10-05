@@ -296,12 +296,16 @@ Crusader is already running"* stehen — sie kommt nie ins Menü. Das Log zeigt
 dann „Haken gesetzt", der Haken feuert aber nie, und man sucht den Fehler an
 der falschen Stelle.
 
-**Vor jedem Testlauf:**
+**Vor jedem Testlauf:** prüfen, dass in **deiner** Instanz genau ein Spiel
+läuft und sein Fenstertitel `Crusader` heißt (nicht `FATAL`, nicht
+`Stronghold Crusader Error`):
 ```
-Get-Process | Where-Object { $_.ProcessName -match "Crusader" } | ForEach-Object { $_.Kill() }
+python werkzeug/instanz.py
 ```
-und danach prüfen, dass **genau eine** Instanz läuft und ihr Fenstertitel
-`Crusader` heißt (nicht `FATAL`, nicht `Stronghold Crusader Error`).
+Seit 05.10.2026 laufen zwei Instanzen gleichzeitig. Der frühere Handgriff
+`Get-Process | Where-Object { $_.ProcessName -match "Crusader" } | ForEach-Object { $_.Kill() }`
+traf **beide** — beendet wird jetzt nur die eigene Instanz
+(`SHC_INSTANZ=<n> python Selfaware-AI/werkzeug/spiel.py beenden`).
 
 ### Die Testsperre — nur eine Sitzung fährt das Spiel
 
@@ -562,14 +566,23 @@ Ohne Angabe gilt überall Instanz 1 — alles wie bisher.
 | Werkzeug | für Instanz 2 |
 |---|---|
 | `python werkzeug/sperre.py holen villagestudio2 "<zweck>"` | der Name bestimmt die Instanz (`villagestudio` = 1); widerspricht `SHC_INSTANZ`, bricht es ab |
-| `powershell -File werkzeug/start_hinten.ps1 -Instanz 2` | findet das Fenster über die Prozessnummer, nicht über den Namen |
+| `powershell -File werkzeug/start_hinten.ps1 -Instanz 2` | startet und senkt nur das Fenster von Instanz 2 |
+| `stapel.ps1`, `nach_hinten.ps1`, `fenster_foto.ps1`, `bild_q.ps1` mit `-Instanz 2` | ohne Angabe: `SHC_INSTANZ`, sonst 1 |
+| `SHC_INSTANZ=2 python werkzeug/<werkzeug>.py` (VillageStudio) | gilt für `shc.py`, `starte_spiel.py`, `bis_menue.py`, `menue_erkunden.py`, `bild.py`, `lauf_burg2.py`, `befehl.py`, `test.py`, `gefecht.py` |
 | `SHC_INSTANZ=2 python Selfaware-AI/werkzeug/<lauf>.py` | `befehl.py` wählt Ordner, Kanal, Kanalsperre (`.lauf2`) und Nummernzähler (`.letzte_id2`) |
 | `SHC_INSTANZ=2 python Selfaware-AI/werkzeug/spiel.py beenden` | beendet **nur** Instanz 2 |
 | `python werkzeug/instanz_abgleich.py 2 --tun --als villagestudio2` | holt `logik.lua`, Modul und Baupläne von Instanz 1 |
+| `python werkzeug/instanz.py` | zeigt alle laufenden Spiele mit Instanz, Prozess und Fenster |
 
-Die Ordner-Regel („Instanz N = `<Instanz 1> InstanzN`") steht an drei Stellen:
-`sperre.py` (davon nehmen sie `instanz_abgleich.py` und `instanz_anlegen.py`), `start_hinten.ps1` und
-`Selfaware-AI/werkzeug/befehl.py` (davon nehmen sie alle Selfaware-Werkzeuge).
+**Eine Stelle für die Regel:** Welcher Ordner, welcher Prozess und welches
+Fenster zu einer Instanz gehören, steht in `werkzeug/instanz.py` (Python) und
+`werkzeug/instanz.ps1` (PowerShell). Alle VillageStudio-Werkzeuge nehmen es von
+dort. Erkannt wird ein Spiel an seinem **Programmpfad**, nie am Namen oder am
+Fenstertitel — beide Instanzen heißen „Stronghold Crusader" und ihre Fenster
+„Crusader". Den Pfad liest Windows auch beim erhöhten Spiel heraus (gemessen).
+`Selfaware-AI/werkzeug/befehl.py` führt die Ordner-Regel getrennt, damit der
+Befehlskanal nicht an VillageStudio hängt; `spiel.py` prüft bei jedem Aufruf,
+dass beide denselben Ordner nennen, und bricht sonst laut ab.
 
 ### Ablauf für einen Lauf auf Instanz 2
 
@@ -597,18 +610,20 @@ verweigert deshalb, wenn die Sperre von Instanz 2 jemand anderem gehört.
 
 Instanz 2 läuft **ohne** erhöhte Rechte (gemessen: Programmpfad von außen
 lesbar; ein Prozess aus derselben Kopie ließ sich mit `Stop-Process` beenden).
-Ob Tastendrücke von außen ankommen, ist nicht geprüft. Instanz 1 läuft erhöht
-wie bisher. Folge im nächsten Abschnitt.
+Ob Tastendrücke von außen ankommen, ist nicht geprüft. Das Fensterfoto
+(`fenster_foto.ps1`, PrintWindow) liefert bei Instanz 2 ein echtes Bild
+(gemessen: Hauptmenü, 2560×1440). Instanz 1 läuft erhöht wie bisher.
 
-### Alte Werkzeuge kennen nur Instanz 1 — nicht benutzen, solange Instanz 2 läuft
+### Alte Werkzeuge: seit 05.10.2026 instanzfest
 
-Abgelesen im Code am 05.10.2026, nicht im Lauf getestet:
+Vorher sahen alle alten Werkzeuge jedes laufende Spiel als ihres an. Gemessen
+mit beiden Instanzen laufend: Jedes zählte **2** Spiele, wo eines gemeint war.
+`bild.py` und `lauf_burg2.py` beendeten jedes Programm mit „Stronghold" oder
+„Crusader" im Namen (abgelesen) — Instanz 2 und sogar Stronghold 2. Jetzt sieht
+jedes Werkzeug nur die gewählte Instanz (gemessen: je 1 Spiel, verschiedene
+Fenster) und beendet nur deren Prozess (gemessen: Instanz 2 beendet, Instanz 1
+lief weiter). `lauf_burg2.py` holt die Sperre der gewählten Instanz.
 
-- `bild.py`, `lauf_burg2.py`: beenden **alle** Spielprozesse. Instanz 1 übersteht
-  das (Zugriff verweigert), **Instanz 2 nicht**.
-- `shc.py`, `starte_spiel.py`, `bis_menue.py`, `menue_erkunden.py`: zählen alle
-  Spielprozesse — mit Instanz 2 stimmt ihre Zahl nicht mehr.
-- `nach_hinten.ps1`, `stapel.ps1`, `fenster_foto.ps1`, `bild_q.ps1`: nehmen das
-  erste Fenster namens „Crusader" — beide Instanzen heißen so.
-- `werkzeug/befehl.py`, `test.py`, `gefecht.py`, `patch_*.py` (VillageStudio) und
-  `Selfaware-AI/werkzeug/gui.py`: fester Pfad Instanz 1.
+Bewusst nur Instanz 1, weil sie die Quelle ändern, die `instanz_abgleich.py`
+weiterträgt: `patch_bauwacht.py`, `patch_modus.py`. Ebenso
+`Selfaware-AI/werkzeug/gui.py`, denn die UCP3-GUI gehört zu Instanz 1.

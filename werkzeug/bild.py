@@ -27,7 +27,9 @@ Aufruf: bild.py [zielpfad]
 """
 import io, os, sys, time, glob, shutil, subprocess
 
-BASE = r"C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner, pids, fenster, hauptfenster   # Instanz waehlen: SHC_INSTANZ (05.10.2026)
+BASE = spielordner().replace("\\", "/")
 EXE  = BASE + "/Stronghold Crusader.exe"
 CMD  = BASE + "/ucp/villagestudio/befehl.json"
 DOKU = os.path.expanduser("~/Documents/Stronghold Crusader")
@@ -48,15 +50,9 @@ def offen():
     """Zaehlt FENSTER, nicht Prozesse. Die exe startet einen Kindprozess ohne
     Fenster - wer Prozesse zaehlt, sieht zwei und haelt das faelschlich fuer
     zwei laufende Spiele."""
-    a = ps('$p = @(Get-Process | Where-Object { $_.ProcessName -match "Crusader" '
-           '-and $_.MainWindowTitle -ne "" }); '
-           '"$($p.Count)|" + (($p | ForEach-Object { $_.MainWindowTitle }) -join ",")')
-    teile = a.split("|", 1)
-    try:
-        n = int(teile[0])
-    except (ValueError, IndexError):
-        n = 0
-    return n, (teile[1] if len(teile) > 1 else "")
+    # Nur Fenster DIESER Instanz - die andere darf daneben laufen (05.10.2026).
+    liste = [(titel, pid) for _, titel, pid in fenster() if titel]
+    return len({pid for _, pid in liste}), ",".join(titel for titel, _ in liste)
 
 
 def prozess_laeuft():
@@ -64,12 +60,7 @@ def prozess_laeuft():
     blockiert der Renderfaden - Windows meldet dann keinen Fenstertitel mehr,
     obwohl das Spiel laeuft. Wer in dieser Zeit den Titel prueft, haelt das
     Spiel faelschlich fuer beendet."""
-    a = ps('(Get-Process | Where-Object { $_.ProcessName -match "Crusader" } '
-           '| Measure-Object).Count')
-    try:
-        return int(a) > 0
-    except ValueError:
-        return False
+    return len(pids()) > 0   # nur DIESE Instanz (05.10.2026)
 
 
 def pruefe(schritt):
@@ -87,9 +78,13 @@ def pruefe(schritt):
 
 
 def starten():
-    ps('Get-Process | Where-Object { $_.ProcessName -match "Stronghold|Crusader" } '
-       '| ForEach-Object { try { $_.Kill() } catch {} }')
-    time.sleep(3)
+    # Nur DIESE Instanz. Frueher traf "Stronghold|Crusader" jedes Spiel dieses
+    # Namens - auch die zweite Instanz und sogar Stronghold 2 (05.10.2026).
+    nummern = pids()
+    if nummern:
+        ps('Get-Process -Id %s -ErrorAction SilentlyContinue '
+           '| ForEach-Object { try { $_.Kill() } catch {} }' % ",".join(map(str, nummern)))
+        time.sleep(3)
     for f in glob.glob(BASE + "/ucp-pid-*"):
         try: os.remove(f)
         except OSError: pass
@@ -106,6 +101,7 @@ def nach_hinten():
     zu minimieren. Fuer das Bild ist das egal - takeScreenshot liest aus der
     DirectDraw-Flaeche, nicht vom Bildschirm. Daniel arbeitet ungestoert
     weiter."""
+    h, _ = hauptfenster()   # das Fenster DIESER Instanz, nicht das erste namens Crusader
     aus = ps('''Add-Type @"
 using System;using System.Runtime.InteropServices;
 public class HB {
@@ -118,15 +114,15 @@ public class HB {
 }
 "@
 $vorher = [HB]::GetForegroundWindow()
-$p = Get-Process | Where-Object { $_.MainWindowTitle -eq "Crusader" } | Select-Object -First 1
-if ($p) {
-  [HB]::SetWindowPos($p.MainWindowHandle, [HB]::HWND_BOTTOM, 0, 0, 0, 0,
+$h = [IntPtr]{HANDLE}
+if ($h -ne [IntPtr]::Zero) {
+  [HB]::SetWindowPos($h, [HB]::HWND_BOTTOM, 0, 0, 0, 0,
                      [HB]::NOSIZE -bor [HB]::NOMOVE -bor [HB]::NOACTIVATE) | Out-Null
-  if ($vorher -ne [IntPtr]::Zero -and $vorher -ne $p.MainWindowHandle) {
+  if ($vorher -ne [IntPtr]::Zero -and $vorher -ne $h) {
     [HB]::SetForegroundWindow($vorher) | Out-Null
   }
   "nach hinten geschoben"
-} else { "kein Fenster" }''')
+} else { "kein Fenster" }'''.replace("{HANDLE}", str(h or 0)))
     print("    " + aus)
 
 

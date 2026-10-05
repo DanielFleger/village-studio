@@ -7,7 +7,9 @@ dort verschwinden sie beim Weiterreichen.
 """
 import io, os, sys, time, json
 
-BASE = r"C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner   # Instanz waehlen: SHC_INSTANZ (05.10.2026)
+BASE = spielordner().replace("\\", "/")
 CMD  = BASE + "/ucp/villagestudio/befehl.json"
 LOG  = BASE + "/ucp3.log"
 

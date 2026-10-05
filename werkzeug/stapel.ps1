@@ -7,6 +7,10 @@
 #
 # "Program Manager" ist der Desktop selbst und liegt naturgemaess ganz unten;
 # das Spiel direkt darueber gilt deshalb als erreicht.
+#
+# -Instanz 2: die zweite Spielkopie (ohne Angabe: SHC_INSTANZ, sonst 1).
+param([int]$Instanz = 0)
+. "$PSScriptRoot\instanz.ps1"
 
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Text;
@@ -21,11 +25,8 @@ public class Sp {
 }
 "@
 
-$p = Get-Process | Where-Object {
-    $_.MainWindowHandle -ne 0 -and $_.ProcessName -match 'Crusader'
-} | Select-Object -First 1
-if (-not $p) { Write-Output "Kein Spielfenster - laeuft Stronghold?"; exit 1 }
-$spiel = $p.MainWindowHandle
+$spiel = Get-InstanzFenster $Instanz   # nie "das erste Fenster namens Crusader" - beide Instanzen heissen so
+if ($spiel -eq [IntPtr]::Zero) { Write-Output "Kein Spielfenster - laeuft Stronghold?"; exit 1 }
 
 $namen = @()
 $platz = 0

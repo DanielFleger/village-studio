@@ -17,7 +17,9 @@ ucp3.log.
 """
 import io, os, sys, time, subprocess, glob
 
-BASE = r"C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner, pids, fenster, nummer   # Instanz waehlen: SHC_INSTANZ (05.10.2026)
+BASE = spielordner().replace("\\", "/")
 EXE  = BASE + "/Stronghold Crusader.exe"
 CMD  = BASE + "/ucp/villagestudio/befehl.json"
 LOG  = BASE + "/ucp3.log"
@@ -38,9 +40,13 @@ def ps(befehl):
 def prozesse_weg():
     # Ueber Get-Process, nicht ueber taskkill: der Prozessname enthaelt ein
     # Leerzeichen, und taskkill meldet Erfolg, auch wenn nichts getroffen wurde.
-    ps('Get-Process | Where-Object { $_.ProcessName -match "Stronghold|Crusader" } '
-       '| ForEach-Object { try { $_.Kill() } catch {} }')
-    time.sleep(3)
+    # Nur DIESE Instanz. Frueher traf "Stronghold|Crusader" jedes Spiel dieses
+    # Namens - auch die zweite Instanz und sogar Stronghold 2 (05.10.2026).
+    nummern = pids()
+    if nummern:
+        ps('Get-Process -Id %s -ErrorAction SilentlyContinue '
+           '| ForEach-Object { try { $_.Kill() } catch {} }' % ",".join(map(str, nummern)))
+        time.sleep(3)
     for f in glob.glob(BASE + "/ucp-pid-*"):
         try: os.remove(f)
         except OSError: pass
@@ -49,17 +55,11 @@ def prozesse_weg():
 def instanzen():
     """Zahl der laufenden Spielprozesse. Ueber tasklist gezaehlt kam hier
     Unsinn heraus - der Filterkopf enthaelt den Namen selbst."""
-    a = ps('(Get-Process | Where-Object { $_.ProcessName -match "Crusader" } '
-           '| Measure-Object).Count')
-    try:
-        return int(a)
-    except ValueError:
-        return -1
+    return len(pids())   # nur DIESE Instanz (05.10.2026)
 
 
 def fenstertitel():
-    return ps('(Get-Process | Where-Object { $_.ProcessName -match "Crusader" } '
-              '| ForEach-Object { $_.MainWindowTitle }) -join ", "')
+    return ", ".join(titel for _, titel, _ in fenster())
 
 
 def befehl(text, warte=6):
@@ -97,7 +97,7 @@ SPERRE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sperre.py")
 if not os.path.exists(SPERRE):
     SPERRE = (r"%USERPROFILE%/Documents/PC_Affe/Games/Stronghold_Crusader/"
               r"Stronghold Crusader Modding/Tools/VillageStudio/werkzeug/sperre.py")
-NAME = "villagestudio"
+NAME = "villagestudio" if nummer() == 1 else "villagestudio%d" % nummer()   # Sperre je Instanz
 
 r = subprocess.run([sys.executable, SPERRE, "holen", NAME, "Burg_left_2-Lauf"],
                    capture_output=True, text=True)

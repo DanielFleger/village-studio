@@ -20,8 +20,7 @@ Aufruf:
 Rueckgabe: 0 = frei bzw. bekommen, 1 = belegt, 2 = falscher Aufruf.
 
 Zwei Spielinstanzen (05.10.2026): jede hat ihre eigene Sperre, im eigenen
-Spielordner. Instanz N liegt in "<Instanz 1> InstanzN" - dieselbe Regel steht
-in start_hinten.ps1 und in Selfaware-AI/werkzeug/befehl.py.
+Spielordner. Welcher Ordner zu welcher Instanz gehoert, sagt instanz.py.
 Welche Instanz gemeint ist, sagt der Name: villagestudio = 1, villagestudio2 = 2.
 Andere Namen nehmen die Umgebungsvariable SHC_INSTANZ (Vorgabe 1). Widersprechen
 sich Name und SHC_INSTANZ, bricht das Werkzeug ab - sonst naehme man still die
@@ -30,20 +29,14 @@ die Rueckgabe gilt dann weiter fuer Instanz 1 wie bisher.
 """
 import io, os, re, sys, time
 
-BASE1 = r"C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner, vorhandene
+
 ALTER = 30 * 60          # nach 30 Minuten gilt eine Sperre als vergessen
 
 
-def spielordner(nummer):
-    return BASE1 if nummer == 1 else "%s Instanz%d" % (BASE1, nummer)
-
-
 def datei(nummer):
-    return spielordner(nummer) + "/ucp/villagestudio/wer_testet.txt"
-
-
-def vorhandene():
-    return [n for n in range(1, 10) if os.path.isdir(spielordner(n))]
+    return os.path.join(spielordner(nummer), "ucp", "villagestudio", "wer_testet.txt")
 
 
 def welche_instanz(name):

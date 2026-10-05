@@ -7,8 +7,10 @@ diesen Weg.
 """
 import sys, io, os
 
-ZIEL = r"C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme/ucp/villagestudio/befehl.json"
-LOG  = r"C:/Program Files (x86)/Steam/steamapps/common/Stronghold Crusader Extreme/ucp3.log"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner   # Instanz waehlen: SHC_INSTANZ (05.10.2026)
+ZIEL = os.path.join(spielordner(), "ucp", "villagestudio", "befehl.json")
+LOG  = os.path.join(spielordner(), "ucp3.log")
 
 text = sys.argv[1] if len(sys.argv) > 1 else '{ "id": 0 }'
 open(ZIEL, "wb").write(text.encode("utf-8"))

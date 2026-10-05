@@ -24,7 +24,7 @@ Aufruf:
 import io, os, subprocess, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sperre import spielordner
+from instanz import spielordner
 
 MARKE = b"Global\\FireflyStrongholdCrusadersExtreme\x00"
 SPIELDATEI = "Stronghold Crusader.exe"

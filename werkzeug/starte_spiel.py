@@ -13,7 +13,9 @@ Aufruf:  python werkzeug/starte_spiel.py [--links]
 """
 import io, os, subprocess, sys, time
 
-SPIEL   = r"C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner, pids, hauptfenster   # Instanz waehlen: SHC_INSTANZ (05.10.2026)
+SPIEL = spielordner()
 EXE     = os.path.join(SPIEL, "Stronghold Crusader.exe")
 BEFEHL  = os.path.join(SPIEL, "ucp", "villagestudio", "befehl.json")
 LOG     = os.path.join(SPIEL, "ucp3.log")
@@ -28,18 +30,13 @@ def ps(befehl):
 
 
 def laeuft():
-    return ps("(Get-Process 'Stronghold Crusader' -ErrorAction SilentlyContinue).Count")
+    return str(len(pids()))   # Text wie bisher; nur DIESE Instanz (05.10.2026)
 
 
 def fenster():
     """Handle und Titel des Spielfensters, oder (None, None)."""
-    aus = ps("$p = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and "
-             "$_.ProcessName -match 'Crusader' } | Select-Object -First 1; "
-             "if ($p) { '{0}|{1}' -f $p.MainWindowHandle, $p.MainWindowTitle }")
-    if "|" not in aus:
-        return None, None
-    h, t = aus.split("|", 1)
-    return int(h), t.strip()
+    # Das Fenster DIESER Instanz - nie "das erste namens Crusader" (05.10.2026).
+    return hauptfenster()
 
 
 def schreibe(text):

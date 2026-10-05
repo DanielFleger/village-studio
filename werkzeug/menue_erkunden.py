@@ -26,7 +26,9 @@ import subprocess
 import sys
 import time
 
-SPIEL  = r"C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner, pids   # Instanz waehlen: SHC_INSTANZ (05.10.2026)
+SPIEL = spielordner()
 BEFEHL = os.path.join(SPIEL, "ucp", "villagestudio", "befehl.json")
 LOG    = os.path.join(SPIEL, "ucp3.log")
 BILDER = r"%USERPROFILE%\AppData\Local\Temp\shc-menue"   # wohin die Bildschirmfotos gehen
@@ -45,10 +47,7 @@ NAMEN = {
 
 
 def laeuft():
-    aus = subprocess.run(
-        ["tasklist", "/FI", "IMAGENAME eq Stronghold Crusader.exe", "/NH"],
-        capture_output=True, text=True, errors="replace").stdout or ""
-    return aus.count("Stronghold Crusader.exe")
+    return len(pids())   # nur DIESE Instanz, erkannt am Programmpfad (instanz.py)
 
 
 def log_text():

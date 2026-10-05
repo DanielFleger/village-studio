@@ -24,7 +24,9 @@ import subprocess
 import sys
 import time
 
-SPIEL  = r"C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from instanz import spielordner, pids, hauptfenster, nummer   # Instanz waehlen: SHC_INSTANZ (05.10.2026)
+SPIEL = spielordner()
 EXE    = os.path.join(SPIEL, "Stronghold Crusader.exe")
 BEFEHL = os.path.join(SPIEL, "ucp", "villagestudio", "befehl.json")
 LOG    = os.path.join(SPIEL, "ucp3.log")
@@ -84,24 +86,12 @@ def laeuft():
     ein schlankes Programm und antwortet in Millisekunden - beim Beenden macht
     das den Unterschied zwischen vier Sekunden und einer.
     """
-    # errors="replace" ist Pflicht: tasklist gibt Zeichen aus, die die
-    # Windows-Standardkodierung nicht kennt. Ohne das bricht der Lesevorgang
-    # ab, stdout ist None, und der naechste Zugriff wirft einen Fehler -
-    # gemessen am 01.09.2026, mitten im dritten Testdurchgang.
-    aus = subprocess.run(
-        ["tasklist", "/FI", "IMAGENAME eq Stronghold Crusader.exe", "/NH"],
-        capture_output=True, text=True, errors="replace").stdout or ""
-    return aus.count("Stronghold Crusader.exe")
+    return len(pids())   # nur DIESE Instanz, erkannt am Programmpfad (instanz.py)
 
 
 def fenster():
-    aus = ps("$p = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and "
-             "$_.ProcessName -match 'Crusader' } | Select-Object -First 1; "
-             "if ($p) { '{0}|{1}' -f $p.MainWindowHandle, $p.MainWindowTitle }")
-    if "|" not in aus:
-        return None, None
-    h, t = aus.split("|", 1)
-    return int(h), t.strip()
+    # Das Fenster DIESER Instanz - nie "das erste namens Crusader" (05.10.2026).
+    return hauptfenster()
 
 
 def fenstermodus(vollbild):
@@ -143,7 +133,7 @@ def nach_hinten():
     skript = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "nach_hinten.ps1")
     aus = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy",
-                          "Bypass", "-File", skript],
+                          "Bypass", "-File", skript, "-Instanz", str(nummer())],
                          capture_output=True, text=True).stdout.strip()
     letzte = [z for z in aus.splitlines() if z.strip()]
     if letzte:
