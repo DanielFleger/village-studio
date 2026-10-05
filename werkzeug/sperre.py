@@ -26,6 +26,22 @@ Andere Namen nehmen die Umgebungsvariable SHC_INSTANZ (Vorgabe 1). Widersprechen
 sich Name und SHC_INSTANZ, bricht das Werkzeug ab - sonst naehme man still die
 Sperre der anderen Instanz. "nachsehen" ohne SHC_INSTANZ zeigt alle Instanzen;
 die Rueckgabe gilt dann weiter fuer Instanz 1 wie bisher.
+
+Sperre je Sitzung (05.10.2026, 20:30): Der Name allein sagt NICHT, wem die Sperre
+gehoert - alle Sitzungen benutzen fuer Instanz 2 denselben Namen "villagestudio2".
+Bis dahin uebernahm "holen" mit gleichem Namen eine fremde Sperre still, und
+"freigeben" loeschte sie (05.10. 20:13-20:15 passiert, SAI-Sitzung gegen die
+Sitzung mit "gefecht.py pruefen"). Darum steht jetzt die SITZUNG mit im Eintrag
+(Claude: CLAUDE_CODE_HOST_SESSION_ID bzw. CLAUDE_CODE_SESSION_ID; sonst SHC_SITZUNG).
+  holen      - eine frische Sperre einer ANDEREN Sitzung ist belegt, egal welcher Name.
+               Die eigene wird erneuert. Ohne eigene Kennung zaehlt eine Sperre mit
+               Kennung immer als fremd (es laesst sich nicht beweisen, dass sie die eigene ist).
+  freigeben  - nur die eigene. Eine fremde bleibt stehen (Rueckgabe 1).
+  Alte Eintraege ohne Kennung (und Sitzungen ohne Kennung untereinander) werden
+  wie bisher am Namen verglichen. Eine Sperre, die aelter als 30 Minuten ist,
+  gilt weiter als vergessen und darf uebernommen werden.
+Dateiformat: name|zeit|S=<sitzung>|zweck - aeltere Leser (name|zeit|zweck) lesen
+den Namen und das Alter unveraendert, sie zeigen die Kennung nur im Zweck mit.
 """
 import io, os, re, sys, time
 
@@ -33,10 +49,20 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from instanz import spielordner, vorhandene
 
 ALTER = 30 * 60          # nach 30 Minuten gilt eine Sperre als vergessen
+KENNUNG = ("CLAUDE_CODE_HOST_SESSION_ID", "CLAUDE_CODE_SESSION_ID", "SHC_SITZUNG")
 
 
 def datei(nummer):
     return os.path.join(spielordner(nummer), "ucp", "villagestudio", "wer_testet.txt")
+
+
+def meine_sitzung():
+    """Kennung der aufrufenden Sitzung, "" wenn keine (Mensch, Codex, Skript ohne Umgebung)."""
+    for k in KENNUNG:
+        v = os.environ.get(k, "").strip()
+        if v:
+            return v.replace("|", "_")
+    return ""
 
 
 def welche_instanz(name):
@@ -56,7 +82,8 @@ DATEI = datei(1)         # wird in main() auf die gewaehlte Instanz gesetzt
 
 
 def lesen():
-    """Gibt (name, zweck, alter_in_sekunden) zurueck oder None."""
+    """Gibt (name, zweck, alter_in_sekunden, sitzung) zurueck oder None. sitzung = "" bei alten Eintraegen.
+    Die ersten drei Stellen sind wie frueher (instanz_abgleich.py liest [0] und [2])."""
     if not os.path.exists(DATEI):
         return None
     try:
@@ -72,17 +99,32 @@ def lesen():
         zeit = float(teile[1])
     except ValueError:
         return None
-    return teile[0].strip(), teile[2].strip(), time.time() - zeit
+    rest, sitzung = teile[2], ""
+    if rest.startswith("S="):
+        sitzung, _, rest = rest[2:].partition("|")
+    return teile[0].strip(), rest.strip(), time.time() - zeit, sitzung.strip()
+
+
+def fremd(eintrag, name):
+    """Gehoert ein Eintrag einer anderen Sitzung (bzw. bei alten Eintraegen: einem anderen Namen)?"""
+    ich = meine_sitzung()
+    sitzung = eintrag[3] if len(eintrag) > 3 else ""
+    if sitzung:
+        return sitzung != ich            # ohne eigene Kennung ist eine Sperre mit Kennung nie die eigene
+    return eintrag[0] != name            # alter Eintrag oder Sitzung ohne Kennung: wie bisher am Namen
 
 
 def zeigen(eintrag):
     if eintrag is None:
         print("Sperre ist FREI.")
         return
-    name, zweck, alter = eintrag
+    name, zweck, alter = eintrag[0], eintrag[1], eintrag[2]
+    sitzung = eintrag[3] if len(eintrag) > 3 else ""
     print("Sperre gehoert: %s" % name)
     print("   Zweck : %s" % zweck)
     print("   Alter : %d Minuten" % (alter / 60))
+    if sitzung:
+        print("   Sitzung: %s%s" % (sitzung, " (diese Sitzung)" if sitzung == meine_sitzung() else ""))
     if alter > ALTER:
         print("   -> aelter als %d Minuten, gilt als vergessen und darf uebernommen werden."
               % (ALTER / 60))
@@ -123,20 +165,22 @@ def main():
         if not name:
             print("Aufruf: sperre.py holen <name> <zweck>")
             return 2
-        if eintrag is not None and eintrag[0] != name and eintrag[2] <= ALTER:
+        if eintrag is not None and eintrag[2] <= ALTER and fremd(eintrag, name):
             print("BELEGT - nicht testen!")
             zeigen(eintrag)
             print()
             print("Schreib der anderen Sitzung, statt trotzdem zu starten.")
             return 1
+        ich = meine_sitzung()
         io.open(DATEI, "w", encoding="utf-8").write(
-            "%s|%f|%s" % (name, time.time(), zweck))
+            "%s|%f|%s%s" % (name, time.time(), ("S=%s|" % ich) if ich else "", zweck))
         print("Sperre geholt: %s - %s" % (name, zweck))
         return 0
 
     if was == "freigeben":
-        if eintrag is not None and name and eintrag[0] != name:
-            print("Sperre gehoert %s, nicht %s - nicht freigegeben." % (eintrag[0], name))
+        if eintrag is not None and fremd(eintrag, name):
+            print("Sperre gehoert %s%s, nicht dieser Sitzung - nicht freigegeben." % (
+                eintrag[0], (" (Sitzung %s)" % eintrag[3]) if len(eintrag) > 3 and eintrag[3] else ""))
             return 1
         if os.path.exists(DATEI):
             os.remove(DATEI)

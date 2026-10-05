@@ -341,6 +341,20 @@ sie von selbst frei, auch bei jedem Abbruch.
 Das ersetzt keine Absprache, es fängt nur den Fall ab, dass eine vergessen
 wurde.
 
+**Die Sperre gehört einer Sitzung, nicht einem Namen (05.10.2026).** Alle
+Sitzungen benutzen für Instanz 2 denselben Namen `villagestudio2`. Bis dahin
+galt eine fremde Sperre mit gleichem Namen als die eigene: `holen` übernahm sie
+still, `freigeben` löschte sie — am 05.10. zwischen 20:13 und 20:15 passiert.
+Jetzt steht die Sitzungskennung im Eintrag (`CLAUDE_CODE_HOST_SESSION_ID`, sonst
+`CLAUDE_CODE_SESSION_ID`, sonst `SHC_SITZUNG`), und `nachsehen` zeigt sie mit
+„(diese Sitzung)“. Eine frische Sperre einer anderen Sitzung ist belegt, egal
+unter welchem Namen; freigeben kann nur die eigene Sitzung. Wer ohne Kennung
+kommt (Mensch, Codex), gilt gegenüber einer Sperre mit Kennung als fremd. Alte
+Einträge ohne Kennung werden wie bisher am Namen verglichen; nach 30 Minuten
+darf jeder übernehmen. Prüfung an einer Attrappe, nie an einer echten Sperre:
+`python werkzeug/sperre_pruefen.py` (9 Fälle; gegen die alte Fassung werden die
+Fälle 1, 2 und 6 rot).
+
 ### Das Spielfenster ist von aussen NICHT bedienbar (31.08.2026)
 
 Der Prozess laeuft erhoeht, die Claude-Sitzung nicht. Windows (UIPI) sperrt
@@ -572,7 +586,7 @@ Ohne Angabe gilt überall Instanz 1 — alles wie bisher.
 
 | Werkzeug | für Instanz 2 |
 |---|---|
-| `python werkzeug/sperre.py holen villagestudio2 "<zweck>"` | der Name bestimmt die Instanz (`villagestudio` = 1); widerspricht `SHC_INSTANZ`, bricht es ab |
+| `python werkzeug/sperre.py holen villagestudio2 "<zweck>"` | der Name bestimmt die Instanz (`villagestudio` = 1); widerspricht `SHC_INSTANZ`, bricht es ab. Besitzer ist die **Sitzung**, nicht der Name |
 | `powershell -File werkzeug/start_hinten.ps1 -Instanz 2` | startet und senkt nur das Fenster von Instanz 2 |
 | `stapel.ps1`, `nach_hinten.ps1`, `fenster_foto.ps1`, `bild_q.ps1` mit `-Instanz 2` | ohne Angabe: `SHC_INSTANZ`, sonst 1 |
 | `SHC_INSTANZ=2 python werkzeug/<werkzeug>.py` (VillageStudio) | gilt für `shc.py`, `starte_spiel.py`, `bis_menue.py`, `menue_erkunden.py`, `bild.py`, `lauf_burg2.py`, `befehl.py`, `test.py`, `gefecht.py` |

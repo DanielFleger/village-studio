@@ -96,7 +96,8 @@ def main(argumente):
 
     sperre.DATEI = sperre.datei(ziel)
     eintrag = sperre.lesen()
-    if eintrag is not None and eintrag[2] <= sperre.ALTER and eintrag[0] != als:
+    # fremd = andere Sitzung (05.10.2026: der Name allein unterscheidet keine Sitzungen - alle heissen villagestudio2)
+    if eintrag is not None and eintrag[2] <= sperre.ALTER and sperre.fremd(eintrag, als):
         print("GESPERRT: die Sperre von Instanz %d gehoert %s (%s) - nichts kopiert." % (ziel, eintrag[0], eintrag[1]))
         print("logik.lua neu zu laden wuerde deren laufende Partie stoeren.")
         return 1
