@@ -549,6 +549,9 @@ bis das Modul laeuft, und uebergibt dann an die Wacht im Spiel.
   Die Fassung hier im Repo (`ucp/logik.lua`, 1.978 Zeilen) ist alt; Instanz 1-3 haben noch eine aeltere Zwischenfassung.
 - **Plattformregel (gemessen 19.10. 22:55):** UCP3 verbietet einem Modul, globale Variablen anzulegen ("global assignment
   not permitted in module") - logik.lua laeuft dann gar nicht. Alles mit `local`.
+- **Rust-Kern (19.10. 23:15, Selfaware-AI B-115):** logik.lua laedt `ucp/modules/villagestudio-0.1.0/samurai_kern.dll`
+  (core.openLibraryHandle, cdecl) und ruft ihn jeden Takt. UCP3 laedt DLLs NUR aus einem Modulordner ("can only load
+  libraries when in a module"). Eine geladene DLL ist bis Spielende gesperrt - neue Fassung = Instanz neu starten.
 - **Belege:** `Selfaware-AI/Spielkarte.md` Abschnitt 1, `werkzeug/absender_live_pruefen.py` (im Spiel 8/8 + Gegenprobe),
   `werkzeug/absender_pruefen.py` (ohne Spiel, Maschinencode mit capstone).
 
