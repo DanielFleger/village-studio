@@ -535,6 +535,39 @@ bis das Modul laeuft, und uebergibt dann an die Wacht im Spiel.
   das Startskript hoert auf, sobald das Modul laeuft und die Lage sitzt - das
   hat aus 22 Sekunden 3,2 gemacht.
 
+### FALLE: Die Fenster-Wacht im Modul laeuft IMMER - auch wenn Daniel spielt (gemessen 19.10.2026)
+
+**Wer selbst spielen will, legt zuerst `ucp/villagestudio/vorn.txt` in den
+Ordner der Instanz und startet sie neu.** Sonst schiebt das Modul das eigene
+Spielfenster in jeder Partie alle 300 Bilder (alle paar Sekunden) ganz nach
+unten - Taskleiste, Browser, Discord springen ueber das Spiel, obwohl es das
+aktive Fenster bleibt.
+
+- **Wo:** `ucp/modules/villagestudio-0.1.0/init.lua`, `onMenuFrame` ->
+  `if fensterWachtAn and (menuCounter <= 60 or menuCounter % 300 == 0) then pcall(fensterNachHinten)`
+  -> `SetWindowPos(eigenesFenster, HWND_BOTTOM, ..., 0x13)`. Der Bild-Haken laeuft auch im Gefecht.
+- **Irrefuehrend:** Der Kommentar davor sagt „ABGESCHALTET 01.09.2026“ - das
+  stimmt nicht mehr, der Aufruf ist seit „GELOEST 01.09.2026, 23:33“
+  (Aufrufart 2) wieder scharf. Gemessen am 19.10. in allen fuenf Instanzen:
+  `pcall(fensterNachHinten)` aktiv, nirgends eine `vorn.txt`.
+- **Schalter:** `vorn.txt` wird nur beim ERSTEN Bild gelesen - anlegen allein
+  wirkt nicht, erst nach einem Neustart. Kein Befehl schaltet die Wacht im
+  laufenden Spiel ab (`fensterWachtAn` ist eine lokale Variable in init.lua).
+  Beleg im ucp3.log: `FENSTER: vorn.txt gefunden - das Fenster bleibt, wo es ist.`
+- **Beleg:** `Selfaware-AI/werkzeug/fenster_ereignisse.ps1` (Windows meldet jeden
+  Vordergrundwechsel + Lage des Spielfensters alle 50 ms),
+  `Selfaware-AI/daten/fenster_ereignisse_20261019_210128.txt`: 21:03:21.091
+  Stronghold vorn, 4 Fenster darueber (nur Taskleisten); 21:03:21.797 Stronghold
+  WEITER vorn, aber 15 Fenster darueber - ohne Klick, ohne Fokuswechsel.
+  Dasselbe 21:03:22.405 -> 21:03:25.814.
+- **Was es NICHT war (vorher geprueft):** Claude-App (Daniel hat sie
+  abgeschaltet, Taskleiste kam trotzdem), andere Programme, `logik.lua`
+  (dort ist `fensterSetzen` wirklich abgeschaltet, `hinten` stand nicht im Log).
+- **Pflaster, die deshalb gebaut und am 19.10. wieder abgeschaltet wurden:**
+  `start_hinten.ps1` (hebt alle anderen Fenster), `spielen_vorne.ps1` +
+  Taskleisten-Wacht in `samurai_wache.py` (Spiel „immer im Vordergrund“).
+  Sie haben gegen die Wacht im Modul gekaempft, statt sie abzuschalten.
+
 ---
 
 ### Nach jedem Laden eines Menschen-Spielstands: `eigenerPlatz` schicken (04.10.2026)

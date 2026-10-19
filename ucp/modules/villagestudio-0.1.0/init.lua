@@ -663,6 +663,12 @@ local function onMenuFrame()
       menuCounter, ticks, einh,
       ticks > 0 and "Gefecht laeuft" or "KEIN Gefecht"))
   end
+  -- !!! ACHTUNG (gemessen 19.10.2026): DIE WACHT IST SCHARF, das "ABGESCHALTET"
+  -- !!! weiter unten ist ueberholt. Alle 300 Bilder SetWindowPos HWND_BOTTOM
+  -- !!! auf das eigene Fenster - auch in jeder Partie, die Daniel selbst spielt:
+  -- !!! Taskleiste, Browser, Discord springen alle paar Sekunden ueber das Spiel.
+  -- !!! Zum Selbstspielen: ucp/villagestudio/vorn.txt anlegen + Instanz neu
+  -- !!! starten (nur beim ersten Bild gelesen). doku/Betriebsregeln.md, FALLE.
   -- Beim allerersten Bild sofort nach hinten, danach regelmaessig nachfassen.
   -- Frueher geht es nicht: vorher hat das Spiel noch kein Fenster gezeichnet.
   -- ABGESCHALTET 01.09.2026. Zwei Startversuche endeten im Absturz, beide mit
