@@ -535,6 +535,23 @@ bis das Modul laeuft, und uebergibt dann an die Wacht im Spiel.
   das Startskript hoert auf, sobald das Modul laeuft und die Lage sitzt - das
   hat aus 22 Sekunden 3,2 gemacht.
 
+### HINWEIS AN DIE LUA-SITZUNG: logik.lua hat seit 19.10.2026 einen Absender je Befehl (Selfaware-AI B-94)
+
+- **Was sich geaendert hat:** Spielbefehle mit `"player"` schalten "ich" (`0x01A275DC`) nicht mehr einen Takt lang um.
+  Der Eintrag bekommt die Kennung `0x53414D00 + Platz`; an `0x00489387` (in `processWaitingCommands`, 9 Bytes) springt das
+  Spiel in eigenen Code, der nur fuer gestempelte Eintraege Ausloeser und "ich" fuer den einen Aufruf setzt und die
+  Auswahl-Leiste (`UnitsState+116`) sichert. Grund: Daniel 19.10. - SamurAI darf nie einen anderen Spieler beeinflussen;
+  vorher gingen Klicks des Menschen in diesem Takt an den Lenker, und jeder Angriff loeschte seine Auswahl.
+- **Schalter:** `{"befehle": [{"absender": "aus"}]}` schreibt die 9 Original-Bytes zurueck (alter Weg), `"an"` baut ein,
+  `"status"` meldet. Beim Laden von logik.lua wird eingebaut. Im Hauptmenue nur als Liste (`befehle`) - init.lua reicht
+  dort nur ausgewaehlte Befehle weiter.
+- **Wo die aktuelle logik.lua liegt:** `Selfaware-AI/werkzeug/logik_stand_20261019.lua` (Instanz 4 und 5 byte-gleich).
+  Die Fassung hier im Repo (`ucp/logik.lua`, 1.978 Zeilen) ist alt; Instanz 1-3 haben noch eine aeltere Zwischenfassung.
+- **Plattformregel (gemessen 19.10. 22:55):** UCP3 verbietet einem Modul, globale Variablen anzulegen ("global assignment
+  not permitted in module") - logik.lua laeuft dann gar nicht. Alles mit `local`.
+- **Belege:** `Selfaware-AI/Spielkarte.md` Abschnitt 1, `werkzeug/absender_live_pruefen.py` (im Spiel 8/8 + Gegenprobe),
+  `werkzeug/absender_pruefen.py` (ohne Spiel, Maschinencode mit capstone).
+
 ### FALLE: Die Fenster-Wacht im Modul laeuft IMMER - auch wenn Daniel spielt (gemessen 19.10.2026)
 
 **Wer selbst spielen will, legt zuerst `ucp/villagestudio/vorn.txt` in den
