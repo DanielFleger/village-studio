@@ -2628,6 +2628,15 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 | Belegter Platz → kein Gebäude, kein Abzug | **gemessen** | Gegenlauf auf dem Lager |
 | Eine neue Holzfällerhütte wird sofort besetzt (Bauer → Holzfäller) | **gemessen** | Typen-Zählung |
 
+### 13i-2. Fuer WEN ein Spielbefehl gilt (19.10.2026, Selfaware-AI B-114)
+
+| Aussage | Marke | Beleg |
+|---|---|---|
+| Jeder eingereihte Befehl traegt seinen Absender (`playerUnk`); `queueCommand` traegt die eigene Netzkennung `DPLAYX_PlayerHandle` ein, `scheduleReceivedCommand` (`0x00480210`) eine mitgegebene | **abgelesen** | `Selfaware-AI/daten/dekomp_queuecommand.c`, `dekomp_befehl_ausfuehren.c` |
+| `processWaitingCommands` (`0x004892F0`) setzt vor jedem Ausfuehren `protocolInvokerPlayerID` (`0x01A275D8`) = `translateMultiplayerIDsIntoPlayerIDs(playerUnk)`; die Ausfuehrer lesen diesen Ausloeser (z. B. `ProcessRecruitUnit(protocolInvokerPlayerID, Typ, Gebaeude)`), 43 Funktionen unter `Commands::` | **abgelesen** | `dekomp_befehl_ausfuehren.c`, `dekomp_absender.c` |
+| `translateMultiplayerIDsIntoPlayerIDs` (`0x0047EAF0`): im Mehrspieler Absender -> Platz ueber `currentPlayerFullIDArray[1..8]` (`0x0191DE10`); im Einzelspieler/Gefecht gegen Computer IMMER `currentPlayerSlotID` (`0x01A275DC`) - der Absender wird nicht beachtet. Darum gilt jeder Befehl fuer den, der bei der Ausfuehrung "ich" ist (passt zur Messung 18.10., logik.lua `alsSpieler`) | **abgelesen + passt zur Messung** | `dekomp_absender.c`; Spielkarte: `Selfaware-AI/Spielkarte.md` Abschnitt 1 |
+| **Folge fuer Mensch + KI-Lenker:** Haelt das Modul "ich" einen Takt lang auf dem Platz des Lenkers, gehen Klicks des Menschen in diesem Takt an den Lenker. Weg ohne Umschalten: Einzelspieler-Zweig der Uebersetzung fuer eine Lenker-Absenderkennung oeffnen (nicht gebaut) | **gefolgert** | Selfaware-AI Backlog B-94 |
+
 ### 13j. Bauplatz pruefen ohne zu bauen (04.10.2026, 20:04)
 
 | Aussage | Marke | Beleg |
