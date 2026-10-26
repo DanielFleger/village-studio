@@ -1,0 +1,53 @@
+== RandomLayer 1008 (0x1bd0f48)
+  lesen 0  schreiben 0  sonst 1  ?
+  lesen 0  schreiben 0  sonst 1  _HoldStrong::Commands::ResyncShortLayer @004840c0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Global::AFireSpreadFunction @004054e0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Global::IgniteFireAtMiniTile @004052e0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Global::SomeFireSpreadFunction @00405130
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Buildings::BuildingsState::spawnCrowForBuilding @0040a260
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Buildings::BuildingsState::updateHopsFieldTileGraphics @0040edf0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Buildings::BuildingsState::updateWheatFieldTileGraphics @0040cf20
+  lesen 2  schreiben 0  sonst 0  _HoldStrong::Map::LandscapeState::createTree @004f1ce0
+  lesen 8  schreiben 0  sonst 0  _HoldStrong::Map::Navigation::PathFindingState::commitUnitPathPlanUsingWalkLayer @00498fd0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Navigation::PathFindingState::findFreeSpaceNextToEnemyDefensiveStructureInSameAreaWithinDistance @004a7f50
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::applyRockGraphicsToFootprint @004fb770
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::generateDustClouds @004fc490
+  lesen 0  schreiben 0  sonst 2  _HoldStrong::Map::TileMapState::resetHeightAndMapBorders @004f6cf0
+  lesen 3  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::setConstructionGFXLayerBasedOnPlacementChecks @00504f10
+  lesen 0  schreiben 0  sonst 2  _HoldStrong::Map::TileMapState::setTerrain @00512940
+  lesen 0  schreiben 1  sonst 1  _HoldStrong::Map::TileMapState::setupTileMapSections @00511df0
+  lesen 2  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::updateBuildingGraphicsLayer @00506370
+  lesen 12  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  lesen 54  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  lesen 4  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::updateMacroLayerRelated @004fdb00
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::updateMacroLayerRelated2 @004ff080
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Units::TroopValueState::scanForArcherPoints @0051f340
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Units::TroopValueState::scanForSupportPoints @0051f4b0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Units::UnitsState::findFreeTileNearby @005371f0
+  lesen 4  schreiben 0  sonst 0  _HoldStrong::Rendering::ViewportRenderState::renderMap @004e8cf0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::UI::MinimapViewState::renderMinimapTileColors @004b58d0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::UI::MinimapViewState::renderMinimapTileStripWithLuminescence @004b5330
+== GfxLayer 1001 (0x1ae5688)
+  lesen 0  schreiben 0  sonst 1  ?
+  lesen 1  schreiben 1  sonst 0  _HoldStrong::Map::Buildings::BuildingsState::updateBuildingAreaTileGraphics @0040efd0
+  lesen 1  schreiben 1  sonst 1  _HoldStrong::Map::Buildings::BuildingsState::updateHopsFieldTileGraphics @0040edf0
+  lesen 1  schreiben 1  sonst 0  _HoldStrong::Map::Buildings::BuildingsState::updateWheatFieldTileGraphics @0040cf20
+  lesen 0  schreiben 2  sonst 0  _HoldStrong::Map::TileMapState::applyRockGraphicsToFootprint @004fb770
+  lesen 0  schreiben 1  sonst 0  _HoldStrong::Map::TileMapState::resetAreaBasedOnLogicalLayer @005127b0
+  lesen 0  schreiben 6  sonst 1  _HoldStrong::Map::TileMapState::setupAllMapSections @00512100
+  lesen 0  schreiben 0  sonst 2  _HoldStrong::Map::TileMapState::setupTileMapSections @00511df0
+  lesen 0  schreiben 17  sonst 0  _HoldStrong::Map::TileMapState::updateBuildingGraphicsLayer @00506370
+  lesen 2  schreiben 17  sonst 0  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  lesen 0  schreiben 103  sonst 0  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  lesen 13  schreiben 0  sonst 0  _HoldStrong::Rendering::ViewportRenderState::renderMap @004e8cf0
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Rendering::ViewportRenderState::updateBuildingPreviewPosition @004e8430
+== MacroLayer 1036 (0x1dcfcb8)
+  lesen 0  schreiben 0  sonst 1  ?
+  lesen 0  schreiben 0  sonst 1  _HoldStrong::Commands::ResyncShortLayer @004840c0
+  lesen 3  schreiben 3  sonst 0  _HoldStrong::Map::Navigation::PathFindingState::updateSeparateAreaTileMap @004995e0
+  lesen 0  schreiben 1  sonst 0  _HoldStrong::Map::TileMapState::resetAreaBasedOnLogicalLayer @005127b0
+  lesen 0  schreiben 0  sonst 2  _HoldStrong::Map::TileMapState::setupTileMapSections @00511df0
+  lesen 3  schreiben 0  sonst 0  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  lesen 15  schreiben 14  sonst 0  _HoldStrong::Map::TileMapState::updateMacroLayerRelated @004fdb00
+  lesen 7  schreiben 11  sonst 0  _HoldStrong::Map::TileMapState::updateMacroLayerRelated2 @004ff080
+  lesen 1  schreiben 0  sonst 0  _HoldStrong::Map::Units::UnitsState::calculateUnitMovementSpeed @0052f7e0

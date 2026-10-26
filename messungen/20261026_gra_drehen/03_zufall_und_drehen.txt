@@ -1,0 +1,288 @@
+=== 1. setupTileMapSections, Zeilen mit RandomLayer
+  64   IO::LowLevelMemory::fillMemory_ByteValue
+  65             (&DAT_LowLevelMemory,0x13a10,'\0',DAT_TileMapState.SEC_TileMap1104);
+  66   IO::LowLevelMemory::fillMemory_ByteValue
+  67             (&DAT_LowLevelMemory,0xb0a90,'\0',DAT_TileMapState.SEC_PathfindingCostTileMap1105);
+  68   puVar2 = DAT_TileMapState.RandomLayer;
+  69   iVar1 = 0x13a10;
+  70   do {
+  71     Random::RNG::nextRandomNumber2(&SEC_RNG);
+  72     *puVar2 = SEC_RNG.currentNumber2;
+  67             (&DAT_LowLevelMemory,0xb0a90,'\0',DAT_TileMapState.SEC_PathfindingCostTileMap1105);
+  68   puVar2 = DAT_TileMapState.RandomLayer;
+  69   iVar1 = 0x13a10;
+  70   do {
+  71     Random::RNG::nextRandomNumber2(&SEC_RNG);
+  72     *puVar2 = SEC_RNG.currentNumber2;
+  73     puVar2 = puVar2 + 1;
+  74     iVar1 = iVar1 + -1;
+  75   } while (iVar1 != 0);
+=== 2. Aufrufer von _HoldStrong::Map::TileMapState::updateGfxLayer
+  <- _HoldStrong::Map::TileMapState::setupAllMapSections @00512100
+    <- _HoldStrong::Global::WinMain @0057be10
+      <- ___tmainCRTStartup @00583e46
+    <- _HoldStrong::Map::MapPropertiesState::loadMap @004c62c0
+      <- _HoldStrong::Global::LaunchSinglePlayerGameUnk @0042c620
+      <- _HoldStrong::Map::MapPropertiesState::loadMissionMapAndSetLord @004c6880
+      <- _HoldStrong::UI::MenuItemActionHandler_MainMenu_Main @004251a0
+    <- _HoldStrong::Global::LaunchSkirmishGame @00441270
+      <- _HoldStrong::Commands::ShareGameSeedAndMultiplayerSettingsAndStartGame @00480980
+      <- _HoldStrong::UI::MenuItemActionHandler_LobbyMenu_LobbyscreenStartButtonClick @00442640
+      <- _HoldStrong::Global::SetupSkirmishMode @004c68d0
+      <- _HoldStrong::UI::MenuItemActionHandler_General_LaunchOrQuitMultiplayerGameUnk @00494950
+    <- _HoldStrong::UI::MenuItemActionHandler_UnusedCreateSiege_SiegeThat @004437e0
+    <- _HoldStrong::Global::InitSkirmishLobbyData @004274f0
+      <- _HoldStrong::Synchrony::GameSynchronyState::handleCommandLineArguments @00491040
+      <- _HoldStrong::UI::MenuItemActionHandler_FindingNetworkSessions_Buttons @00490d90
+      <- _HoldStrong::UI::MenuItemActionHandler_WaitingForHost_ConnectToLobby @004914d0
+      <- _HoldStrong::Synchrony::GameSynchronyState::initMultiplayerLobbyState @0048c230
+      <- _HoldStrong::UI::MenuItemActionHandler_ChooseNetworkServiceProvider_Buttons @004909e0
+      <- _HoldStrong::UI::MenuItemActionHandler_SelectCrusade_Main @0042bf00
+      <- _HoldStrong::UI::MenuItemActionHandler_UnusedSelectRandomNumberOfEnemies_Main @0042ba50
+    <- _HoldStrong::Global::InitializeBasicMap @0042f010
+      <- _HoldStrong::UI::MenuItemActionHandler_CustomScenarios_Main @00440770
+      <- _HoldStrong::UI::MenuItemActionHandler_NewMapMaptype_Buttons @0042f2b0
+    <- _HoldStrong::UI::MenuView_SingleplayerMapChoice_Prepare @00448d40
+    <- _HoldStrong::UI::MenuItemActionHandler_ProgressBarBox_LoadAndSaveGameButtonLogic @004950b0
+      <- _HoldStrong::Global::ProgressBarRelated @00495840
+      <- _HoldStrong::UI::ShowProgressBarSaveLoadDialog @00495800
+  <- _HoldStrong::Game::GameStateStructures::processGameTick @0045cd10
+    <- _HoldStrong::Global::WinMain @0057be10
+    <- _HoldStrong::Map::TileMapState::prepareMap @00512450
+      <- _HoldStrong::Map::MapPropertiesState::loadMap @004c62c0
+      <- _HoldStrong::Global::LaunchSkirmishGame @00441270
+      <- _HoldStrong::UI::MenuItemActionHandler_UnusedCreateSiege_SiegeThat @004437e0
+      <- _HoldStrong::UI::MenuItemActionHandler_General_LaunchOrQuitMultiplayerGameUnk @00494950
+      <- _HoldStrong::UI::MenuItemActionHandler_ProgressBarBox_LoadAndSaveGameButtonLogic @004950b0
+    <- _HoldStrong::UI::MenuItemActionHandler_NewMapMapsize_Buttons @0042f940
+=== 2. Aufrufer von _HoldStrong::Map::TileMapState::updateGFXLayers
+  <- _HoldStrong::Map::TileMapState::setupAllMapSections @00512100
+    <- _HoldStrong::Global::WinMain @0057be10
+      <- ___tmainCRTStartup @00583e46
+    <- _HoldStrong::Map::MapPropertiesState::loadMap @004c62c0
+      <- _HoldStrong::Global::LaunchSinglePlayerGameUnk @0042c620
+      <- _HoldStrong::Map::MapPropertiesState::loadMissionMapAndSetLord @004c6880
+      <- _HoldStrong::UI::MenuItemActionHandler_MainMenu_Main @004251a0
+    <- _HoldStrong::Global::LaunchSkirmishGame @00441270
+      <- _HoldStrong::Commands::ShareGameSeedAndMultiplayerSettingsAndStartGame @00480980
+      <- _HoldStrong::UI::MenuItemActionHandler_LobbyMenu_LobbyscreenStartButtonClick @00442640
+      <- _HoldStrong::Global::SetupSkirmishMode @004c68d0
+      <- _HoldStrong::UI::MenuItemActionHandler_General_LaunchOrQuitMultiplayerGameUnk @00494950
+    <- _HoldStrong::UI::MenuItemActionHandler_UnusedCreateSiege_SiegeThat @004437e0
+    <- _HoldStrong::Global::InitSkirmishLobbyData @004274f0
+      <- _HoldStrong::Synchrony::GameSynchronyState::handleCommandLineArguments @00491040
+      <- _HoldStrong::UI::MenuItemActionHandler_FindingNetworkSessions_Buttons @00490d90
+      <- _HoldStrong::UI::MenuItemActionHandler_WaitingForHost_ConnectToLobby @004914d0
+      <- _HoldStrong::Synchrony::GameSynchronyState::initMultiplayerLobbyState @0048c230
+      <- _HoldStrong::UI::MenuItemActionHandler_ChooseNetworkServiceProvider_Buttons @004909e0
+      <- _HoldStrong::UI::MenuItemActionHandler_SelectCrusade_Main @0042bf00
+      <- _HoldStrong::UI::MenuItemActionHandler_UnusedSelectRandomNumberOfEnemies_Main @0042ba50
+    <- _HoldStrong::Global::InitializeBasicMap @0042f010
+      <- _HoldStrong::UI::MenuItemActionHandler_CustomScenarios_Main @00440770
+      <- _HoldStrong::UI::MenuItemActionHandler_NewMapMaptype_Buttons @0042f2b0
+    <- _HoldStrong::UI::MenuView_SingleplayerMapChoice_Prepare @00448d40
+    <- _HoldStrong::UI::MenuItemActionHandler_ProgressBarBox_LoadAndSaveGameButtonLogic @004950b0
+      <- _HoldStrong::Global::ProgressBarRelated @00495840
+      <- _HoldStrong::UI::ShowProgressBarSaveLoadDialog @00495800
+  <- _HoldStrong::Game::GameStateStructures::processGameTick @0045cd10
+    <- _HoldStrong::Global::WinMain @0057be10
+    <- _HoldStrong::Map::TileMapState::prepareMap @00512450
+      <- _HoldStrong::Map::MapPropertiesState::loadMap @004c62c0
+      <- _HoldStrong::Global::LaunchSkirmishGame @00441270
+      <- _HoldStrong::UI::MenuItemActionHandler_UnusedCreateSiege_SiegeThat @004437e0
+      <- _HoldStrong::UI::MenuItemActionHandler_General_LaunchOrQuitMultiplayerGameUnk @00494950
+      <- _HoldStrong::UI::MenuItemActionHandler_ProgressBarBox_LoadAndSaveGameButtonLogic @004950b0
+    <- _HoldStrong::UI::MenuItemActionHandler_NewMapMapsize_Buttons @0042f940
+=== 2. Aufrufer von _HoldStrong::Map::TileMapState::setupTileMapSections
+  <- _HoldStrong::Map::TileMapState::setupAllMapSections @00512100
+    <- _HoldStrong::Global::WinMain @0057be10
+      <- ___tmainCRTStartup @00583e46
+    <- _HoldStrong::Map::MapPropertiesState::loadMap @004c62c0
+      <- _HoldStrong::Global::LaunchSinglePlayerGameUnk @0042c620
+      <- _HoldStrong::Map::MapPropertiesState::loadMissionMapAndSetLord @004c6880
+      <- _HoldStrong::UI::MenuItemActionHandler_MainMenu_Main @004251a0
+    <- _HoldStrong::Global::LaunchSkirmishGame @00441270
+      <- _HoldStrong::Commands::ShareGameSeedAndMultiplayerSettingsAndStartGame @00480980
+      <- _HoldStrong::UI::MenuItemActionHandler_LobbyMenu_LobbyscreenStartButtonClick @00442640
+      <- _HoldStrong::Global::SetupSkirmishMode @004c68d0
+      <- _HoldStrong::UI::MenuItemActionHandler_General_LaunchOrQuitMultiplayerGameUnk @00494950
+    <- _HoldStrong::UI::MenuItemActionHandler_UnusedCreateSiege_SiegeThat @004437e0
+    <- _HoldStrong::Global::InitSkirmishLobbyData @004274f0
+      <- _HoldStrong::Synchrony::GameSynchronyState::handleCommandLineArguments @00491040
+      <- _HoldStrong::UI::MenuItemActionHandler_FindingNetworkSessions_Buttons @00490d90
+      <- _HoldStrong::UI::MenuItemActionHandler_WaitingForHost_ConnectToLobby @004914d0
+      <- _HoldStrong::Synchrony::GameSynchronyState::initMultiplayerLobbyState @0048c230
+      <- _HoldStrong::UI::MenuItemActionHandler_ChooseNetworkServiceProvider_Buttons @004909e0
+      <- _HoldStrong::UI::MenuItemActionHandler_SelectCrusade_Main @0042bf00
+      <- _HoldStrong::UI::MenuItemActionHandler_UnusedSelectRandomNumberOfEnemies_Main @0042ba50
+    <- _HoldStrong::Global::InitializeBasicMap @0042f010
+      <- _HoldStrong::UI::MenuItemActionHandler_CustomScenarios_Main @00440770
+      <- _HoldStrong::UI::MenuItemActionHandler_NewMapMaptype_Buttons @0042f2b0
+    <- _HoldStrong::UI::MenuView_SingleplayerMapChoice_Prepare @00448d40
+    <- _HoldStrong::UI::MenuItemActionHandler_ProgressBarBox_LoadAndSaveGameButtonLogic @004950b0
+      <- _HoldStrong::Global::ProgressBarRelated @00495840
+      <- _HoldStrong::UI::ShowProgressBarSaveLoadDialog @00495800
+  <- _HoldStrong::Map::TileMapState::Constructor_TileMapState @00515f40
+    <- _HoldStrong::Global::Init::Constructor_TileMapState @0059cac0
+=== 3. setMapRotation 0x004f70e0
+
+/* WARNING: Enum "MappersEnum": Some values do not have unique names */
+/* decompilerscript: committed: 2025-01-30 21:57:43.216000 */
+
+void __thiscall
+_HoldStrong::Map::TileMapState::setMapRotation(TileMapState *this,undefined4 newRotation)
+
+{
+  DAT_TileMapState.DAT_FutureMapOrientation = newRotation;
+  return;
+}
+
+
+=== 3b. Wer liest/schreibt die Ausrichtung 0x01fe7aa4
+  READ  _HoldStrong::Map::Entities::EntityState::updateEntities @004087c0
+  READ  _HoldStrong::Map::Entities::EntityState::calculateEntityDrawOffset @004036f0
+  READ  _HoldStrong::Audio::SFX::SFXState::playSFXAtLocation @00449dc0
+  READ  _HoldStrong::Input::MouseState::renderPreviewAtMouseLocation @004685c0
+  READ  _HoldStrong::UI::MinimapViewState::renderMinimapTileStripWithLuminescence @004b5330
+  READ  _HoldStrong::UI::MinimapViewState::renderMinimapTileColors @004b58d0
+  READ  _HoldStrong::UI::MinimapViewState::drawMinimap @004b66c0
+  READ  _HoldStrong::UI::MinimapViewState::drawMinimap @004b66c0
+  READ  _HoldStrong::UI::MinimapViewState::drawMinimap @004b66c0
+  READ  _HoldStrong::Rendering::ViewportRenderState::setViewportBasedOnMapSize @004e5c00
+  READ  _HoldStrong::Rendering::ViewportRenderState::updateBuildingPreviewPosition @004e8430
+  READ  _HoldStrong::Rendering::ViewportRenderState::updateBuildingPreviewPosition @004e8430
+  READ  _HoldStrong::UI::MinimapViewState::convertMinimapClickToTileXY @004b51a0
+  READ  _HoldStrong::Rendering::ViewportRenderState::computeMouseTileFromScreenPosition @004e5ed0
+  READ  _HoldStrong::Rendering::ViewportRenderState::focusOnTile @004e5e20
+  READ  _HoldStrong::Rendering::ViewportRenderState::renderMap @004e8cf0
+  READ  _HoldStrong::Rendering::ViewportRenderState::renderMap @004e8cf0
+  READ  _HoldStrong::Rendering::ViewportRenderState::renderMap @004e8cf0
+  READ  _HoldStrong::Rendering::ViewportRenderState::renderGmOverlayBuilding @004e3980
+  READ  _HoldStrong::Audio::SFX::SFXState::playSFXAtLocationFullVolume @00449f10
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  WRITE  _HoldStrong::Map::TileMapState::changeMapOrientation @00501b90
+  READ  _HoldStrong::Map::Units::UnitsState::updateMicroPosition @00534030
+  READ  _HoldStrong::Map::Units::UnitsState::updateUnits @00579300
+  READ  _HoldStrong::Map::Units::UnitsState::updateUnits @00579300
+  READ  _HoldStrong::Map::Units::UnitsState::updateUnits @00579300
+  READ  _HoldStrong::Rendering::ViewportRenderState::renderGmOverlayBuilding @004e3980
+  READ  _HoldStrong::UI::HoveredState::calculateHoveredTile @005119d0
+  READ  _HoldStrong::Global::UpdateGateHouseLarge @004238b0
+  READ  _HoldStrong::Global::UpdateGateHouseSmall @00423cd0
+  READ  _HoldStrong::UI::MenuItemActionHandler_InGameMenu_UnitSelectionAndControlsUnk @004348d0
+  READ  _HoldStrong::UI::Helpers::SomeUnitAndViewportCheck @004347f0
+  READ  _HoldStrong::Input::MouseState::storeXYAndResetMouseState @004687f0
+  READ  _HoldStrong::Input::MouseState::storeXYAndResetMouseState @004687f0
+  READ  _HoldStrong::Input::MouseState::storeXYAndResetMouseState @004687f0
+  READ  _HoldStrong::UI::MinimapViewState::locatePlayerKeepPositionsOnMinimap @004b5f70
+  READ  _HoldStrong::Map::Units::UnitsState::harassBuildingsWithSiegeAI @0053d030
+  READ  _HoldStrong::Map::Units::UnitsState::setUnitFacingDirectionTowardsTarget @0052fd00
+  READ  _HoldStrong::Map::Units::UnitsState::setUnitFacingDirectionForTargetXandY @0052fe90
+  READ  _HoldStrong::Global::WindowMsgProcessingFunc @004b2ae0
+  READ  _HoldStrong::Global::WindowMsgProcessingFunc @004b2ae0
+  READ  _HoldStrong::Rendering::ViewportBasedTileNumber @004b2a60
+  READ  _HoldStrong::Global::WindowMsgProcessingFunc @004b2ae0
+  READ  _HoldStrong::Global::WindowMsgProcessingFunc @004b2ae0
+  READ  _HoldStrong::Global::WindowMsgProcessingFunc @004b2ae0
+  READ  _HoldStrong::UI::MenuItemActionHandler_General_ToolbarButtonPressed @00444410
+  READ  _HoldStrong::UI::MenuItemActionHandler_General_ToolbarButtonPressed @00444410
+  READ  _HoldStrong::UI::MenuItemActionHandler_General_ToolbarButtonPressed @00444410
+  READ  _HoldStrong::Global::UpdateDrawBridge @00417b90
+  READ  _HoldStrong::Global::UpdateKeepDoor @00418b20
+  READ  _HoldStrong::Global::UpdateKeepDoor @00418b20
+  READ  _HoldStrong::Global::UpdateTower2 @0041e870
+  READ  _HoldStrong::Map::Buildings::BuildingsState::hasBuildingEntranceFlagForOrientation @0040b720
+  READ  _HoldStrong::Map::Buildings::BuildingsState::hasBuildingExitFlagForOrientation @0040b7b0
+  READ  _HoldStrong::Global::UpdateTower3 @0041eb00
+  READ  _HoldStrong::Global::UpdateTower4 @0041eda0
+  READ  _HoldStrong::Global::UpdateTower5 @0041f110
+  READ  _HoldStrong::Global::UpdateWoodGate1 @004240d0
+  READ  _HoldStrong::Map::Units::UnitsState::setUnitFacingDirectionBasedOnBuilding @0052ff80
+  READ  _HoldStrong::Global::HorseArcher_DoShooting @00575820
+  DATA  ?
+  READ  _HoldStrong::UI::HandleWallTerrainMouseDrag @00437cc0
+  READ  _HoldStrong::UI::MenuItemActionHandler_MapEditorLandscaping_QueueCommandCallback @00443a30
+  READ  _HoldStrong::UI::MenuItemActionHandler_InGameMenu_TriggerPlaceBuildingCommand @004451c0
+  READ  _HoldStrong::UI::MenuItemActionHandler_InGameMenu_TriggerPlaceBuildingCommand @004451c0
+  READ  _HoldStrong::Map::TileMapState::computeTileLuminescence @004f7a80
+  READ  _HoldStrong::Map::TileMapState::getWallFlagForOrientedDirection @004f89c0
+  READ  _HoldStrong::Map::TileMapState::getWallFlagForOrientedDirection @004f89c0
+  READ  _HoldStrong::Map::TileMapState::hasHigherNeighborWithStairs @004f8a40
+  READ  _HoldStrong::Map::TileMapState::hasHigherPlainNeighborWithWallOrGatehouse @004f8ac0
+  READ  _HoldStrong::Map::TileMapState::getBuildingSizeIndexMappingData @004f9880
+  READ  _HoldStrong::Map::TileMapState::determineBuildingPlacementRotation @004fa000
+  READ  _HoldStrong::Map::TileMapState::getRubbleGraphicStageForDamageLevel @004fa460
+  READ  _HoldStrong::Map::TileMapState::setMiscDisplayLayer @004fb0c0
+  READ  _HoldStrong::Map::TileMapState::applyRockGraphicsToFootprint @004fb770
+  READ  _HoldStrong::Map::TileMapState::renderWallPlacementPreview @004fb9e0
+  READ  _HoldStrong::Map::TileMapState::computeTileCliffEdgeFlags @004fc0b0
+  READ  _HoldStrong::Map::TileMapState::computeWallCornerRenderRotation @004fc650
+  READ  _HoldStrong::Map::TileMapState::computeWallCornerRenderRotation @004fc650
+  READ  _HoldStrong::Map::TileMapState::computeClimbRampRotation @004fc810
+  READ  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  READ  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  READ  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  READ  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  READ  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  READ  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  READ  _HoldStrong::Map::TileMapState::updateGFXLayers @004fc9e0
+  READ  _HoldStrong::Map::TileMapState::changeMapOrientation @00501b90
+  READ  _HoldStrong::Map::TileMapState::setConstructionGFXLayerBasedOnPlacementChecks @00504f10
+  READ  _HoldStrong::Map::TileMapState::setConstructionGFXLayerBasedOnPlacementChecks @00504f10
+  READ  _HoldStrong::Map::TileMapState::setConstructionGFXLayerBasedOnPlacementChecks @00504f10
+  READ  _HoldStrong::Map::TileMapState::setConstructionGFXLayerBasedOnPlacementChecks @00504f10
+  READ  _HoldStrong::Map::TileMapState::setConstructionGFXLayerBasedOnPlacementChecks @00504f10
+  READ  _HoldStrong::Map::TileMapState::setConstructionGFXLayerBasedOnPlacementChecks @00504f10
+  READ  _HoldStrong::Map::TileMapState::updateBuildingGraphicsLayer @00506370
+  READ  _HoldStrong::Map::TileMapState::updateBuildingGraphicsLayer @00506370
+  READ  _HoldStrong::Map::TileMapState::updateBuildingGraphicsLayer @00506370
+  READ  _HoldStrong::Map::TileMapState::updateBuildingGraphicsLayer @00506370
+  READ  _HoldStrong::Map::TileMapState::updateBuildingGraphicsLayer @00506370
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::updateGfxLayer @00509180
+  READ  _HoldStrong::Map::TileMapState::prepareMap @00512450
