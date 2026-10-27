@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<string>", line 10, in <module>
+  File "C:\Users\danie\AppData\Roaming\Python\Python311\site-packages\PIL\Image.py", line 1070, in convert
+    self.load()
+  File "C:\Users\danie\AppData\Roaming\Python\Python311\site-packages\PIL\ImageFile.py", line 409, in load
+    raise OSError(msg)
+OSError: image file is truncated (9090 bytes not processed)
+Ausrichtung 0
+  gesendet: {"bild": "karte", "datei": "ucp/villagestudio/abzug/gra_ko_a0.bmp", "id": 1793120047}
+  gesendet: {"drehen": "links", "id": 1793120048}
+  gesendet: {"bild": "karte", "datei": "ucp/villagestudio/abzug/gra_ko_a2.bmp", "id": 1793120049}
+  gesendet: {"drehen": "rechts", "id": 1793120050}
+  gesendet: {"bild": "karte", "datei": "ucp/villagestudio/abzug/gra_ko_b0.bmp", "id": 1793120051}

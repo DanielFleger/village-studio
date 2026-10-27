@@ -1,0 +1,16 @@
+  gesendet: {"menue": 41, "id": 1793119911}
+  gesendet: {"eigenesGefecht": true, "karte": "!KOphase Map 1", "ki": 5, "kis": [5], "gegner": 1, "id": 1793119912}
+  gesendet: {"pause": true, "id": 1793119913}
+Karte !KOphase Map 1 geladen, Ausrichtung 0
+  Abzug a0: Ausrichtung 0 -> schichten_ko_a0.bin
+  gesendet: {"bild": "karte", "datei": "C:/Users/danie/Documents/PC_Affe/Games/Stronghold_Crusader/Stronghold Crusader Modding/Tools/VillageStudio/messungen/20261026_gra_drehen/bild_ko_a0.bmp", "id": 1793119914}
+  WARNUNG: Bild a0 kam nicht an
+  gesendet: {"drehen": "links", "id": 1793119915}
+  Abzug a2: Ausrichtung 2 -> schichten_ko_a2.bin
+  gesendet: {"bild": "karte", "datei": "C:/Users/danie/Documents/PC_Affe/Games/Stronghold_Crusader/Stronghold Crusader Modding/Tools/VillageStudio/messungen/20261026_gra_drehen/bild_ko_a2.bmp", "id": 1793119916}
+  WARNUNG: Bild a2 kam nicht an
+  gesendet: {"drehen": "rechts", "id": 1793119917}
+  Abzug b0: Ausrichtung 0 -> schichten_ko_b0.bin
+  gesendet: {"bild": "karte", "datei": "C:/Users/danie/Documents/PC_Affe/Games/Stronghold_Crusader/Stronghold Crusader Modding/Tools/VillageStudio/messungen/20261026_gra_drehen/bild_ko_b0.bmp", "id": 1793119918}
+  WARNUNG: Bild b0 kam nicht an
+OK: fertig

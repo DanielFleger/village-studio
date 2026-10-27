@@ -1,0 +1,6 @@
+gfx a0 vs b0 verschieden: 13 | a0 vs a2 verschieden: 48827
+zufall a0 vs b0 verschieden: 0 | a0 vs a2 verschieden: 0
+makro a0 vs b0 verschieden: 0 | a0 vs a2 verschieden: 0
+haeufigste Wechsel a0->b0: [((6300, 6296), 1), ((6299, 6295), 1), ((6298, 6294), 1), ((6297, 6293), 1), ((24205, 24136), 1), ((24204, 24136), 1), ((24169, 24141), 1), ((24166, 24136), 1)]
+verschiedene Bildnummern a0: 1063  b0: 1063
+Zufall: verschiedene Werte 15024 Beispiel (9570, 24554, 12807, 21761, 1233, 15645, 18227, 12660)
