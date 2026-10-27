@@ -1,0 +1,154 @@
+  gesendet: {"menue": 41, "id": 1793120916}
+  gesendet: {"eigenesGefecht": true, "karte": "!KOphase Map 1", "ki": 5, "kis": [5], "gegner": 1, "id": 1793120917}
+Lord Spieler 1 bei (191,328)
+  gesendet: {"baue": {"mapper": 54, "x": 199, "y": 328, "groesse": 4, "richtung": 0}, "id": 1793120918}
+  gesendet: {"baue": {"mapper": 54, "x": 191, "y": 336, "groesse": 4, "richtung": 0}, "id": 1793120919}
+  gesendet: {"baue": {"mapper": 54, "x": 183, "y": 328, "groesse": 4, "richtung": 0}, "id": 1793120920}
+  gebaut: Typ 1 Drehwert 0 bei (183,328)
+  gesendet: {"baue": {"mapper": 54, "x": 199, "y": 328, "groesse": 4, "richtung": 15}, "id": 1793120921}
+  gesendet: {"baue": {"mapper": 54, "x": 191, "y": 336, "groesse": 4, "richtung": 15}, "id": 1793120922}
+  gesendet: {"baue": {"mapper": 54, "x": 183, "y": 328, "groesse": 4, "richtung": 15}, "id": 1793120923}
+  gesendet: {"baue": {"mapper": 54, "x": 191, "y": 320, "groesse": 4, "richtung": 15}, "id": 1793120924}
+  gebaut: Typ 1 Drehwert 15 bei (191,320)
+  gesendet: {"baue": {"mapper": 72, "x": 199, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120925}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 336, "groesse": 10, "richtung": 0}, "id": 1793120926}
+  gesendet: {"baue": {"mapper": 72, "x": 183, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120927}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 320, "groesse": 10, "richtung": 0}, "id": 1793120928}
+  gesendet: {"baue": {"mapper": 72, "x": 199, "y": 336, "groesse": 10, "richtung": 0}, "id": 1793120929}
+  gesendet: {"baue": {"mapper": 72, "x": 183, "y": 336, "groesse": 10, "richtung": 0}, "id": 1793120930}
+  gesendet: {"baue": {"mapper": 72, "x": 199, "y": 320, "groesse": 10, "richtung": 0}, "id": 1793120931}
+  gesendet: {"baue": {"mapper": 72, "x": 183, "y": 320, "groesse": 10, "richtung": 0}, "id": 1793120932}
+  gesendet: {"baue": {"mapper": 72, "x": 202, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120933}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 339, "groesse": 10, "richtung": 0}, "id": 1793120934}
+  gesendet: {"baue": {"mapper": 72, "x": 180, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120935}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 317, "groesse": 10, "richtung": 0}, "id": 1793120936}
+  gesendet: {"baue": {"mapper": 72, "x": 202, "y": 339, "groesse": 10, "richtung": 0}, "id": 1793120937}
+  gesendet: {"baue": {"mapper": 72, "x": 180, "y": 339, "groesse": 10, "richtung": 0}, "id": 1793120938}
+  gesendet: {"baue": {"mapper": 72, "x": 202, "y": 317, "groesse": 10, "richtung": 0}, "id": 1793120939}
+  gesendet: {"baue": {"mapper": 72, "x": 180, "y": 317, "groesse": 10, "richtung": 0}, "id": 1793120940}
+  gesendet: {"baue": {"mapper": 72, "x": 205, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120941}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 342, "groesse": 10, "richtung": 0}, "id": 1793120942}
+  gesendet: {"baue": {"mapper": 72, "x": 177, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120943}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 314, "groesse": 10, "richtung": 0}, "id": 1793120944}
+  gesendet: {"baue": {"mapper": 72, "x": 205, "y": 342, "groesse": 10, "richtung": 0}, "id": 1793120945}
+  gesendet: {"baue": {"mapper": 72, "x": 177, "y": 342, "groesse": 10, "richtung": 0}, "id": 1793120946}
+  gesendet: {"baue": {"mapper": 72, "x": 205, "y": 314, "groesse": 10, "richtung": 0}, "id": 1793120947}
+  gesendet: {"baue": {"mapper": 72, "x": 177, "y": 314, "groesse": 10, "richtung": 0}, "id": 1793120948}
+  gesendet: {"baue": {"mapper": 72, "x": 208, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120949}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 345, "groesse": 10, "richtung": 0}, "id": 1793120950}
+  gesendet: {"baue": {"mapper": 72, "x": 174, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120951}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 311, "groesse": 10, "richtung": 0}, "id": 1793120952}
+  gesendet: {"baue": {"mapper": 72, "x": 208, "y": 345, "groesse": 10, "richtung": 0}, "id": 1793120953}
+  gesendet: {"baue": {"mapper": 72, "x": 174, "y": 345, "groesse": 10, "richtung": 0}, "id": 1793120954}
+  gesendet: {"baue": {"mapper": 72, "x": 208, "y": 311, "groesse": 10, "richtung": 0}, "id": 1793120955}
+  gesendet: {"baue": {"mapper": 72, "x": 174, "y": 311, "groesse": 10, "richtung": 0}, "id": 1793120956}
+  gesendet: {"baue": {"mapper": 72, "x": 211, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120957}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 348, "groesse": 10, "richtung": 0}, "id": 1793120958}
+  gesendet: {"baue": {"mapper": 72, "x": 171, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120959}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 308, "groesse": 10, "richtung": 0}, "id": 1793120960}
+  gesendet: {"baue": {"mapper": 72, "x": 211, "y": 348, "groesse": 10, "richtung": 0}, "id": 1793120961}
+  gesendet: {"baue": {"mapper": 72, "x": 171, "y": 348, "groesse": 10, "richtung": 0}, "id": 1793120962}
+  gesendet: {"baue": {"mapper": 72, "x": 211, "y": 308, "groesse": 10, "richtung": 0}, "id": 1793120963}
+  gesendet: {"baue": {"mapper": 72, "x": 171, "y": 308, "groesse": 10, "richtung": 0}, "id": 1793120964}
+  gesendet: {"baue": {"mapper": 72, "x": 214, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120965}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 351, "groesse": 10, "richtung": 0}, "id": 1793120966}
+  gesendet: {"baue": {"mapper": 72, "x": 168, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120967}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 305, "groesse": 10, "richtung": 0}, "id": 1793120968}
+  gesendet: {"baue": {"mapper": 72, "x": 214, "y": 351, "groesse": 10, "richtung": 0}, "id": 1793120969}
+  gesendet: {"baue": {"mapper": 72, "x": 168, "y": 351, "groesse": 10, "richtung": 0}, "id": 1793120970}
+  gesendet: {"baue": {"mapper": 72, "x": 214, "y": 305, "groesse": 10, "richtung": 0}, "id": 1793120971}
+  gesendet: {"baue": {"mapper": 72, "x": 168, "y": 305, "groesse": 10, "richtung": 0}, "id": 1793120972}
+  gesendet: {"baue": {"mapper": 72, "x": 217, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120973}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 354, "groesse": 10, "richtung": 0}, "id": 1793120974}
+  gesendet: {"baue": {"mapper": 72, "x": 165, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120975}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 302, "groesse": 10, "richtung": 0}, "id": 1793120976}
+  gesendet: {"baue": {"mapper": 72, "x": 217, "y": 354, "groesse": 10, "richtung": 0}, "id": 1793120977}
+  gesendet: {"baue": {"mapper": 72, "x": 165, "y": 354, "groesse": 10, "richtung": 0}, "id": 1793120978}
+  gesendet: {"baue": {"mapper": 72, "x": 217, "y": 302, "groesse": 10, "richtung": 0}, "id": 1793120979}
+  gesendet: {"baue": {"mapper": 72, "x": 165, "y": 302, "groesse": 10, "richtung": 0}, "id": 1793120980}
+  gesendet: {"baue": {"mapper": 72, "x": 220, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120981}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 357, "groesse": 10, "richtung": 0}, "id": 1793120982}
+  gesendet: {"baue": {"mapper": 72, "x": 162, "y": 328, "groesse": 10, "richtung": 0}, "id": 1793120983}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 299, "groesse": 10, "richtung": 0}, "id": 1793120984}
+  gesendet: {"baue": {"mapper": 72, "x": 220, "y": 357, "groesse": 10, "richtung": 0}, "id": 1793120985}
+  gesendet: {"baue": {"mapper": 72, "x": 162, "y": 357, "groesse": 10, "richtung": 0}, "id": 1793120986}
+  gesendet: {"baue": {"mapper": 72, "x": 220, "y": 299, "groesse": 10, "richtung": 0}, "id": 1793120987}
+  gesendet: {"baue": {"mapper": 72, "x": 162, "y": 299, "groesse": 10, "richtung": 0}, "id": 1793120988}
+  NICHT gebaut: Typ 32 Drehwert 0
+  gesendet: {"baue": {"mapper": 72, "x": 199, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793120989}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 336, "groesse": 10, "richtung": 15}, "id": 1793120990}
+  gesendet: {"baue": {"mapper": 72, "x": 183, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793120991}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 320, "groesse": 10, "richtung": 15}, "id": 1793120992}
+  gesendet: {"baue": {"mapper": 72, "x": 199, "y": 336, "groesse": 10, "richtung": 15}, "id": 1793120993}
+  gesendet: {"baue": {"mapper": 72, "x": 183, "y": 336, "groesse": 10, "richtung": 15}, "id": 1793120994}
+  gesendet: {"baue": {"mapper": 72, "x": 199, "y": 320, "groesse": 10, "richtung": 15}, "id": 1793120995}
+  gesendet: {"baue": {"mapper": 72, "x": 183, "y": 320, "groesse": 10, "richtung": 15}, "id": 1793120996}
+  gesendet: {"baue": {"mapper": 72, "x": 202, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793120997}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 339, "groesse": 10, "richtung": 15}, "id": 1793120998}
+  gesendet: {"baue": {"mapper": 72, "x": 180, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793120999}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 317, "groesse": 10, "richtung": 15}, "id": 1793121000}
+  gesendet: {"baue": {"mapper": 72, "x": 202, "y": 339, "groesse": 10, "richtung": 15}, "id": 1793121001}
+  gesendet: {"baue": {"mapper": 72, "x": 180, "y": 339, "groesse": 10, "richtung": 15}, "id": 1793121002}
+  gesendet: {"baue": {"mapper": 72, "x": 202, "y": 317, "groesse": 10, "richtung": 15}, "id": 1793121003}
+  gesendet: {"baue": {"mapper": 72, "x": 180, "y": 317, "groesse": 10, "richtung": 15}, "id": 1793121004}
+  gesendet: {"baue": {"mapper": 72, "x": 205, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121005}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 342, "groesse": 10, "richtung": 15}, "id": 1793121006}
+  gesendet: {"baue": {"mapper": 72, "x": 177, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121007}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 314, "groesse": 10, "richtung": 15}, "id": 1793121008}
+  gesendet: {"baue": {"mapper": 72, "x": 205, "y": 342, "groesse": 10, "richtung": 15}, "id": 1793121009}
+  gesendet: {"baue": {"mapper": 72, "x": 177, "y": 342, "groesse": 10, "richtung": 15}, "id": 1793121010}
+  gesendet: {"baue": {"mapper": 72, "x": 205, "y": 314, "groesse": 10, "richtung": 15}, "id": 1793121011}
+  gesendet: {"baue": {"mapper": 72, "x": 177, "y": 314, "groesse": 10, "richtung": 15}, "id": 1793121012}
+  gesendet: {"baue": {"mapper": 72, "x": 208, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121013}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 345, "groesse": 10, "richtung": 15}, "id": 1793121014}
+  gesendet: {"baue": {"mapper": 72, "x": 174, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121015}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 311, "groesse": 10, "richtung": 15}, "id": 1793121016}
+  gesendet: {"baue": {"mapper": 72, "x": 208, "y": 345, "groesse": 10, "richtung": 15}, "id": 1793121017}
+  gesendet: {"baue": {"mapper": 72, "x": 174, "y": 345, "groesse": 10, "richtung": 15}, "id": 1793121018}
+  gesendet: {"baue": {"mapper": 72, "x": 208, "y": 311, "groesse": 10, "richtung": 15}, "id": 1793121019}
+  gesendet: {"baue": {"mapper": 72, "x": 174, "y": 311, "groesse": 10, "richtung": 15}, "id": 1793121020}
+  gesendet: {"baue": {"mapper": 72, "x": 211, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121021}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 348, "groesse": 10, "richtung": 15}, "id": 1793121022}
+  gesendet: {"baue": {"mapper": 72, "x": 171, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121023}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 308, "groesse": 10, "richtung": 15}, "id": 1793121024}
+  gesendet: {"baue": {"mapper": 72, "x": 211, "y": 348, "groesse": 10, "richtung": 15}, "id": 1793121025}
+  gesendet: {"baue": {"mapper": 72, "x": 171, "y": 348, "groesse": 10, "richtung": 15}, "id": 1793121026}
+  gesendet: {"baue": {"mapper": 72, "x": 211, "y": 308, "groesse": 10, "richtung": 15}, "id": 1793121027}
+  gesendet: {"baue": {"mapper": 72, "x": 171, "y": 308, "groesse": 10, "richtung": 15}, "id": 1793121028}
+  gesendet: {"baue": {"mapper": 72, "x": 214, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121029}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 351, "groesse": 10, "richtung": 15}, "id": 1793121030}
+  gesendet: {"baue": {"mapper": 72, "x": 168, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121031}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 305, "groesse": 10, "richtung": 15}, "id": 1793121032}
+  gesendet: {"baue": {"mapper": 72, "x": 214, "y": 351, "groesse": 10, "richtung": 15}, "id": 1793121033}
+  gesendet: {"baue": {"mapper": 72, "x": 168, "y": 351, "groesse": 10, "richtung": 15}, "id": 1793121034}
+  gesendet: {"baue": {"mapper": 72, "x": 214, "y": 305, "groesse": 10, "richtung": 15}, "id": 1793121035}
+  gesendet: {"baue": {"mapper": 72, "x": 168, "y": 305, "groesse": 10, "richtung": 15}, "id": 1793121036}
+  gesendet: {"baue": {"mapper": 72, "x": 217, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121037}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 354, "groesse": 10, "richtung": 15}, "id": 1793121038}
+  gesendet: {"baue": {"mapper": 72, "x": 165, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121039}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 302, "groesse": 10, "richtung": 15}, "id": 1793121040}
+  gesendet: {"baue": {"mapper": 72, "x": 217, "y": 354, "groesse": 10, "richtung": 15}, "id": 1793121041}
+  gesendet: {"baue": {"mapper": 72, "x": 165, "y": 354, "groesse": 10, "richtung": 15}, "id": 1793121042}
+  gesendet: {"baue": {"mapper": 72, "x": 217, "y": 302, "groesse": 10, "richtung": 15}, "id": 1793121043}
+  gesendet: {"baue": {"mapper": 72, "x": 165, "y": 302, "groesse": 10, "richtung": 15}, "id": 1793121044}
+  gesendet: {"baue": {"mapper": 72, "x": 220, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121045}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 357, "groesse": 10, "richtung": 15}, "id": 1793121046}
+  gesendet: {"baue": {"mapper": 72, "x": 162, "y": 328, "groesse": 10, "richtung": 15}, "id": 1793121047}
+  gesendet: {"baue": {"mapper": 72, "x": 191, "y": 299, "groesse": 10, "richtung": 15}, "id": 1793121048}
+  gesendet: {"baue": {"mapper": 72, "x": 220, "y": 357, "groesse": 10, "richtung": 15}, "id": 1793121049}
+  gesendet: {"baue": {"mapper": 72, "x": 162, "y": 357, "groesse": 10, "richtung": 15}, "id": 1793121050}
+  gesendet: {"baue": {"mapper": 72, "x": 220, "y": 299, "groesse": 10, "richtung": 15}, "id": 1793121051}
+  gesendet: {"baue": {"mapper": 72, "x": 162, "y": 299, "groesse": 10, "richtung": 15}, "id": 1793121052}
+  NICHT gebaut: Typ 32 Drehwert 15
+Orte: {'haus0': (183, 328), 'haus15': (191, 320), 'apfel0': None, 'apfel15': None}
+  gesendet: {"kamera": [191, 328], "id": 1793121053}
+  gesendet: {"pause": true, "id": 1793121054}
+  gesendet: {"bild": "karte", "datei": "ucp/villagestudio/abzug/gra_haus_r0.bmp", "id": 1793121055}
+  gesendet: {"drehen": "links", "id": 1793121056}
+  gesendet: {"bild": "karte", "datei": "ucp/villagestudio/abzug/gra_haus_r2.bmp", "id": 1793121057}
+  gesendet: {"drehen": "links", "id": 1793121058}
+  gesendet: {"bild": "karte", "datei": "ucp/villagestudio/abzug/gra_haus_r4.bmp", "id": 1793121059}
+  gesendet: {"drehen": "links", "id": 1793121060}
+  gesendet: {"bild": "karte", "datei": "ucp/villagestudio/abzug/gra_haus_r6.bmp", "id": 1793121061}
+  gesendet: {"drehen": "links", "id": 1793121062}
+OK: fertig
