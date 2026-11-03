@@ -2850,4 +2850,7 @@ Instanz 2, `Liga_Grumpy Neighbors`, Karteneditor und Gefecht (zwei Mensch-Plaetz
 - **gemessen und aus dem Speicher erklaert:** Stein am Gebaeude mit UCP: Katapult 40 direkt, 15 je Nebenfeld, Trebuchet 120 und 30, voller Treffer 6 Nebenfelder, also 130 und 300 (0x407CD5, 0x407CE5, 0x407A96). Der Export zeigt 20, 10, 60, 30.
 - **abgelesen:** Spielbefehle stehen in der Sprungtabelle 0xB38DC0: Nummer = Tabellenplatz minus 20, Liste `lauf_s_plan/befehl_nummern.txt`. 70 Haltung, 74 Hunde, 45 Tor.
 - **Falle:** `liste` im Kanal des Auge-Werkzeugs schrieb jeden Befehl auf Spieler 1 um, behoben. Karteneditor: `ClickSetTerrain` plant keinen Graben wie im Spiel, dort im Gefecht pruefen.
-- **offen:** Tunnel, Graben, Leiter, Pechgraben, Kochoel, Hunde, Kuhwurf, Loeschen.
+- **gemessen:** Burgbereich: Im Gefecht gehen Mauer, Graben, Pechgraben, Kaefig und Turm nur nahe der eigenen Burg (`getCastleBuildRangeForMapSize`), bis 45 Felder war alles erlaubt; der Befehl meldet auch sonst Erfolg.
+- **gemessen:** Graben 275 Takte je Feld und Sklave. Leiter (Anweisung 24) und Mauerangriff (23) nehmen die Feldnummer. Oben auf der Mauer kein Mehr an Reichweite: Pfeil auf 38 ja, auf 42 nein.
+- **gemessen:** Kochoel: Anweisung 15, Pech in der Schmelze (`resourcePitch`), dann 20, der Werfer verbrennt selbst. Pechgraben zuendet der Feuerwerfer, Bogenschuetze nicht. Hunde: Spielbefehl 74, 8 Hunde (Art 67), Umkreis 15 Felder, rund 1.070 Takte. Kuhwurf: Anweisung 22 mit `playerDataArray[].counter`.
+- **offen:** Tunnel (auf Befehl schlagen Tunnelgraeber nur), Loeschen, Zuschuetten.
