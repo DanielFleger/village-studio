@@ -2836,3 +2836,18 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 - **gemessen:** Was die KI zahlt (Liga), allein gemessen: Art 22 10, 23 30, 24 10, 25 40, 28 120, 37 10, 70 60, 71 10, 72 15, 75 100, Ingenieur 50. Das Gold faellt, wenn der Bauer die neue Art bekommt (`unitTypeToChangeInto`), nicht wenn der Soldat erscheint.
 - **gemessen:** Belagerungsbauten: Am Wellenende gehen die noch stehenden Bauten der Welle im selben Takt auf `BLS_REMOVE`, Bauten mit `attackWave` 0 (Belaestigung, Ballisten) bleiben. Flaggen `ET_FLAG_1`, `_2`, `_4` (Arten 10, 12, 11): 0 Verteidigung, 1 Raubzug, 2 sonst, 3 nervoes, erst am Ende der Animation, 814 von 814 Wechseln. `attackVectors` hat 800 Bytes je Spieler (die Feldkarte nennt nur 16): bis 50 Eintraege, der erste ist der Burgeingang. `noRubble` heisst falsch: 1 heisst, Schutt bleibt.
 - **FALLE fuer Auswertungen:** Platz 0 der Einheiten taeuscht weiter: In den Rohzaehlungen sahen 788 von 1.777 Zielwechseln und alle "kostenlosen" Soldaten wie echte Ereignisse aus, es waren Kopien. Immer ab Platz 1 zaehlen.
+
+### 13ab. Kampfregeln: Was Lauf S misst (03.11.2026, SRE)
+
+Instanz 2, `Liga_Grumpy Neighbors`, Karteneditor und Gefecht (zwei Mensch-Plaetze ohne KI). Belege: `Selfaware-AI`, Zweig `funktionswissen`, `data/research/auge_plan/lauf_s_20261103/Ergebnis_Lauf_S.md`.
+
+- **gemessen:** Tempo haengt am Befehl: Direktbefehl `setDestinationForUnit` 8 x (Tempo-Wert + 1) = 16, 24, 32 Takte je Feld; Truppen- oder Angriffsbefehl 12 fuer die meisten schnellen Arten, Ritter und Berittener Bogenschuetze rund 10,5, Ingenieur und Assassine 16. Alle Geraete 77. Editor und Gefecht gleich.
+- **gemessen:** Reichweite am Boden: Pfeil 40 (Tabelle 0x5B6358 sagt 54), Bolzen 40, Stein 18, Feuer 11, Ballista 68, Feuerballiste 39. Auf `UIT_UNIT_ATTACK_UNIT` laufen Schuetzen nicht los.
+- **gemessen:** Geschoss in `DAT_EntityState`: Schuetze `unitID_OR_seaGullID`, Ziel `unitID`, Zielpunkt `targetX/Y`, fliegt bei `logicalState` 2. Pfeil 5,75 Mikro je Takt, Bolzen 6,2, Stein 5,6, Feuer 3,8. Das Spiel schiesst voraus, laufendes Ziel 67 von 70 getroffen.
+- **gemessen:** Nahkampf: mehrere Angreifer addieren sich, 2.417 von 2.417 Faellen. Einheiten stapeln sich bis 54 je Feld.
+- **gemessen, mit Spielbefehl 70 (Gruppe, Haltung):** aggressiv reagiert auf 24 Felder, nicht 26; defensiv auf 4, nicht 6; stehen nie.
+- **gemessen:** Besatzung wie `getRemainingRequiredEngineers`; mit einem Mann zu wenig steigt keiner ein. Schusstakt Katapult 130, Trebuchet 296, Ballista 155, Feuerballiste 100.
+- **gemessen und aus dem Speicher erklaert:** Stein am Gebaeude mit UCP: Katapult 40 direkt, 15 je Nebenfeld, Trebuchet 120 und 30, voller Treffer 6 Nebenfelder, also 130 und 300 (0x407CD5, 0x407CE5, 0x407A96). Der Export zeigt 20, 10, 60, 30.
+- **abgelesen:** Spielbefehle stehen in der Sprungtabelle 0xB38DC0: Nummer = Tabellenplatz minus 20, Liste `lauf_s_plan/befehl_nummern.txt`. 70 Haltung, 74 Hunde, 45 Tor.
+- **Falle:** `liste` im Kanal des Auge-Werkzeugs schrieb jeden Befehl auf Spieler 1 um, behoben. Karteneditor: `ClickSetTerrain` plant keinen Graben wie im Spiel, dort im Gefecht pruefen.
+- **offen:** Tunnel, Graben, Leiter, Pechgraben, Kochoel, Hunde, Kuhwurf, Loeschen.
