@@ -2852,5 +2852,9 @@ Instanz 2, `Liga_Grumpy Neighbors`, Karteneditor und Gefecht (zwei Mensch-Plaetz
 - **Falle:** `liste` im Kanal des Auge-Werkzeugs schrieb jeden Befehl auf Spieler 1 um, behoben. Karteneditor: `ClickSetTerrain` plant keinen Graben wie im Spiel, dort im Gefecht pruefen.
 - **gemessen:** Burgbereich: Im Gefecht gehen Mauer, Graben, Pechgraben, Kaefig und Turm nur nahe der eigenen Burg (`getCastleBuildRangeForMapSize`), bis 45 Felder war alles erlaubt; der Befehl meldet auch sonst Erfolg.
 - **gemessen:** Graben 275 Takte je Feld und Sklave. Leiter (Anweisung 24) und Mauerangriff (23) nehmen die Feldnummer. Oben auf der Mauer kein Mehr an Reichweite: Pfeil auf 38 ja, auf 42 nein.
-- **gemessen:** Kochoel: Anweisung 15, Pech in der Schmelze (`resourcePitch`), dann 20, der Werfer verbrennt selbst. Pechgraben zuendet der Feuerwerfer, Bogenschuetze nicht. Hunde: Spielbefehl 74, 8 Hunde (Art 67), Umkreis 15 Felder, rund 1.070 Takte. Kuhwurf: Anweisung 22 mit `playerDataArray[].counter`.
-- **offen:** Tunnel (auf Befehl schlagen Tunnelgraeber nur), Loeschen, Zuschuetten.
+- **gemessen:** Kochoel: Anweisung 15, Pech in der Schmelze (`resourcePitch`), dann 20, der Werfer verbrennt selbst. Pechgraben zuendet der Feuerwerfer, Bogenschuetze nicht. Kuhwurf: Anweisung 22 mit `playerDataArray[].counter`.
+- **gemessen:** Tunnel: Bauen (Befehl 28) mit Mapper 66, Groesse 3 und dem Trupp des Graebers. Erlaubt nur mit feindlicher Mauer oder Turm Art 74 bis 76 binnen 76 Schritten (`algTunnelerFindTarget`). Ein Graeber je Eingang, rund 572 Takte Eingang (Art 85, dann Art 50 mit 100 Leben), 223 Vorbereitung, 48 je Feld, 65 am Ziel. Wachturm faellt ganz, von der Mauer ein Stueck, der Gang wird zur Grube. Faellt der Eingang, stuerzt der Gang ein und das Ziel bleibt.
+- **gemessen:** Hunde (Art 67): 4 kommen von selbst bei 8 Feinden, bei 3 nicht (Code `UpdateCageDog`: mehr als 5 oder Truppenwert ueber 24 binnen 16 Schritten). 80 Leben je Takt und Hund. Befehl 74 setzt 4 weitere auf den Kaefig, die feststecken.
+- **gemessen:** Zuschuetten (Anweisung 7) nur beim Graben eines anderen Teams, rund 220 Takte je Feld und Sklave.
+- **gemessen:** Starttruppen im Gefecht: je Spieler 6 Bogenschuetzen bei Takt 202, 8 Speertraeger bei Takt 403. Messlaeufe raeumen erst danach.
+- **offen:** Loeschen, wozu Befehl 74 im echten Spiel dient.
