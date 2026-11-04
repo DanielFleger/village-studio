@@ -2858,4 +2858,5 @@ Instanz 2, `Liga_Grumpy Neighbors`, Karteneditor und Gefecht (zwei Mensch-Plaetz
 - **gemessen:** Zuschuetten (Anweisung 7) nur beim Graben eines anderen Teams, rund 220 Takte je Feld und Sklave.
 - **gemessen:** Starttruppen im Gefecht: je Spieler 6 Bogenschuetzen bei Takt 202, 8 Speertraeger bei Takt 403. Messlaeufe raeumen erst danach.
 - **gemessen:** Besatzung: Zaehler springt von 0 auf die Sollzahl, mit zu wenig Ingenieuren bleibt er 0. huntedBy steigt nicht beim Angriffsbefehl. countArabianArcher summiert die Lebenden je Takt. Giftwolke 828 Takte. Ramme 125 je Treffer (Code 50, Faktor ungeklaert). Mauer: Tunnelgraeber Mitte 20 Schaden und Hoehe, Ende 30, erster Treffer 20 Hoehe mehr.
-- **offen:** Loeschen, wozu Befehl 74 im echten Spiel dient.
+- **gemessen:** Mauer je Schlag: Tunnelgraeber 20, Ritter 15, Schwert 10, Pike und Keule 5, Speer 2, Sklave und Assassine 0; Ende 1,5-fach, Kreuzung halb. Lord: Toeter bekommt 25 % des Goldes. Belagerungsturm legt nur mit Anweisung 23 an. Tor reagiert bei 3 bis 16 Feldern, nicht bei 24. Menschliches Katapult laedt nicht selbst nach. Oeltraeger wirft nicht von selbst.
+- **offen:** Loeschen, wozu Befehl 74 und Befehl 86 im echten Spiel dienen, wie Einheiten auf einen Turm kommen.
