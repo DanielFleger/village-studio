@@ -3,9 +3,9 @@
 #
 # Einbinden:   . "$PSScriptRoot\instanz.ps1"
 # Danach:      Get-InstanzOrdner 2 / Get-InstanzProzesse / Get-InstanzFenster
-#              (ohne Zahl: SHC_INSTANZ, sonst 1)
+#              (ohne Zahl: SHC_INSTANZ = Name oder Nummer, sonst "vorgabe" aus lib\instanzen.json)
 #
-# Instanz N liegt im Ordner "<Instanz 1> InstanzN". Erkannt wird ein Prozess
+# Ordner und Namen stehen in lib\instanzen.json (seit 15.11.2026). Erkannt wird ein Prozess
 # an seinem Programmpfad - beide Instanzen heissen "Stronghold Crusader" und
 # ihre Fenster "Crusader". Get-Process liefert den Pfad beim erhoehten Spiel
 # NICHT (.Path bleibt leer); QueryFullProcessImageName mit den kleinsten
@@ -28,24 +28,29 @@ public class ShcInstanz {
 "@
 }
 
-$script:SHC_STAMM = "C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme"
+# 15.11.2026 (Daniel, SAI): Namen, Ordner und Rollen stehen in EINER Liste, lib/instanzen.json (steam, team-liga;
+# 3, 4, 5 im Archiv auf D:). SHC_INSTANZ = Name oder Nummer, ohne Angabe gilt "vorgabe" (team-liga, B-197).
+$script:SHC_LISTE = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot '..\lib\instanzen.json') | ConvertFrom-Json
+$script:SHC_STAMM = Join-Path $script:SHC_LISTE.stamm (($script:SHC_LISTE.instanzen | Where-Object { $_.name -eq 'steam' }).ordner)
+
+function Get-InstanzEintrag([string]$Wahl) {
+    if (-not $Wahl) { $Wahl = $env:SHC_INSTANZ }
+    if (-not $Wahl) { $Wahl = $script:SHC_LISTE.vorgabe }
+    $e = $script:SHC_LISTE.instanzen | Where-Object { $_.name -ieq $Wahl -or "$($_.nummer)" -eq $Wahl } | Select-Object -First 1
+    if ($e) { return $e }
+    $a = $script:SHC_LISTE.archiv | Where-Object { "$($_.nummer)" -eq $Wahl } | Select-Object -First 1
+    if ($a) { throw "Instanz $Wahl liegt seit $($a.seit) im Archiv: $($a.ordner)" }
+    throw "Instanz '$Wahl' gibt es nicht - aktiv sind $(($script:SHC_LISTE.instanzen | ForEach-Object { $_.name }) -join ', ') (lib\instanzen.json)"
+}
 
 function Get-InstanzNummer([int]$Instanz = 0) {
-    if ($Instanz -gt 0) { return $Instanz }
-    if ($env:SHC_INSTANZ) {
-        $n = 0
-        if (-not [int]::TryParse($env:SHC_INSTANZ, [ref]$n) -or $n -lt 1) {
-            throw "SHC_INSTANZ='$($env:SHC_INSTANZ)' ist keine Instanznummer (1, 2, ...)"
-        }
-        return $n
-    }
-    return 1
+    if ($Instanz -gt 0) { return [int](Get-InstanzEintrag "$Instanz").nummer }
+    return [int](Get-InstanzEintrag).nummer
 }
 
 function Get-InstanzOrdner([int]$Instanz = 0) {
-    $n = Get-InstanzNummer $Instanz
-    if ($n -le 1) { return $script:SHC_STAMM }
-    return "$($script:SHC_STAMM) Instanz$n"
+    $e = Get-InstanzEintrag "$(Get-InstanzNummer $Instanz)"
+    return Join-Path $script:SHC_LISTE.stamm $e.ordner
 }
 
 function Get-InstanzProzesse([int]$Instanz = 0) {

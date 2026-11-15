@@ -2,10 +2,11 @@
 """Welche Spielinstanz, welcher Ordner, welcher Prozess, welches Fenster.
 
 EINE Stelle fuer alle Python-Werkzeuge in VillageStudio (fuer PowerShell:
-instanz.ps1, gleiche Regel). Seit 05.10.2026 laufen zwei Spiele gleichzeitig;
-Instanz N liegt im Ordner "<Instanz 1> InstanzN". Gewaehlt wird mit der
-Umgebungsvariable SHC_INSTANZ (ohne = 1). Selfaware-AI/werkzeug/befehl.py
-traegt dieselbe Ordner-Regel; spiel.py dort prueft, dass beide gleich sind.
+instanz.ps1). Seit 15.11.2026 (Daniel, SAI) stehen Namen, Ordner und Rollen in EINER Liste:
+lib/instanzen.json - steam (Steams Ordner) und team-liga (SamurAI spielen und testen); 3, 4, 5
+liegen im Archiv auf D:. Gewaehlt wird mit SHC_INSTANZ = Name oder Nummer, ohne Angabe gilt
+"vorgabe" aus der Liste (team-liga, B-197 - frueher 1 = Steams Ordner). Selfaware-AI liest
+dieselbe Liste (src/selfaware/game/ucp/instanzen.py).
 
 Erkannt wird ein Prozess an seinem Programmpfad, nicht am Namen und nicht am
 Fenstertitel - beide Instanzen heissen "Stronghold Crusader" und ihre Fenster
@@ -15,10 +16,34 @@ Prozess 2604 erhoeht, Pfad lesbar, rund 60 ms fuer alles).
 
 Aufruf:  python instanz.py      zeigt alle laufenden Spiele mit Instanz, Prozess, Fenster
 """
-import ctypes, ctypes.wintypes as w, os, subprocess
+import ctypes, ctypes.wintypes as w, json, os, subprocess
 
-STAMM = r"C:\Program Files (x86)\Steam\steamapps\common\Stronghold Crusader Extreme"
+LISTE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib", "instanzen.json")
 EXE = "Stronghold Crusader.exe"
+
+
+def liste():
+    with open(LISTE, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def eintrag(wahl=None):
+    """Der Listeneintrag zu einem Namen oder einer Nummer (ohne Angabe: SHC_INSTANZ, sonst 'vorgabe').
+    Archivierte oder unbekannte Instanzen brechen laut ab."""
+    L = liste()
+    roh = str(wahl).strip() if wahl is not None else (os.environ.get("SHC_INSTANZ", "").strip() or L["vorgabe"])
+    for e in L["instanzen"]:
+        if roh.lower() == e["name"] or roh == str(e["nummer"]):
+            return e
+    for a in L.get("archiv", []):
+        if roh == str(a["nummer"]):
+            raise ValueError("Instanz %s liegt seit %s im Archiv: %s - aktiv sind %s"
+                             % (roh, a["seit"], a["ordner"], ", ".join(x["name"] for x in L["instanzen"])))
+    raise ValueError("Instanz %r gibt es nicht - aktiv sind %s (lib/instanzen.json)"
+                     % (roh, ", ".join("%s (%d)" % (x["name"], x["nummer"]) for x in L["instanzen"])))
+
+
+STAMM = os.path.join(liste()["stamm"], eintrag("steam")["ordner"])     # Steams eigener Ordner (frueher "Instanz 1")
 
 _k32 = ctypes.WinDLL("kernel32", use_last_error=True)
 _k32.OpenProcess.restype = w.HANDLE
@@ -36,22 +61,20 @@ _u32.GetWindowTextW.argtypes = [w.HWND, w.LPWSTR, ctypes.c_int]
 
 
 def nummer(n=None):
-    """Die gewaehlte Instanz: n, sonst SHC_INSTANZ, sonst 1. Unsinn bricht laut ab."""
-    if n is None:
-        roh = os.environ.get("SHC_INSTANZ", "").strip() or "1"
-        if not roh.isdigit() or int(roh) < 1:
-            raise ValueError("SHC_INSTANZ=%r ist keine Instanznummer (1, 2, ...)" % roh)
-        n = int(roh)
-    return int(n)
+    """Die interne Nummer der gewaehlten Instanz (Name oder Nummer; ohne Angabe SHC_INSTANZ, sonst 'vorgabe')."""
+    return int(eintrag(n)["nummer"])
+
+
+def name(n=None):
+    return eintrag(n)["name"]
 
 
 def spielordner(n=None):
-    n = nummer(n)
-    return STAMM if n == 1 else "%s Instanz%d" % (STAMM, n)
+    return os.path.join(liste()["stamm"], eintrag(n)["ordner"])
 
 
 def vorhandene():
-    return [n for n in range(1, 10) if os.path.isdir(spielordner(n))]
+    return [e["nummer"] for e in liste()["instanzen"] if os.path.isdir(spielordner(e["nummer"]))]
 
 
 def programmpfad(pid):
@@ -125,4 +148,4 @@ if __name__ == "__main__":
         print("Kein Spiel laeuft.")
     for pid, nr, ordner in spiele:
         titel = ", ".join(t for _, t, p in fenster(nr) if p == pid) if nr else ""
-        print("Instanz %s  Prozess %d  Fenster '%s'  %s" % (nr or "?", pid, titel, ordner or "(Pfad nicht lesbar)"))
+        print("Instanz %s  Prozess %d  Fenster '%s'  %s" % (name(nr) if nr else "?", pid, titel, ordner or "(Pfad nicht lesbar)"))

@@ -545,7 +545,7 @@ bis das Modul laeuft, und uebergibt dann an die Wacht im Spiel.
 - **Schalter:** `{"befehle": [{"absender": "aus"}]}` schreibt die 9 Original-Bytes zurueck (alter Weg), `"an"` baut ein,
   `"status"` meldet. Beim Laden von logik.lua wird eingebaut. Im Hauptmenue nur als Liste (`befehle`) - init.lua reicht
   dort nur ausgewaehlte Befehle weiter.
-- **Wo die aktuelle logik.lua liegt:** `Selfaware-AI/werkzeug/logik_stand_20261019.lua` (Instanz 4 und 5 byte-gleich).
+- **Wo die aktuelle logik.lua liegt:** seit 15.11.2026 `Selfaware-AI/bridge/snapshots/logik_stand_20261115.lua`, eingespielt in die Team-Liga-Instanz (frueher: `Selfaware-AI/werkzeug/logik_stand_20261019.lua`, Instanz 4 und 5 byte-gleich - beide seit 15.11. im Archiv).
   Die Fassung hier im Repo (`ucp/logik.lua`, 1.978 Zeilen) ist alt; Instanz 1-3 haben noch eine aeltere Zwischenfassung.
 - **Plattformregel (gemessen 19.10. 22:55):** UCP3 verbietet einem Modul, globale Variablen anzulegen ("global assignment
   not permitted in module") - logik.lua laeuft dann gar nicht. Alles mit `local`.

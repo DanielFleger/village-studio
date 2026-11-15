@@ -1,0 +1,17 @@
+{
+ "herkunft": "Daniel 15.11.2026 14:18/14:24/14:54 (SAI, Plan SAI_2026-11-15_plan-instanzen.html): Instanz 1 ist die Steam-Instanz, Instanz 2 wird Werkstatt und SamurAI-Spielinstanz zugleich (Name nach Spielmodus: Team-Liga), Instanz 3, 4 und 5 ins Archiv auf D:. Spaeter je Spielmodus eine Instanz (Ascension, Vanilla, Custom).",
+ "regel": "EINE Liste fuer alle Werkzeuge: VillageStudio/werkzeug/instanz.py und instanz.ps1, Selfaware-AI/src/selfaware/game/ucp/instanzen.py. SHC_INSTANZ nimmt den Namen (team-liga, steam) oder die Nummer; ohne Angabe gilt 'vorgabe'. Die Nummer ist nur noch der interne Schluessel fuer Zustandsdateien (.letzte_id2, .lauf2) und bleibt fest.",
+ "stamm": "C:\\Program Files (x86)\\Steam\\steamapps\\common",
+ "vorgabe": "team-liga",
+ "instanzen": [
+  {"nummer": 1, "name": "steam", "ordner": "Stronghold Crusader Extreme", "mod": "Ascension-Multiplayer",
+   "rolle": "Steams eigener Ordner, bleibt unveraendert; Werkzeuge treffen ihn nur mit ausdruecklicher Angabe (B-197)"},
+  {"nummer": 2, "name": "team-liga", "ordner": "Stronghold Crusader Extreme Team-Liga", "mod": "Mod-KI-Team-Liga",
+   "rolle": "SamurAI spielen und testen (Kreativmodus); bis 15.11.2026 'Instanz2'"}
+ ],
+ "archiv": [
+  {"nummer": 3, "ordner": "D:\\SHC-Archiv\\2026-11-15\\Stronghold Crusader Extreme Instanz3", "seit": "2026-11-15", "war": "Liga, Testserien"},
+  {"nummer": 4, "ordner": "D:\\SHC-Archiv\\2026-11-15\\Stronghold Crusader Extreme Instanz4", "seit": "2026-11-15", "war": "Ascension-AI-Turnier mit selfaware-bridge (Sitzung SAI)"},
+  {"nummer": 5, "ordner": "D:\\SHC-Archiv\\2026-11-15\\Stronghold Crusader Extreme Instanz5", "seit": "2026-11-15", "war": "Daniels SamurAI-App, Kern 19, Lernkreis"}
+ ]
+}
