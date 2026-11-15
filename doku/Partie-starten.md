@@ -50,7 +50,7 @@ stimmen“). Die ersten zwei Zeilen sind seine Annahmen: bestätigen lassen, nic
 ### Die Freigabe (Fänger, keine Disziplin)
 
 Nach Daniels Antwort schreibt die Sitzung seine Antwort im Wortlaut nach
-`Selfaware-AI-fw/data/research/partie_freigabe.json`:
+`Selfaware-AI/data/research/partie_freigabe.json`:
 
 ```json
 {"zeit": "15.11.2026 11:50", "daniel": "<sein Wortlaut>", "weg": "menue",
@@ -58,14 +58,14 @@ Nach Daniels Antwort schreibt die Sitzung seine Antwort im Wortlaut nach
  "verbraucht": false}
 ```
 
-**Startsperre** (`Selfaware-AI-fw/src/selfaware/execution/startsperre.py`, sitzt in `befehl.sende`): Ein Befehl mit
+**Startsperre** (`Selfaware-AI/src/selfaware/execution/startsperre.py`, sitzt in `befehl.sende`): Ein Befehl mit
 `eigenesGefecht` kommt nur durch, wenn die Freigabe Daniels Wortlaut trägt und er ausdrücklich den Befehlsweg erlaubt hat
 (`"weg": "befehl"`). Jede Freigabe gilt für genau einen Start, danach steht sie auf `"verbraucht": true`. Ohne Freigabe
 wird der Befehl verworfen, Meldung `STARTSPERRE: ...`. Test: `tests/test_startsperre.py` (Negativlauf rot, 15.11.2026).
 
 ### SamurAI ist eine eigene KI – nie ein Platzhalter
 
-SamurAI hat ein eigenes KI-Paket mit Namen, Beschreibung, Profilbild und Burg (`Selfaware-AI-fw/assets/ai/SamurAI`). UCP setzt es
+SamurAI hat ein eigenes KI-Paket mit Namen, Beschreibung, Profilbild und Burg (`Selfaware-AI/assets/ai/SamurAI`). UCP setzt es
 über den KI-Tauscher auf den **Abt-Platz (KI 16)**: `ucp-config.yml` → `aiSwapper` → `abbot` → `SamurAI` (so in der Team-Liga-Instanz mit
 `Selfaware-AI-0.2.0`, abgelesen 15.11.2026; die archivierten Instanzen 4 und 5 hatten 0.2.0 bzw. 0.1.0). Nennt Daniel SamurAI, kommt genau dieses Bild in
 die Lobby. Steht es nicht in der KI-Auswahl, wird erst nachgesehen und gefragt – nie Rotkäppchen, Ratte oder Abt ohne sein Ja.
@@ -73,7 +73,7 @@ Fehler vom 15.11.2026 12:27: Partie 34 lief mit Rotkäppchen als Platzhalter, Da
 eine Beschreibung und ein Profilbild“.
 
 Startplätze nie aus eigener Deutung von „links unten“ setzen: das Bild der Kartenvorschau mit nummerierten Schildern zeigen und
-Daniel die Nummern wählen lassen (Beispiel `Selfaware-AI-fw/data/research/menueweg_20261115/schilder_nummeriert.png`).
+Daniel die Nummern wählen lassen (Beispiel `Selfaware-AI/data/research/menueweg_20261115/schilder_nummeriert.png`).
 
 ## 1. Was über den Menüweg bekannt ist (Stand 15.11.2026)
 
@@ -82,7 +82,7 @@ Daniel die Nummern wählen lassen (Beispiel `Selfaware-AI-fw/data/research/menue
 | Klicken von außen geht nicht (Spiel läuft mit erhöhten Rechten, Fehler 5); der Weg führt über die Knopf-Handler des Spiels, die das Modul ruft | **gemessen** | `Menue-Handbuch.md`, Abschnitt 1 |
 | Hauptmenü Knopf 2 „Kreuzzug“ führt zu Ansicht 55; `{"menue": 41}` führt von jeder Ansicht zurück ins Hauptmenü | **gemessen** | `Menue-Handbuch.md`, „Ebene 1 vollständig“ |
 | Im Hauptmenü kommen Knöpfe nur als Liste an: `{"befehle": [{"id": n, "kreuzzug": 2}]}`; einzeln verwirft der Menü-Haken sie ohne Logzeile | **gemessen 15.11.2026** | `init.lua` Menü-Haken; Log „KREUZZUG: Knopf 2, ok=true“ erst als Liste |
-| Kreuzzug-Knopf 2 öffnet „Eigenes Gefecht“ (Lobby); voreingestellt: Normales Spiel, Gold 0 · 150 | **gemessen 15.11.2026** | Bild `Selfaware-AI-fw/data/research/menueweg_20261115/1_eigenes_gefecht.png`; Bedeutung der Nummern: `funktionswissen/eingang/rest_060.txt` |
+| Kreuzzug-Knopf 2 öffnet „Eigenes Gefecht“ (Lobby); voreingestellt: Normales Spiel, Gold 0 · 150 | **gemessen 15.11.2026** | Bild `Selfaware-AI/data/research/menueweg_20261115/1_eigenes_gefecht.png`; Bedeutung der Nummern: `funktionswissen/eingang/rest_060.txt` |
 | Kartenliste der Lobby im Speicher: Eintrag n (0 = oben) = Namensnummer k bei `0x01126E28 + 4n`, Name bei `0x11BFCF8 + k × 0x3E9` (dieselbe Liste wie im Lade-Dialog). Die Zählstelle `0x0112661C` steht in der Lobby auf 0 – bis zum ersten leeren Namen lesen | **gemessen 15.11.2026** | `menueweg_20261115/kartenliste.txt`: „Liga_Battle Brother_s Strife“ = Eintrag 46 |
 | Karte wählen: `{"knopf": "LobbyMenu_MapSelectScrollbar", "nr": 0, "art": 3, "wert": R}` setzt den Rollstand R (wie Balken ziehen, Modul gibt Zeiger auf drei Zahlen), dann `{"knopf": "LobbyMenu_MapSelectTable", "nr": n − R}` (Zeile 0 = oberste sichtbare) | **gemessen 15.11.2026** | Bild `menueweg_20261115/2_karte.png`: „Liga_Battle Brother_s Strife – Ausgeglichen“ markiert |
 | Gegner hinzufügen: `LobbyMenu_PlayerListAndNpcButtons` Nr −101 öffnet die KI-Auswahl, `AiLordSelect_Main` Nr n setzt die n-te KI in den nächsten freien Platz | **abgelesen, nicht gemessen** | `rest_047.txt`, `rest_019.txt` |
@@ -102,7 +102,7 @@ die Kopie. Bisher daran gearbeitet: Sitzungen „KIL – Zeitreisender statt Bau
 
 ## 3. Ablauf, der am 15.11.2026 funktioniert hat (Partie 34, Instanz 2)
 
-1. SamurAI-Paket eingebunden: Plugin `ucp/plugins/Selfaware-AI-0.2.0` (Inhalt aus `Selfaware-AI-fw/assets/ai/SamurAI`),
+1. SamurAI-Paket eingebunden: Plugin `ucp/plugins/Selfaware-AI-0.2.0` (Inhalt aus `Selfaware-AI/assets/ai/SamurAI`),
    `ucp-config.yml` → `aiSwapper` → `abbot` → SamurAI (lines, portrait, aiv), Plugin in beiden Ladereihenfolgen; Sicherung
    `ucp-config.yml.vor-samurai-20261115_1231`. Log: „enabling extension: Selfaware-AI“, keine Warnung zu SamurAI. **gemessen**
 2. Lobby: `kreuzzug 2` → (eigener Befehl, sonst zu früh) Karte → `PlayerListAndNpcButtons −101` → `AiLordSelect_Main 8`

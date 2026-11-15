@@ -94,9 +94,8 @@ print()
 # haengt im Dialog, schreibt aber Logzeilen, und ucp3.log wird bei jedem Start
 # neu angelegt. Am 31.08. hat genau das einen Lauf zerstoert.
 SPERRE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sperre.py")
-if not os.path.exists(SPERRE):
-    SPERRE = (r"%USERPROFILE%/Documents/PC_Affe/Games/Stronghold_Crusader/"
-              r"Stronghold Crusader Modding/Tools/VillageStudio/werkzeug/sperre.py")
+if not os.path.exists(SPERRE):   # 15.11.2026 (B-192): frueher ein Ersatzpfad in den alten, weggezogenen Ordner
+    sys.exit("Testsperre fehlt: %s - ohne Sperre faehrt kein Lauf (31.08.)" % SPERRE)
 NAME = "villagestudio" if nummer() == 1 else "villagestudio%d" % nummer()   # Sperre je Instanz
 
 r = subprocess.run([sys.executable, SPERRE, "holen", NAME, "Burg_left_2-Lauf"],

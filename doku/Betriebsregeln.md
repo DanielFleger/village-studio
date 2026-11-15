@@ -305,7 +305,7 @@ python werkzeug/instanz.py
 Seit 05.10.2026 laufen zwei Instanzen gleichzeitig. Der frühere Handgriff
 `Get-Process | Where-Object { $_.ProcessName -match "Crusader" } | ForEach-Object { $_.Kill() }`
 traf **beide** — beendet wird jetzt nur die eigene Instanz
-(`SHC_INSTANZ=<n> python Selfaware-AI/werkzeug/spiel.py beenden`).
+(`SHC_INSTANZ=<n> python -m selfaware.tools.setup.spiel beenden`).
 
 ### Die Testsperre — nur eine Sitzung fährt das Spiel
 
@@ -545,14 +545,14 @@ bis das Modul laeuft, und uebergibt dann an die Wacht im Spiel.
 - **Schalter:** `{"befehle": [{"absender": "aus"}]}` schreibt die 9 Original-Bytes zurueck (alter Weg), `"an"` baut ein,
   `"status"` meldet. Beim Laden von logik.lua wird eingebaut. Im Hauptmenue nur als Liste (`befehle`) - init.lua reicht
   dort nur ausgewaehlte Befehle weiter.
-- **Wo die aktuelle logik.lua liegt:** seit 15.11.2026 `Selfaware-AI/bridge/snapshots/logik_stand_20261115.lua`, eingespielt in die Team-Liga-Instanz (frueher: `Selfaware-AI/werkzeug/logik_stand_20261019.lua`, Instanz 4 und 5 byte-gleich - beide seit 15.11. im Archiv).
+- **Wo die aktuelle logik.lua liegt:** seit 15.11.2026 `Selfaware-AI/bridge/snapshots/logik_stand_20261115.lua`, eingespielt in die Team-Liga-Instanz (frueher: `Selfaware-AI/bridge/snapshots/logik_stand_20261019.lua`, Instanz 4 und 5 byte-gleich - beide seit 15.11. im Archiv).
   Die Fassung hier im Repo (`ucp/logik.lua`, 1.978 Zeilen) ist alt; Instanz 1-3 haben noch eine aeltere Zwischenfassung.
 - **Plattformregel (gemessen 19.10. 22:55):** UCP3 verbietet einem Modul, globale Variablen anzulegen ("global assignment
   not permitted in module") - logik.lua laeuft dann gar nicht. Alles mit `local`.
 - **Rust-Kern (19.10. 23:15, Selfaware-AI B-115):** logik.lua laedt `ucp/modules/villagestudio-0.1.0/samurai_kern.dll`
   (core.openLibraryHandle, cdecl) und ruft ihn jeden Takt. UCP3 laedt DLLs NUR aus einem Modulordner ("can only load
   libraries when in a module"). Eine geladene DLL ist bis Spielende gesperrt - neue Fassung = Instanz neu starten.
-- **Belege:** `Selfaware-AI/Spielkarte.md` Abschnitt 1, `werkzeug/absender_live_pruefen.py` (im Spiel 8/8 + Gegenprobe),
+- **Belege:** `Selfaware-AI/docs/research/Spielkarte.md` Abschnitt 1, `werkzeug/absender_live_pruefen.py` (im Spiel 8/8 + Gegenprobe),
   `werkzeug/absender_pruefen.py` (ohne Spiel, Maschinencode mit capstone).
 
 ### FALLE: Die Fenster-Wacht im Modul laeuft IMMER - auch wenn Daniel spielt (gemessen 19.10.2026)
@@ -574,9 +574,9 @@ aktive Fenster bleibt.
   wirkt nicht, erst nach einem Neustart. Kein Befehl schaltet die Wacht im
   laufenden Spiel ab (`fensterWachtAn` ist eine lokale Variable in init.lua).
   Beleg im ucp3.log: `FENSTER: vorn.txt gefunden - das Fenster bleibt, wo es ist.`
-- **Beleg:** `Selfaware-AI/werkzeug/fenster_ereignisse.ps1` (Windows meldet jeden
+- **Beleg:** `Selfaware-AI/tools/windows/fenster_ereignisse.ps1` (Windows meldet jeden
   Vordergrundwechsel + Lage des Spielfensters alle 50 ms),
-  `Selfaware-AI/daten/fenster_ereignisse_20261019_210128.txt`: 21:03:21.091
+  `Selfaware-AI/data/research/fenster_ereignisse_20261019_210128.txt`: 21:03:21.091
   Stronghold vorn, 4 Fenster darueber (nur Taskleisten); 21:03:21.797 Stronghold
   WEITER vorn, aber 15 Fenster darueber - ohne Klick, ohne Fokuswechsel.
   Dasselbe 21:03:22.405 -> 21:03:25.814.
@@ -643,8 +643,8 @@ Ohne Angabe gilt überall Instanz 1 — alles wie bisher.
 | `powershell -File werkzeug/start_hinten.ps1 -Instanz 2` | startet und senkt nur das Fenster von Instanz 2 |
 | `stapel.ps1`, `nach_hinten.ps1`, `fenster_foto.ps1`, `bild_q.ps1` mit `-Instanz 2` | ohne Angabe: `SHC_INSTANZ`, sonst 1 |
 | `SHC_INSTANZ=2 python werkzeug/<werkzeug>.py` (VillageStudio) | gilt für `shc.py`, `starte_spiel.py`, `bis_menue.py`, `menue_erkunden.py`, `bild.py`, `lauf_burg2.py`, `befehl.py`, `test.py`, `gefecht.py` |
-| `SHC_INSTANZ=2 python Selfaware-AI/werkzeug/<lauf>.py` | `befehl.py` wählt Ordner, Kanal, Kanalsperre (`.lauf2`) und Nummernzähler (`.letzte_id2`) |
-| `SHC_INSTANZ=2 python Selfaware-AI/werkzeug/spiel.py beenden` | beendet **nur** Instanz 2 |
+| `SHC_INSTANZ=2 python -m selfaware.<modul>` | `befehl.py` wählt Ordner, Kanal, Kanalsperre (`.lauf2`) und Nummernzähler (`.letzte_id2`) |
+| `SHC_INSTANZ=2 python -m selfaware.tools.setup.spiel beenden` | beendet **nur** Instanz 2 |
 | `python werkzeug/instanz_abgleich.py 2 --tun --als villagestudio2` | holt `logik.lua`, Modul und Baupläne von Instanz 1 |
 | `python werkzeug/instanz.py` | zeigt alle laufenden Spiele mit Instanz, Prozess und Fenster |
 
@@ -654,7 +654,7 @@ Fenster zu einer Instanz gehören, steht in `werkzeug/instanz.py` (Python) und
 dort. Erkannt wird ein Spiel an seinem **Programmpfad**, nie am Namen oder am
 Fenstertitel — beide Instanzen heißen „Stronghold Crusader" und ihre Fenster
 „Crusader". Den Pfad liest Windows auch beim erhöhten Spiel heraus (gemessen).
-`Selfaware-AI/werkzeug/befehl.py` führt die Ordner-Regel getrennt, damit der
+`Selfaware-AI/src/selfaware/game/ucp/befehl.py` führt die Ordner-Regel getrennt, damit der
 Befehlskanal nicht an VillageStudio hängt; `spiel.py` prüft bei jedem Aufruf,
 dass beide denselben Ordner nennen, und bricht sonst laut ab.
 
@@ -702,4 +702,4 @@ lief weiter). `lauf_burg2.py` holt die Sperre der gewählten Instanz.
 
 Bewusst nur Instanz 1, weil sie die Quelle ändern, die `instanz_abgleich.py`
 weiterträgt: `patch_bauwacht.py`, `patch_modus.py`. Ebenso
-`Selfaware-AI/werkzeug/gui.py`, denn die UCP3-GUI gehört zu Instanz 1.
+`Selfaware-AI/src/selfaware/tools/setup/gui.py`, denn die UCP3-GUI gehört zu Instanz 1.

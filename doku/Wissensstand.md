@@ -2485,12 +2485,12 @@ ZEIT-Logzeilen, Ticks je Sekunde = Tickdifferenz / Zeitdifferenz.*
 | Die Startpositionen verteilt `eigenesGefecht` **zufällig** (`playerPositionsArray` 0x01A275D0 auf 0xF6, dann „zufällig platzieren" je Platz) — feste Positionen oben/unten sind damit noch nicht möglich | **abgelesen** | derselbe Handler |
 | Die Karte „Liga_Grumpy Neighbors" liegt als Datei in `ucp/plugins/Mod-KI-Team-Liga-2.0.2/resources/maps/`; der Kartenlader ist auf diesen Ordner eingestellt | **gemessen** | Dateisuche und `ucp-config.yml` |
 | **Die UCP3-GUI schreibt die Config beim Spielstart aus der GUI** — Änderungszeit der `ucp-config.yml` 20:21:34 = Startzeit des Spiels, auf die Sekunde | **gemessen** | `LastWriteTime` der Config gegen `StartTime` des Spielprozesses |
-| **Beim Schließen schreibt die GUI die Config nicht** — Prüfsumme vorher und nachher gleich (`58591298a2e027cc`) | **gemessen** | `Selfaware-AI/werkzeug/gui.py schliessen`, 20:59 |
+| **Beim Schließen schreibt die GUI die Config nicht** — Prüfsumme vorher und nachher gleich (`58591298a2e027cc`) | **gemessen** | `Selfaware-AI/src/selfaware/tools/setup/gui.py schliessen`, 20:59 |
 | Die GUI läuft auf derselben Rechtestufe wie die Claude-Sitzung (Pfad lesbar) und lässt sich freundlich schließen (`CloseMainWindow`) | **gemessen** | ein Lauf, Prozess nach < 15 s weg |
 | Ein **aus der GUI gestartetes Spiel** hat unser Modul nicht (0 × `villagestudio` im Log) und läuft auf höherer Rechtestufe — von hier aus also **weder per Befehl noch von außen beendbar** | **gemessen** | Log ohne `villagestudio`; Programmpfad des Prozesses nicht lesbar |
 | Die installierte `liga_ai.json` ist inhaltlich identisch mit SBAs Quelle (Commit 5e9a83f): 942 von 942 Werten gleich, nur die Schreibweise der Datei weicht ab. Das Startgold steht nicht darin, sondern in der Erweiterung `startResources` | **gemessen** | Vergleich aller Blattwerte beider Dateien |
 | **Hohe Rechte gibt es hier ohne Klick:** Windows steht auf „Erhöhen ohne Nachfrage" (`ConsentPromptBehaviorAdmin = 0`), Daniels Konto ist Administrator. Ein Helfer mit `Start-Process -Verb RunAs` läuft still auf hoher Stufe (S-1-16-12288), ohne Dialog, fertig nach 0,3 s — und kann den Programmpfad des Spiels lesen, den eine normale Sitzung nicht lesen kann | **gemessen** | Probe-Skript, 21:04 |
-| **Damit ist ein Spiel ohne unser Modul doch von hier beendbar:** der erhöhte Helfer bat das Fenster zu schließen (`CloseMainWindow`), das Spiel ging sauber zu — kein harter Abbruch nötig. Der Fehlerhub-Eintrag mp-18 („von keiner Sitzung zu beenden") ist damit überholt | **gemessen** | `Selfaware-AI/werkzeug/spiel.py beenden`, 21:06; Gegenprobe `tasklist` |
+| **Damit ist ein Spiel ohne unser Modul doch von hier beendbar:** der erhöhte Helfer bat das Fenster zu schließen (`CloseMainWindow`), das Spiel ging sauber zu — kein harter Abbruch nötig. Der Fehlerhub-Eintrag mp-18 („von keiner Sitzung zu beenden") ist damit überholt | **gemessen** | `Selfaware-AI/src/selfaware/tools/setup/spiel.py beenden`, 21:06; Gegenprobe `tasklist` |
 | Die GUI setzt beim Spielstart auch `continueOutOfFocus` auf `pause` — im Hintergrund hält das Spiel dann an, und **kein einziger Befehl kommt an** (Log endete eine Sekunde nach dem Start) | **gemessen** | Lauf 1, 21:07; `ucp-config.yml` und Sicherung von 21:07 |
 | **Erstes eigenes Spiel per Befehl** (Lauf 1, 21:10): `eigenesGefecht` mit `karte: "Liga_Grumpy Neighbors"`, `ki: 1`, `gegner: 2` → Kartenname im Speicher stimmt, KI-Liste `[0,0,1,1,0,…]`, `isSkirmishTrail` 0, Spielmodus 99, Ansicht 14 | **gemessen** | `peek` im pausierten Spiel |
 | `{ "pause": true }` hält die Uhr an (Tick 4691 vor und nach dem Messen), `{ "pause": false }` setzt fort | **gemessen** | Lauf 1 |
@@ -2502,7 +2502,7 @@ ZEIT-Logzeilen, Ticks je Sekunde = Tickdifferenz / Zeitdifferenz.*
 | Im Hauptmenü kommen **nur Startbefehle** durch (`menue`, `eigenesGefecht`); `tickpause` und `pause` werden dort stillschweigend verworfen | **gemessen** | Log ohne jede Antwort |
 | Während des Gefechtsaufbaus liefert der Tickzähler kurz **Unsinn** (7.807.163), danach 0, 1, 2 … | **gemessen** | Wächter löste mit diesem Wert aus |
 | Spielbeginn im Selbstspiel, tick-genau: Tick 1–25 nur 133 neutrale Einheiten; Tick 50 je Spieler 1 Einheit ohne Lord; **Tick 100 je ein Lord**; Tick 400 rund 20 Einheiten je Spieler | **gemessen** | Pausen bei 2/5/10/25/50/100/200/400 |
-| Der Selbstspiel-Start nach Lobby-Rezept ist **wiederholbar**: drei Starts, Burgen jedes Mal bei (162,104) und (224,282), gleiche Einheitenzahlen | **gemessen** | `Selfaware-AI/werkzeug/selbstspiel.py 3` |
+| Der Selbstspiel-Start nach Lobby-Rezept ist **wiederholbar**: drei Starts, Burgen jedes Mal bei (162,104) und (224,282), gleiche Einheitenzahlen | **gemessen** | `Selfaware-AI/src/selfaware/tools/experiments/selbstspiel.py 3` |
 | Warum das Spiel überhaupt hoch läuft, ist **offen**: kein Kompatibilitäts-Häkchen „Als Administrator ausführen" (nur XP-SP3-Modus, 16-Bit-Farben, DPI), kein `requestedExecutionLevel` im Programm | **gemessen, Ursache offen** | Registry `AppCompatFlags\Layers` (HKCU/HKLM), Programmdatei durchsucht |
 
 **Was daraus für die Lernschleife folgt:** Eine Spielinstanz schafft — gerechnet
@@ -2512,7 +2512,7 @@ vollständigen eigenen Spiel.
 
 ### 13b. Spielstand speichern ohne Klick (30.09.2026, 22:03)
 
-Rezept als Werkzeug: `Selfaware-AI/werkzeug/speichern.py "<Name>"`.
+Rezept als Werkzeug: `Selfaware-AI/src/selfaware/game/ucp/speichern.py "<Name>"`.
 
 | Aussage | Marke | Beleg |
 |---|---|---|
@@ -2528,7 +2528,7 @@ Rezept als Werkzeug: `Selfaware-AI/werkzeug/speichern.py "<Name>"`.
 
 ### 13c. Spielstand laden per Name, mit Lade-Pause (30.09.2026, 22:16)
 
-Rezept als Werkzeug: `Selfaware-AI/werkzeug/laden.py "<Name>"` (Grundlage: Menü-Handbuch, „Einen bestimmten Spielstand laden").
+Rezept als Werkzeug: `Selfaware-AI/src/selfaware/game/ucp/laden.py "<Name>"` (Grundlage: Menü-Handbuch, „Einen bestimmten Spielstand laden").
 
 | Aussage | Marke | Beleg |
 |---|---|---|
@@ -2537,7 +2537,7 @@ Rezept als Werkzeug: `Selfaware-AI/werkzeug/laden.py "<Name>"` (Grundlage: Menü
 | Die Liste ist nach einem **eigenen Datum** sortiert, nicht nach der Dateizeit (Walltest 3: Datei 19:21, Liste 17:28 Weltzeit) — Zeilen also aus dem Speicher lesen, nicht aus dem Ordner ableiten | **gemessen** | Bild der Liste gegen `ls` |
 | Der **Tickzähler** steht nach dem Laden auf der gespeicherten Spielzeit (M7-01 gespeichert bei 1100 → geladen bei 1100). **Die Welt aber nicht** — siehe 13d: Einheiten, Gebäude und Spieler sind einen Tick weiter | **gemessen** | Logzeile „LADEPAUSE: Spielzeit sprang um −17888 auf Tick 1100"; 13d |
 | **Lade-Pause** `{ "ladepause": true }`: hält beim ersten Tick an, an dem die Spielzeit springt (beide Richtungen) **oder** die Pause aufgehoben ist (scharf gemacht im pausierten Spiel; Laden hebt die Pause auf). Das zweite Zeichen braucht es beim Wiederladen eines Stands mit gleicher Spielzeit. Die Tick-Pause „jetzt + 1" taugt nicht: sie greift nur, wenn der geladene Stand später liegt | **gemessen** | vier Ladevorgänge per Sprung; Wiederladen M7-01 über M7-01 per „Pause aufgehoben"; Gegenlauf 3 s ohne Laden löst nicht aus |
-| Geladen: Walltest 4 → Tick 18.988; Waffengebäude_test → 24.604; Tiberias 4 LUL (ältester, 12.04.2020) → 83.339 — alle ohne Absturz | **gemessen** | Bilder `Selfaware-AI/daten/bilder/m7-02_*` (nicht im Repo) |
+| Geladen: Walltest 4 → Tick 18.988; Waffengebäude_test → 24.604; Tiberias 4 LUL (ältester, 12.04.2020) → 83.339 — alle ohne Absturz | **gemessen** | Bilder `Tools/_archiv/2026-11-15/Tools_Selfaware-AI-alter-stand/daten/bilder/m7-02_*` (nicht im Repo) |
 | Das Menü-Handbuch nennt für „Wallrest 4" 40.524 Ticks; der erste Tick nach dem Laden von Walltest 4 ist 18.988. Vermutlich wurde damals nach dem Weiterlaufen gemessen (die Pause kam zu spät) | **gemessen / Ursache vermutet** | `laden.py "Walltest 4"` |
 | Nach dem Anhalten kommen noch drei Tick-Aufrufe mit **derselben** Spielzeit an. Erklärt (23:26:48): **der Taktgeber `processGameTick` läuft auch in der Pause**, nur die Spielzeit rückt nicht vor — eine Tick-Pause auf den aktuellen Tick löste im pausierten Spiel sofort aus | **gemessen** | dreimal „LADEPAUSE: nachgehalten bei Tick …" je Ladevorgang; Tick-Pause-Probe |
 | Nach dem Laden von Tiberias stand das Tempo auf **20** — vermutlich bringt der Spielstand sein Tempo mit | **gemessen, Ursache vermutet** | `peek` GameCore+0xC8 |
@@ -2545,7 +2545,7 @@ Rezept als Werkzeug: `Selfaware-AI/werkzeug/laden.py "<Name>"` (Grundlage: Menü
 
 ### 13d. Verliert Speichern und Laden etwas? (30.09.2026, 23:28)
 
-Werkzeuge: `Selfaware-AI/werkzeug/verlusttest.py`, `verlust_eingrenzen.py`; Berichte `Selfaware-AI/daten/verlusttest_232853.json`, `verlust_eingrenzen_233135.json`. Je Schnappschuss 11 Bereiche (3,6 MB). A = M7-01 geladen + genau 100 Ticks (Tick 1200), vor dem Speichern; B = derselbe Stand nach Speichern und Wiederladen.
+Werkzeuge: `Selfaware-AI/src/selfaware/tools/experiments/verlusttest.py`, `verlust_eingrenzen.py`; Berichte `Selfaware-AI/data/research/verlusttest_232853.json`, `verlust_eingrenzen_233135.json`. Je Schnappschuss 11 Bereiche (3,6 MB). A = M7-01 geladen + genau 100 Ticks (Tick 1200), vor dem Speichern; B = derselbe Stand nach Speichern und Wiederladen.
 
 | Aussage | Marke | Beleg |
 |---|---|---|
@@ -2558,7 +2558,7 @@ Werkzeuge: `Selfaware-AI/werkzeug/verlusttest.py`, `verlust_eingrenzen.py`; Beri
 
 ### 13e. Navigation auf der Karte per Befehl (30.09.2026, 23:47)
 
-Werkzeug `Selfaware-AI/werkzeug/navigation.py`; Dekompilate `Selfaware-AI/daten/dekomp_navigation*.c`. Tasten: `WindowMsgProcessingFunc` 0x004B2AE0; Rechtsklick-Menü: `MenuItemActionHandler_InGameMenu_PeasantBuildAndRightClickMenuSelection` 0x00434350.
+Werkzeug `Selfaware-AI/src/selfaware/tools/experiments/navigation.py`; Dekompilate `Selfaware-AI/research/native/dekomp_navigation*.c`. Tasten: `WindowMsgProcessingFunc` 0x004B2AE0; Rechtsklick-Menü: `MenuItemActionHandler_InGameMenu_PeasantBuildAndRightClickMenuSelection` 0x00434350.
 
 | Aussage | Marke | Beleg |
 |---|---|---|
@@ -2572,7 +2572,7 @@ Werkzeug `Selfaware-AI/werkzeug/navigation.py`; Dekompilate `Selfaware-AI/daten/
 
 ### 13f. Lord-Duell: befehligen, festhalten, Treffer, Tod, Endbildschirm (01.10.2026, 00:00–00:14)
 
-Werkzeug `Selfaware-AI/werkzeug/lordduell.py`; Modulbefehle `lords`, `lordwacht` (Ziel festhalten, Treffen, erster Treffer, Tod, Halt), `zielsuche`. Karte Liga_Grumpy Neighbors, Start `M7-01 Speichertest Grumpy T1100`.
+Werkzeug `Selfaware-AI/src/selfaware/tools/experiments/lordduell.py`; Modulbefehle `lords`, `lordwacht` (Ziel festhalten, Treffen, erster Treffer, Tod, Halt), `zielsuche`. Karte Liga_Grumpy Neighbors, Start `M7-01 Speichertest Grumpy T1100`.
 
 | Aussage | Marke | Beleg |
 |---|---|---|
@@ -2592,13 +2592,13 @@ Werkzeug `Selfaware-AI/werkzeug/lordduell.py`; Modulbefehle `lords`, `lordwacht`
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| `checkSkirmishGameDefeat` (0x00486600, aus `processGameTick`) zählt je Team die toten Lords; lebt höchstens noch ein Team, setzt es sofort `MapAndTime.gameOver` (**0x0117D500**) = 1, `gameOverTime` (**0x0117C888**) = `timeGetTime()` (Rechneruhr, ms) und `playerIsAlive[9]` (short, ab **0x0117EF40**); das Sieg/Niederlage-Fenster erscheint | **abgelesen** | `Selfaware-AI/daten/dekomp_spielende.c` |
-| Der Endbildschirm (Ansicht 30, „Mächtigster Fürst") folgt **rund 9–10 s Rechnerzeit** nach „Spiel vorbei", unabhängig vom Tempo: Tempo 1000 → 4.844 Ticks / 9.245 ms, Tempo 300 → 1.799 Ticks / 9.698 ms | **gemessen** (Ticks grob, Abfrage etwa sekündlich) | `Selfaware-AI/werkzeug/spielende.py` |
+| `checkSkirmishGameDefeat` (0x00486600, aus `processGameTick`) zählt je Team die toten Lords; lebt höchstens noch ein Team, setzt es sofort `MapAndTime.gameOver` (**0x0117D500**) = 1, `gameOverTime` (**0x0117C888**) = `timeGetTime()` (Rechneruhr, ms) und `playerIsAlive[9]` (short, ab **0x0117EF40**); das Sieg/Niederlage-Fenster erscheint | **abgelesen** | `Selfaware-AI/research/native/dekomp_spielende.c` |
+| Der Endbildschirm (Ansicht 30, „Mächtigster Fürst") folgt **rund 9–10 s Rechnerzeit** nach „Spiel vorbei", unabhängig vom Tempo: Tempo 1000 → 4.844 Ticks / 9.245 ms, Tempo 300 → 1.799 Ticks / 9.698 ms | **gemessen** (Ticks grob, Abfrage etwa sekündlich) | `Selfaware-AI/src/selfaware/tools/experiments/spielende.py` |
 | Sieger aus dem Speicher: `playerIsAlive` = [0, 0, 1, 0 …] → Spieler 2; das Fenster im Spiel nennt denselben („Niederlage – Rotkäppchen, & die Großmutter gewinnt", aus Sicht des Geist-Menschen) | **gemessen** | Bild `m4-04_BEWEIS_sieg_fenster_im_spiel.png` |
 
 ### 13h. Einheiten steuern: wer gehorcht, was haelt, wie schnell (04.10.2026)
 
-Werkzeuge in `Selfaware-AI/werkzeug/` (`einheiten_steuern.py`, `gruppe_halten.py`, `arbeit_pruefen.py`, `aufloesen_ersetzen.py`, `zickzack.py`), Ergebnisse in `Selfaware-AI/daten/`, Tabelle in `Selfaware-AI/Meilensteine.md` (M10).
+Werkzeuge in `Selfaware-AI/src/selfaware/` (`einheiten_steuern.py`, `gruppe_halten.py`, `arbeit_pruefen.py`, `aufloesen_ersetzen.py`, `zickzack.py`), Ergebnisse in `Selfaware-AI/data/research/`, Tabelle in `Selfaware-AI/docs/research/Meilensteine.md` (M10).
 
 | Aussage | Marke | Beleg |
 |---|---|---|
@@ -2616,7 +2616,7 @@ Werkzeuge in `Selfaware-AI/werkzeug/` (`einheiten_steuern.py`, `gruppe_halten.py
 
 ### 13i. Bauen und Anwerben per Befehl - wie ein Klick des Menschen (04.10.2026, 19:55)
 
-Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat`, `eigenerPlatz`.
+Werkzeug `Selfaware-AI/src/selfaware/game/ucp/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat`, `eigenerPlatz`.
 
 | Aussage | Marke | Beleg |
 |---|---|---|
@@ -2632,16 +2632,16 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| Jeder eingereihte Befehl traegt seinen Absender (`playerUnk`); `queueCommand` traegt die eigene Netzkennung `DPLAYX_PlayerHandle` ein, `scheduleReceivedCommand` (`0x00480210`) eine mitgegebene | **abgelesen** | `Selfaware-AI/daten/dekomp_queuecommand.c`, `dekomp_befehl_ausfuehren.c` |
+| Jeder eingereihte Befehl traegt seinen Absender (`playerUnk`); `queueCommand` traegt die eigene Netzkennung `DPLAYX_PlayerHandle` ein, `scheduleReceivedCommand` (`0x00480210`) eine mitgegebene | **abgelesen** | `Selfaware-AI/research/native/dekomp_queuecommand.c`, `dekomp_befehl_ausfuehren.c` |
 | `processWaitingCommands` (`0x004892F0`) setzt vor jedem Ausfuehren `protocolInvokerPlayerID` (`0x01A275D8`) = `translateMultiplayerIDsIntoPlayerIDs(playerUnk)`; die Ausfuehrer lesen diesen Ausloeser (z. B. `ProcessRecruitUnit(protocolInvokerPlayerID, Typ, Gebaeude)`), 43 Funktionen unter `Commands::` | **abgelesen** | `dekomp_befehl_ausfuehren.c`, `dekomp_absender.c` |
-| `translateMultiplayerIDsIntoPlayerIDs` (`0x0047EAF0`): im Mehrspieler Absender -> Platz ueber `currentPlayerFullIDArray[1..8]` (`0x0191DE10`); im Einzelspieler/Gefecht gegen Computer IMMER `currentPlayerSlotID` (`0x01A275DC`) - der Absender wird nicht beachtet. Darum gilt jeder Befehl fuer den, der bei der Ausfuehrung "ich" ist (passt zur Messung 18.10., logik.lua `alsSpieler`) | **abgelesen + passt zur Messung** | `dekomp_absender.c`; Spielkarte: `Selfaware-AI/Spielkarte.md` Abschnitt 1 |
+| `translateMultiplayerIDsIntoPlayerIDs` (`0x0047EAF0`): im Mehrspieler Absender -> Platz ueber `currentPlayerFullIDArray[1..8]` (`0x0191DE10`); im Einzelspieler/Gefecht gegen Computer IMMER `currentPlayerSlotID` (`0x01A275DC`) - der Absender wird nicht beachtet. Darum gilt jeder Befehl fuer den, der bei der Ausfuehrung "ich" ist (passt zur Messung 18.10., logik.lua `alsSpieler`) | **abgelesen + passt zur Messung** | `dekomp_absender.c`; Spielkarte: `Selfaware-AI/docs/research/Spielkarte.md` Abschnitt 1 |
 | **Folge fuer Mensch + KI-Lenker:** Haelt das Modul "ich" einen Takt lang auf dem Platz des Lenkers, gehen Klicks des Menschen in diesem Takt an den Lenker. Weg ohne Umschalten: Absender je Befehl (Kennung 0x53414D00+Platz, eigener Code an 0x00489387) - **GEBAUT 19.10.2026**, siehe Betriebsregeln "HINWEIS AN DIE LUA-SITZUNG" | **gemessen** (im Spiel 8/8 + Gegenprobe) | Selfaware-AI B-94, `werkzeug/absender_live_pruefen.py` |
 
 ### 13j. Bauplatz pruefen ohne zu bauen (04.10.2026, 20:04)
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| `checkBuildingCanBePlacedHere` (0x005037B0, thiscall TileMapState 0x01A93208; Spieler, x, y, Bau-Nummer, Groesse) setzt `buildingPlacementFail` (0x01FE7B3C; 0 = geht). **Vorher die Bau-Drehung (0x01FE7BBC) setzen** wie `placeBuilding` - sonst prueft es einen anderen Grundriss | **gemessen**: 12 von 12 Stellen stimmen mit echtem Bauen ueberein | `Selfaware-AI/daten/platzpruefung_gegenprobe.txt`; Modulbefehle `platz`, `platzsuche` |
+| `checkBuildingCanBePlacedHere` (0x005037B0, thiscall TileMapState 0x01A93208; Spieler, x, y, Bau-Nummer, Groesse) setzt `buildingPlacementFail` (0x01FE7B3C; 0 = geht). **Vorher die Bau-Drehung (0x01FE7BBC) setzen** wie `placeBuilding` - sonst prueft es einen anderen Grundriss | **gemessen**: 12 von 12 Stellen stimmen mit echtem Bauen ueberein | `Selfaware-AI/data/research/platzpruefung_gegenprobe.txt`; Modulbefehle `platz`, `platzsuche` |
 | Beliebtheit = PlayerData + 0x60 in Hundertsteln | **abgelesen, plausibel** (93,25 / 98,25), gegen die Anzeige noch nicht verglichen | M13 |
 | Gebaeude lassen sich nicht drehen; Ein-/Ausgang nur ueber Blockieren des ueblichen Platzes lenkbar | **Daniel** (Spielkenntnis) | Spielwissen.md |
 
@@ -2649,42 +2649,42 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| Befehlsnummern = Lage in der Handler-Tabelle 0x00B38E10 + 4·Nr: 28 Bauen, 31 Anwerben, **34 Steuern** (`ChangeTaxes(Spieler, Stufe)`), **35 Rationen** (`ChangeRations`), **38 Kaufen/Verkaufen** (`ProcessBuyOrSell(Spieler, 0 kaufen / 1 verkaufen, Ware)`) | **abgelesen**; 38 **gemessen** | `Selfaware-AI/daten/dekomp_handel_steuer.c`, `dekomp_kaufen.c` |
+| Befehlsnummern = Lage in der Handler-Tabelle 0x00B38E10 + 4·Nr: 28 Bauen, 31 Anwerben, **34 Steuern** (`ChangeTaxes(Spieler, Stufe)`), **35 Rationen** (`ChangeRations`), **38 Kaufen/Verkaufen** (`ProcessBuyOrSell(Spieler, 0 kaufen / 1 verkaufen, Ware)`) | **abgelesen**; 38 **gemessen** | `Selfaware-AI/research/native/dekomp_handel_steuer.c`, `dekomp_kaufen.c` |
 | Ein Kauf bringt 5 Stück, nur mit genug Gold **und** freiem Lager (Essen → Kornspeicher) | **gemessen** | ohne Kornspeicher keine Wirkung |
 | Beliebtheits-Teilwerte (PlayerData +): Bier 0x2110, Religion 0x2114, Angst 0x2118, Steuer 0x215C, Essen 0x2160, Enge 0x2164, Jahrmarkt 0x222C; Steuerstufe 0x2188, Rationen 0x218C | **abgelesen + gemessen** (Essen −250 → +125 nach Apfelkauf) | M13a |
-| Kornspeicher + 50 Äpfel: Beliebtheit 93,25 → 95,25 nach 600 Ticks → 100 nach 1500 Ticks | **gemessen** | `Selfaware-AI/daten/beliebtheit_95.txt` |
+| Kornspeicher + 50 Äpfel: Beliebtheit 93,25 → 95,25 nach 600 Ticks → 100 nach 1500 Ticks | **gemessen** | `Selfaware-AI/data/research/beliebtheit_95.txt` |
 
 ### 13l. Farmland, Platzkarte, Hoechstzahl Farmen; Spielende nach dem Laden (04.10.2026, 20:15–21:22)
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| Farmen (Weizen, Hopfen, Apfel, Kuehe): jedes Feld fruchtbar (Logic2Layer 0x10 Gras, 0x80 dichtes, 0x01 duennes Gestruepp; nicht bei LogicLayer 0x100000) und >= 50 Felder Gras/dichtes Gestruepp | **abgelesen** + **gemessen** (Modell deckt alle 658 Spiel-Stellen) | `Selfaware-AI/daten/dekomp_platzpruefung.c` |
-| Bau-Stelle = obere linke Ecke des Grundrisses (Apfel 10x10: x..x+9, y..y+9) | **gemessen** (einziger Versatz ohne Abweichung) | `Selfaware-AI/daten/platzkarte_apfel_M7-04_basis.txt` |
-| Je Feld sperren ausserdem (isBuildingPlacementAllowedAtTile 0x004F9A60): Hoehe/Hang, Gebaeude, Wasser, Fluss, Baeume (LogicLayer 0x3000 + Baum), **jede Einheit ausser Huehnern** (bei Menschen; bei KI nur Lords und fremde Einheiten) | **abgelesen**; Einheit **gemessen** + Daniel bestaetigt | `Selfaware-AI/daten/dekomp_feld_bauerlaubnis.c`, `farm_ueber_einheit.txt` |
+| Farmen (Weizen, Hopfen, Apfel, Kuehe): jedes Feld fruchtbar (Logic2Layer 0x10 Gras, 0x80 dichtes, 0x01 duennes Gestruepp; nicht bei LogicLayer 0x100000) und >= 50 Felder Gras/dichtes Gestruepp | **abgelesen** + **gemessen** (Modell deckt alle 658 Spiel-Stellen) | `Selfaware-AI/research/native/dekomp_platzpruefung.c` |
+| Bau-Stelle = obere linke Ecke des Grundrisses (Apfel 10x10: x..x+9, y..y+9) | **gemessen** (einziger Versatz ohne Abweichung) | `Selfaware-AI/data/research/platzkarte_apfel_M7-04_basis.txt` |
+| Je Feld sperren ausserdem (isBuildingPlacementAllowedAtTile 0x004F9A60): Hoehe/Hang, Gebaeude, Wasser, Fluss, Baeume (LogicLayer 0x3000 + Baum), **jede Einheit ausser Huehnern** (bei Menschen; bei KI nur Lords und fremde Einheiten) | **abgelesen**; Einheit **gemessen** + Daniel bestaetigt | `Selfaware-AI/research/native/dekomp_feld_bauerlaubnis.c`, `farm_ueber_einheit.txt` |
 | Der Grund-Speicher 0x01FE7B40 wird bei diesen Feld-Sperren nicht neu gesetzt - er zeigt dann einen alten Wert | **abgelesen** | dieselbe Datei, Zeilen 356-360 |
 | Modulbefehl `platzkarte`: Spielpruefung fuer jede Stelle eines Rechtecks; ganze Karte (160.000 Stellen) unter 1 s; Wiederholung deckungsgleich | **gemessen** | Selfaware-AI M13b |
 | Farmen duerfen sich lueckenlos beruehren | **gemessen** (9 von 9 gebaut, 5 Paare beruehren sich) | Selfaware-AI M13b, 21:20 |
-| 9 Apfelplantagen: erste Aepfel gut 2.000 Ticks nach dem Bau, Kornspeicher 14 -> 93 in 4.000 Ticks, Beliebtheit 100 | **gemessen** | `Selfaware-AI/daten/apfel_lauf_9_gepackt.txt` |
+| 9 Apfelplantagen: erste Aepfel gut 2.000 Ticks nach dem Bau, Kornspeicher 14 -> 93 in 4.000 Ticks, Beliebtheit 100 | **gemessen** | `Selfaware-AI/data/research/apfel_lauf_9_gepackt.txt` |
 | **Geladener Spielstand: Mensch fehlt in currentPlayerFullIDArray (0x0191DE10, alles -1)** -> Platz zaehlt nicht als Teilnehmer -> checkSkirmishGameDefeat sieht nur eine Mannschaft -> gameOver im ersten Takt. Abhilfe: fullID[Platz] = 1 (wie `eigenesGefecht`), jetzt im Modulbefehl `eigenerPlatz` | **gemessen** (3 von 3 nachgestellt; mit Abhilfe 2.020 Ticks ohne Ende) | Selfaware-AI M13b „FEHLER GEFUNDEN“ |
-| Mannschaften der Spieler: int[9] bei 0x0117D548 (Grumpy-Stand: Spieler 1 -> 2, Spieler 2 -> 1) | **abgelesen** (aus checkSkirmishGameDefeat errechnet) + gelesen | `Selfaware-AI/daten/dekomp_spielende.c` |
+| Mannschaften der Spieler: int[9] bei 0x0117D548 (Grumpy-Stand: Spieler 1 -> 2, Spieler 2 -> 1) | **abgelesen** (aus checkSkirmishGameDefeat errechnet) + gelesen | `Selfaware-AI/research/native/dekomp_spielende.c` |
 | 9x9-Farmen (Weizen, Hopfen): Bau-Stelle oben links, dieselbe 50-Gras-Regel; 9er und 10er Farmen duerfen sich beruehren | **gemessen** (Modellvergleich; 13 von 13 gemischt gebaut) | Selfaware-AI M13c |
-| Beste Farm-Mischung je Karte: OR-Tools CP-SAT ueber die Platzkarten, ganze Karte (12.744 Stellen) OPTIMAL in 2,7 s; Gegenprobe mit eigener Suche 5 von 5 gleich | **gemessen** | `Selfaware-AI/werkzeug/farmen_mischen.py` |
-| Hopfen: erster Ertrag gut 7.000 Ticks nach dem Bau (Aepfel gut 2.000) | **gemessen** (3 Farmen, 1 Lauf) | `Selfaware-AI/daten/mischung_apfel_hopfen_lauf.txt` |
+| Beste Farm-Mischung je Karte: OR-Tools CP-SAT ueber die Platzkarten, ganze Karte (12.744 Stellen) OPTIMAL in 2,7 s; Gegenprobe mit eigener Suche 5 von 5 gleich | **gemessen** | `Selfaware-AI/src/selfaware/macro/farmen_mischen.py` |
+| Hopfen: erster Ertrag gut 7.000 Ticks nach dem Bau (Aepfel gut 2.000) | **gemessen** (3 Farmen, 1 Lauf) | `Selfaware-AI/data/research/mischung_apfel_hopfen_lauf.txt` |
 
 ### 13m. Truppen wie der Mensch befehligen, Lagebild, Lenker-Takt (04.10.2026, 22:40-23:03)
 
 | Aussage | Marke | Beleg |
 |---|---|---|
-| Befehlstabelle 0x00B38E10: 16 Auswahl, 17 Bewegen (Gruppe), 29 Gebaeude abreissen (Nr, Rueckgabe-%, uid; Besitzer wird NICHT geprueft), 31 Anwerben, 36 Einheiten-Befehl (Gruppe, Art 4 Einheit / 9 Gebaeude / 31 Halt, Ziel-Nr, Ziel-uid) | **abgelesen** | `Selfaware-AI/daten/befehlstabelle.txt`, `dekomp_befehl_16/36.c`, `dekomp_abreissen.c` |
-| Auswahl: Bits bei UnitsState 0x01387F38 +116 (Bit je Einheitennummer); Befehl 16 legt die Gruppe unter der mitgegebenen Nummer an (createPlayerTribe); freie Gruppe = tribeState (+24) 0, Gruppen ab 0x01667F78 + 40, je 0x334 Byte | **abgelesen + gemessen** (8 Speertraeger toeten 2 Angreifer ohne Verlust) | `Selfaware-AI/daten/angriff_probe.txt` |
-| KI-Angriffe stehen nicht in den Befehlsfeldern der Einheit (+924/+926/+928 = 0), sondern im Laufziel (+0xC8/+0xCA) - so erkennt man frueh, welches Gebaeude angegriffen wird | **gemessen** | `Selfaware-AI/daten/lagebild_T14719.txt` |
-| Holzfaeller nimmt nur Baeume mit Zustand 2, Stufe < 4, Holz (+120) > 0 (findTree 0x004F3B90) | **abgelesen** + Beobachtung Daniel | `Selfaware-AI/daten/dekomp_baum_004f3b90.c` |
+| Befehlstabelle 0x00B38E10: 16 Auswahl, 17 Bewegen (Gruppe), 29 Gebaeude abreissen (Nr, Rueckgabe-%, uid; Besitzer wird NICHT geprueft), 31 Anwerben, 36 Einheiten-Befehl (Gruppe, Art 4 Einheit / 9 Gebaeude / 31 Halt, Ziel-Nr, Ziel-uid) | **abgelesen** | `Selfaware-AI/data/research/befehlstabelle.txt`, `dekomp_befehl_16/36.c`, `dekomp_abreissen.c` |
+| Auswahl: Bits bei UnitsState 0x01387F38 +116 (Bit je Einheitennummer); Befehl 16 legt die Gruppe unter der mitgegebenen Nummer an (createPlayerTribe); freie Gruppe = tribeState (+24) 0, Gruppen ab 0x01667F78 + 40, je 0x334 Byte | **abgelesen + gemessen** (8 Speertraeger toeten 2 Angreifer ohne Verlust) | `Selfaware-AI/data/research/angriff_probe.txt` |
+| KI-Angriffe stehen nicht in den Befehlsfeldern der Einheit (+924/+926/+928 = 0), sondern im Laufziel (+0xC8/+0xCA) - so erkennt man frueh, welches Gebaeude angegriffen wird | **gemessen** | `Selfaware-AI/data/research/lagebild_T14719.txt` |
+| Holzfaeller nimmt nur Baeume mit Zustand 2, Stufe < 4, Holz (+120) > 0 (findTree 0x004F3B90) | **abgelesen** + Beobachtung Daniel | `Selfaware-AI/research/native/dekomp_baum_004f3b90.c` |
 | Modulbefehle `status` (alles in einer Zeile) + `lagebild` (Einheiten + Gebaeude als Dateien) in EINER Liste und Warten bis zur Antwortzeile: eine Lenker-Runde 0,04 s (vorher 1,1 s mit fester Wartezeit) | **gemessen** | Selfaware-AI M15 |
 | Ein geladener Spielstand traegt den Menschen nicht ein -> gameOver im ersten Takt; Abhilfe `eigenerPlatz` (siehe 13l, Betriebsregel) | **gemessen** | Selfaware-AI M13b |
 
 ### 13n. Auswahl bleibt haengen; Angriffe nacheinander (05.10.2026, 00:00-00:10)
 - **gemessen:** `playerMakeUnitSelection` (0x00535BC0) setzt bei jeder ausgewaehlten Einheit `ifSelectedThenPlayerID` (+178) und `selectionRelatedFlag` (+180). Nichts im Spiel loescht diese Marken, wenn das Modul die Auswahl-Bits (UnitsState +116) selbst setzt. Folge in Partie 9c: 78 Assassinen, 6 Bogenschuetzen, 5 Speertraeger und der Lord standen in **einer** Gruppe (1249) und folgten einem Befehl, der nur einem Assassinen galt. **Abhilfe (belegt):** vor jeder Auswahl die Marken aller eigenen Einheiten auf 0 setzen.
-- **gemessen:** Mehrere Befehle 16+36 im selben Takt landen alle in der zuletzt angelegten Gruppe und laufen zum letzten Ziel (Test `Selfaware-AI/werkzeug/pruefe_einzelbefehl.py`, rot). **Abhilfe (belegt, gruen):** Modul-Warteschlange `angriffSchlangeTick` - der naechste Angriff erst, wenn die Einheiten des vorigen in ihrer Gruppe stehen (Einheit +728 `tribeID`), hoechstens 20 Ticks. Ergebnis: je Takt ein Angriff, jede Einheit in eigener Gruppe, keine andere mitgerissen.
+- **gemessen:** Mehrere Befehle 16+36 im selben Takt landen alle in der zuletzt angelegten Gruppe und laufen zum letzten Ziel (Test `Selfaware-AI/src/selfaware/tools/experiments/pruefe_einzelbefehl.py`, rot). **Abhilfe (belegt, gruen):** Modul-Warteschlange `angriffSchlangeTick` - der naechste Angriff erst, wenn die Einheiten des vorigen in ihrer Gruppe stehen (Einheit +728 `tribeID`), hoechstens 20 Ticks. Ergebnis: je Takt ein Angriff, jede Einheit in eigener Gruppe, keine andere mitgerissen.
 - **abgelesen:** Gruppen werden frei (`tribeState` +24 = 0), sobald keine Einheit mehr darin ist - deshalb nahm das Modul in Partie 9c immer wieder 1249/1247: jeder Befehl riss alle Einheiten in die neue Gruppe und leerte die alte.
 - **gemessen:** Bei einem Gebaeudeangriff (Art 9) steht das Laufziel (+0xC8/+0xCA) 1-2 Felder neben dem Gebaeude; `targetingType` (+924) bleibt dabei 0. Fuer die Kontrolle "laeuft er wirklich hin" taugt das Laufziel, die Zielart nicht.
 - Lagebild hat vier neue Spalten: `auswahlvon auswahlmarke gruppe gruppenuid`.
@@ -2707,7 +2707,7 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 - **gemessen (Gegenprobe):** Dieselbe Kopie ein zweites Mal gestartet -> Fenster `Stronghold Crusader Error` (Dialog "already running"), 18 s stehend, waehrend Instanz 1 und 2 weiterliefen. Die umbenannte Marke wirkt. **Abgeleitet:** eine Kopie ohne Umbenennung haengt ebenso an Instanz 1 (fuer denselben Ordner seit 31.08. gemessen).
 - **gemessen:** Instanz 2 laeuft OHNE erhoehte Rechte (Programmpfad lesbar, Stop-Process auf einen Prozess derselben Kopie wirkt), Instanz 1 mit. **Vermutet:** die Kompatibilitaetseintraege (AppCompatFlags `WINXPSP3 16BITCOLOR ...`) haengen am Pfad von Instanz 1 - nicht geprueft.
 - **gemessen:** UCP legt `ucp-pid-<nummer>` 0,06-0,12 s nach Prozessstart in den Spielordner und raeumt die Datei beim sauberen Beenden weg. Die Werkzeuge erkennen ihre Instanz daran, mit 30-s-Zeitpruefung gegen neu vergebene Nummern (Negativlauf ohne Pruefung: eine falsche `ucp-pid-2604` in Instanz 2 griff den Prozess von Instanz 1).
-- Beleg: `Selfaware-AI/daten/instanz2_einrichtung_20261005.txt`. Handhabung: Betriebsregeln, "Zwei Spielinstanzen gleichzeitig".
+- Beleg: `Selfaware-AI/data/research/instanz2_einrichtung_20261005.txt`. Handhabung: Betriebsregeln, "Zwei Spielinstanzen gleichzeitig".
 
 ### 13r. Welches Spiel gehoert zu welcher Instanz (05.10.2026, 19:55-20:03)
 - **gemessen:** Den Programmpfad des ERHOEHTEN Spiels liest eine normale Sitzung mit `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` + `QueryFullProcessImageNameW` (Prozess 2604; tasklist und Abfrage zusammen 56 bzw. 60 ms in zwei Laeufen, Beleg unten). `Get-Process ... .Path` bleibt beim erhoehten Spiel dagegen leer. Damit ist jede Instanz an ihrem Ordner erkennbar - `werkzeug/instanz.py` / `instanz.ps1`; die Hilfskruecke ueber `ucp-pid-<nr>` + Zeitpruefung (13q) ist abgeloest.
@@ -2715,14 +2715,14 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 - **gemessen:** `lauf_burg2.prozesse_weg()` mit SHC_INSTANZ=2 beendete nur Instanz 2 (29080); Instanz 1 (2604) lief weiter.
 - **gemessen:** `fenster_foto.ps1` (PrintWindow, Flag 0x2) liefert bei der NICHT erhoehten Instanz 2 ein echtes Bild (Hauptmenue, 2560x1440). Fuer Instanz 1 nicht neu geprueft; `bild.py` vermerkt dort seit 31.08. nur einen leeren Rahmen.
 - **gemessen:** Die zwei Spielfenster draengen sich ueber ihre Wacht im Modul abwechselnd nach ganz unten - zwei Abfragen nacheinander koennen beide "Platz 8" melden; im selben Augenblick lagen sie auf 8 und 9 von 10.
-- Beleg: `Selfaware-AI/daten/sif_altwerkzeuge_20261005.txt`.
+- Beleg: `Selfaware-AI/data/research/sif_altwerkzeuge_20261005.txt`.
 
 ### 13s. Tasten von aussen an Instanz 2; fuenf Instanzen gleichzeitig (05.10.2026, 20:08-20:13)
 - **gemessen:** Tastendruecke per `PostMessage` (WM_KEYDOWN/WM_CHAR/WM_KEYUP, Taste P) kommen bei der NICHT erhoehten Instanz 2 an: aus der Pause (Pause-Merker 0x01FEA054 = 1, Spielzeit 600 steht) -> erstes P: Pause 0, Spielzeit 1.415 -> 2.262; zweites P: Pause 1, Spielzeit steht bei 2.349. Vorher festgelegt: jede Taste dreht die Pause um, die Spielzeit folgt. Bei Instanz 1 (erhoeht) scheitert derselbe Weg mit Fehler 5 (gemessen 31.08.).
 - **gemessen:** Ein erster Versuch war ungueltig: Nach Laden direkt aus dem Start meldete `eigenerPlatz` gameOver 1, das Spiel lief bis Tick 1.093 und zeigte dann den Endbildschirm (Ansicht 30) - die Taste ging an den Endbildschirm. Nach `{"menue": 41}` und erneutem Laden stand gameOver auf 0. **Vermutet:** Zustand aus dem vorher abgesetzten `{"gefecht": 0}`.
 - **gemessen (berichtigt 20:17):** `{"gefecht": 0}` (werkzeug/gefecht.py) startet ein Gefecht, wenn das Hauptmenue steht: zweiter Versuch, Instanz 2 frisch, Ansicht 41 nach 26 s abgewartet -> Gefecht lief (Spielzeit 4.488 -> 6.611), danach Endbildschirm (Ansicht 30). Der erste Versuch rund 10 s nach dem Start meldete "MENUE: starte", es entstand aber keine Partie. **Vermutet:** das Spiel war noch im Vorspann. Die fruehere Aussage hier ("startet heute keine Partie mehr") war falsch.
 - **gemessen:** Fuenf Instanzen gleichzeitig (Prozesse 2604, 16020, 20848, 27144, 26984), jede Kopie mit eigener Sperrmarke (`...Extrem3/4/5`, je ein Byte an 0x1ABF93), jeder Log mit `villagestudio aktiv`, Instanzen 2-5 antworten ueber ihren eigenen Kanal. Rechenzeit ueber 5 s: Gefecht ~0,9 Kern, Menue/Pause ~0,1 Kern je Spiel (16 Kerne); Speicher 208-242 MB je Spiel; je Kopie 1,5 GB, Anlegen 4 s.
-- Belege: `Selfaware-AI/daten/tasten_instanz2_20261005.txt`, `Selfaware-AI/daten/fuenf_instanzen_20261005.txt`.
+- Belege: `Selfaware-AI/data/research/tasten_instanz2_20261005.txt`, `Selfaware-AI/data/research/fuenf_instanzen_20261005.txt`.
 
 ### 13t. Vorrat in Gebaeuden, Steinhaufen am Steinbruch; Baukosten und Ertrag im Liga-Spiel (05.10.2026, 19:52-20:35)
 - **gemessen:** Gebaeude-Datensatz `0xF98520 + 0x14 + i*0x32C` (Ghidra-Offsets ab dieser Stelle): `+0x184 currentNumberOfResource` und `+0x188 currentLimitOfResource` tragen den Vorrat im Gebaeude. Eisenmine: 1-2 von 48. **Der Steinbruch selbst zeigt 0** - seine Bloecke liegen auf dem Steinhaufen daneben (Gebaeudetyp 21): gemessen 7, 47, 42 und 34 von 48 an vier Steinbruechen (Selfaware-AI, Ende Lauf x4, Tick 28.754); die drei fernen hatten je 1 Ochsenjoch und standen fast voll. `+0x192 quarryStockpileID` am Steinbruch zeigt auf diesen Haufen (gemessen: Nummer + 1). `+0x130 resourceStone` liest am Haufen denselben Wert wie +0x184.
@@ -2794,7 +2794,7 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 
 ### 13z. Burgenbau ohne Mausklick: Kalender, Waren, Bauen (02.11.2026, SRE)
 
-*Quelle: Lauf F des Auges, Instanz 2, Karte "A Mighty Oasis", plus Proben. Belege und Skripte: Selfaware-AI-fw `data/research/auge_plan/ursachen_lauf_f/` (Commit d1fa572, lokal).*
+*Quelle: Lauf F des Auges, Instanz 2, Karte "A Mighty Oasis", plus Proben. Belege und Skripte: Selfaware-AI `data/research/auge_plan/ursachen_lauf_f/` (Commit d1fa572, lokal).*
 
 - **gemessen + abgelesen:** Im Burgenbau steht der Kalender, solange Anzeige 20 (`DEID_KEEP_AND_GRANERY_PLACEMENT_INFO`) ungleich 0 ist (`updateDateAndTime`). Ohne Kornspeicher stand sie auf 2: 284.885 Takte, kein Monat um. Kornspeicher per Befehl 28 gesetzt: Anzeige 0, Reiter wechselt von selbst, Woche laeuft. Kein Menuewechsel noetig. Dieselbe Anzeige haelt im Einzelspiel auch `updateTreeStage` an (abgelesen).
 - **gemessen:** 1 Woche = 200 Takte (3 Wochen in 600 Takten). **abgeleitet + abgelesen:** 1 Jahr = 9.600 Takte (4 Wochen, 12 Monate).
@@ -2804,7 +2804,7 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 - **gemessen + abgelesen:** Befehl 28 prueft im Einzelspiel keine Kosten (`ClickPlaceBuilding`): Kaserne steht bei 0 Stein, Stein bleibt 0.
 - **gemessen:** Tempo 1000 ergibt 825 Takte je Sekunde: 11 Takte je Bild, 75 Bilder je Sekunde (Log: 600 Bilder in 8,004 s, 6.600 Takte). Woher die 75 kommen, ist offen. Tempo 40: gesamt 40,0, Median einzelner Abstaende 37,6, weil Takte auf Bildgrenzen liegen (**abgeleitet**).
 - **gemessen:** Burgenbau, Beliebtheit 87,75, freier Wohnplatz: 1 neuer Bewohner je rund 250 Takte. Deckel 10 mit Burg, 18 nach der ersten Huette. Arbeiter je Typ: `DAT_EmployeeCountPerBuildingType` (0x005B8B58, 4 Bytes je Typ), ueber alle 63 baubaren Arten 34 Arbeitsplaetze. Die Beliebtheit steht mit dem Kalender still: 87,75 ueber 280.000 Takte, nach Kalenderstart ohne Essen 3.480 Takte spaeter 0.
-- **gemessen + abgelesen, KORREKTUR zu 13y ("schon gebaute Gebaeude bleiben falsch"):** Sie lassen sich heilen. Der Drehwert steht in `buildings[].buildingVariation` (Eintrag +0x116, 2 Bytes). 15 setzen, Karte einmal im Kreis drehen (das Spiel zeichnet erst beim Drehen neu), speichern: alle vier Drehungen normal, auch nach dem Laden. Fuer normale Arten haengt ausser dem Bild kein Feld am Wert (je Art 15/15/0 im selben Takt, 323 Felder, 43 Arten). Ausgenommen: Werkstaetten rechnen den Wert selbst aus (alle 256 Takte), Tore und Zugbruecke haben eigene Regeln (Klick: Stein 0x50/0x51, Holz 0/2/4/6). Werkzeug: Selfaware-AI-fw `anzeige_reparieren`. Belege: `data/research/auge_plan/anzeigefehler/`.
+- **gemessen + abgelesen, KORREKTUR zu 13y ("schon gebaute Gebaeude bleiben falsch"):** Sie lassen sich heilen. Der Drehwert steht in `buildings[].buildingVariation` (Eintrag +0x116, 2 Bytes). 15 setzen, Karte einmal im Kreis drehen (das Spiel zeichnet erst beim Drehen neu), speichern: alle vier Drehungen normal, auch nach dem Laden. Fuer normale Arten haengt ausser dem Bild kein Feld am Wert (je Art 15/15/0 im selben Takt, 323 Felder, 43 Arten). Ausgenommen: Werkstaetten rechnen den Wert selbst aus (alle 256 Takte), Tore und Zugbruecke haben eigene Regeln (Klick: Stein 0x50/0x51, Holz 0/2/4/6). Werkzeug: Selfaware-AI `anzeige_reparieren`. Belege: `data/research/auge_plan/anzeigefehler/`.
 - **gemessen:** Eine Drehung laesst auch im angehaltenen Spiel genau 1 Takt laufen (4 Drehungen, Takt 532.360 auf 532.364). Tempo-Stufen 800 bis 1000 ergeben alle 825 bis 827 Takte je Sekunde.
 - **abgelesen + gemessen, klaert "Platz 0 wird auf anderem Weg belegt" (Abschnitt Einheiten) und die Lord-Kopie:** Platz 0 der Einheitenliste ist ein Merkplatz. `setDestinationForUnit` (0x0053D3D0) und `computeLadderClimbPath` (0x00533A10) kopieren mit `copyData(0x490, units + unitID, units)` die ganze Einheit dorthin, bevor sie ihren Wegplan leeren. Messung 02.11.2026 20:31 (Instanz 2, Tempo 40, jeder Takt gelesen, Takt 532.447 bis 534.453): In 19 Takten aenderte sich Platz 0, jedes Mal stand dieselbe uid auch auf genau einem echten Platz, 12 bis 36 Bytes wichen zum Original ab, darunter Lord (Typ 55). Wer Einheiten zaehlt oder eine uid sucht, beginnt bei Platz 1.
 - **abgelesen + gemessen:** `updateTaxing` (0x0045BF50) laeuft bei jedem Wochenwechsel (`processSingleTimeTick`, Bedingung `weekChanged`) und addiert die Wochensteuer auf `taxIncomeMonthlyAccumulator` (+0x2158) oder bei Bestechung auf `taxBribeMonthlyAccumulator` (+0x2144). Beim Monatswechsel kommt ein Zehntel davon aufs Gold (`currentResources[15]`, +0x50C; nie unter 0), die Sammelfelder werden 0. Messung 02.11.2026 20:31: Gold +16 bei Takt 532.964 und 533.764, Abstand genau 800 Takte (1 Monat), das Sammelfeld aendert sich jeweils im selben Takt.
@@ -2822,7 +2822,7 @@ Werkzeug `Selfaware-AI/werkzeug/bauen.py`; Modulbefehle `baue`, `werbe`, `vorrat
 
 ### 13aa. Gefecht, KI und Laden: was Lauf K belegt (03.11.2026, SRE)
 
-*Quelle: Lauf K des Auges 02.11.2026 23:49, Instanz 2, Karte `Green Haven` ("Der gruene Punkt"), 8 KI ohne Menschen, Liga-Balance, 133.512 Takte Kampf bis zum letzten Lord. Belege und Skripte: Selfaware-AI-fw `data/research/auge_plan/lauf_k_20261102/` (lokal). Urteile je Punkt: `Punkte_Lauf_K.md`.*
+*Quelle: Lauf K des Auges 02.11.2026 23:49, Instanz 2, Karte `Green Haven` ("Der gruene Punkt"), 8 KI ohne Menschen, Liga-Balance, 133.512 Takte Kampf bis zum letzten Lord. Belege und Skripte: Selfaware-AI `data/research/auge_plan/lauf_k_20261102/` (lokal). Urteile je Punkt: `Punkte_Lauf_K.md`.*
 
 - **FALLE, abgelesen + gemessen:** Laden ist nicht "derselbe Stand". `prepareMap` (0x00512450) rechnet einmal `processGameTick` mit `gamePausedLogical = -1`: Einheiten und Gebaeude einen Schritt, Takt und Zufall stehen. `upgradeMapFormatForUnits` (0x0053E390) setzt bei jedem Laden Tempo, Grafik und Reichweite aus den Tabellen und bei vollem Leben auch das Leben: KI-Lords verlieren so ihren Faktor (gemessen 75.000 bis 180.000 werden alle 150.000), Verwundete behalten ihr Leben. Baeume, Zonenkarten und `keepPositions` entstehen neu.
 - **gemessen:** Das Spiel rechnet festgelegt, wenn zwei Eingaenge gleich sind: `mapAndTime.counterForUpdatingSeparateAreaTileMaps` (0x0117CAD8, laeuft auch in der Pause, stand nach dem Laden bei 12, 36 oder 43) und `DAT_EntityState.every10Ticks`. Der Name ist falsch: Das ist der Suchzeiger fuer den naechsten freien Geschossplatz (`spawnProjectileEntity` 0x00404AE0), das Laden setzt ihn nicht zurueck. Mit beiden gleich: 2.001 Takte Frieden und 2.001 Takte Kampf Byte fuer Byte gleich in den Bytes der Spiel-Pruefsumme.
@@ -2859,10 +2859,10 @@ Instanz 2, `Liga_Grumpy Neighbors`, Karteneditor und Gefecht (zwei Mensch-Plaetz
 - **gemessen:** Starttruppen im Gefecht: je Spieler 6 Bogenschuetzen bei Takt 202, 8 Speertraeger bei Takt 403. Messlaeufe raeumen erst danach.
 - **gemessen:** Besatzung: Zaehler springt von 0 auf die Sollzahl, mit zu wenig Ingenieuren bleibt er 0. huntedBy steigt nicht beim Angriffsbefehl. countArabianArcher summiert die Lebenden je Takt. Giftwolke 828 Takte. Ramme 125 je Treffer (Code 50, Faktor ungeklaert). Mauer: Tunnelgraeber Mitte 20 Schaden und Hoehe, Ende 30, erster Treffer 20 Hoehe mehr.
 - **gemessen:** Mauer je Schlag: Tunnelgraeber 20, Ritter und Schwert 10 (Ritter am 04.11. berichtigt), Pike und Keule 5, Speer 2, Sklave und Assassine 0; Ende 1,5-fach, Kreuzung halb. Lord: Toeter bekommt 25 % des Goldes. Belagerungsturm legt nur mit Anweisung 23 an. Tor reagiert bei 3 bis 16 Feldern, nicht bei 24. Menschliches Katapult laedt nicht selbst nach. Oeltraeger wirft nicht von selbst.
-- **gemessen (04.11.):** Das laufende Spiel ist nicht der Export: 814 von 428.114 Befehlen in 157 Funktionen weichen ab (UCP3), Abgleich `code_abgleich.py` in Selfaware-AI-fw. Tor 140 Mikro und 100 Takte (17 Felder ja, 18 nein), Ramme 125, Pfeil hoechstens 40 Felder, Munition 10, Angst Tabelle 80 bis 140 Prozent. Weg auf den Turm: Treppe als Linie von der Mauer weg, Ziel Turmmitte, Ecken gesperrt, Laufbefehl wirkt sofort. Grenze 5 auf dem Wachturm nur beim Mausklick, SamurAI darf per Befehl mehr und allgemein alles, was ein Mensch auch kann, etwa Einheiten auf einen Punkt packen (Daniel 04.11.). Mauerlinie ganz oder gar nicht. Loeschen mit Brunnen 221 bis 254 Takte statt 960 bis 980. Befehl 86: Wert 1 fuellt bis 10, Wert 0 gibt +10 fuer 10 Stein.
+- **gemessen (04.11.):** Das laufende Spiel ist nicht der Export: 814 von 428.114 Befehlen in 157 Funktionen weichen ab (UCP3), Abgleich `code_abgleich.py` in Selfaware-AI. Tor 140 Mikro und 100 Takte (17 Felder ja, 18 nein), Ramme 125, Pfeil hoechstens 40 Felder, Munition 10, Angst Tabelle 80 bis 140 Prozent. Weg auf den Turm: Treppe als Linie von der Mauer weg, Ziel Turmmitte, Ecken gesperrt, Laufbefehl wirkt sofort. Grenze 5 auf dem Wachturm nur beim Mausklick, SamurAI darf per Befehl mehr und allgemein alles, was ein Mensch auch kann, etwa Einheiten auf einen Punkt packen (Daniel 04.11.). Mauerlinie ganz oder gar nicht. Loeschen mit Brunnen 221 bis 254 Takte statt 960 bis 980. Befehl 86: Wert 1 fuellt bis 10, Wert 0 gibt +10 fuer 10 Stein.
 - **gemessen (04.11.):** Hunde ab Truppenwert 16 (Export 25), Befehl 74 ist ReleaseDogs. Mauerluecke begehbar. Lager nimmt im Nahkampf keinen Schaden.
 - **gemessen (04.11.):** Kuhwurf: Anweisung 22 wirft je Befehl eine Kuh. Einzeln befohlen stehen 8 Mann rund 240 Takte auf einem Feld, dann gehen sie auseinander. Buendnis: Gold geht genau an den Partner. Bau-Reichweite 45, 50, 60, 70 je Kartengroesse. Leitertraeger 20 Gold, die Pruefung der Oberflaeche sagt 4. Pike 1 Holz. KI kauft Holz ab Zaehler 3, nicht 37. Mapper 192 ist das Zelt fuer den Belagerungsturm. Tempo wird ueber rund 825 Takte je Sekunde nicht schneller. Spielbefehl 113 Unterart 2 verschiebt Gold und Waren zwischen Spielern.
-- **gemessen (04.11.):** Streuung entziffert (Selfaware-AI-fw `data/research/auge_plan/streuung_20261104/Ergebnis_Streuung.md`): Der Zufall ist eine feste Tabelle aus 20.000 Zahlen. Schuss auf Einheit zielt auf die Feldmitte plus Vorhalt und streut nur nach oben (Hoehenunterschied / 300, ab 75 Hoehe 1,5-fach). Getroffen wird der Erste auf dem Weg unter Boden + 42, kein festes Opfer. Bodenschuss je Waffe: Bogen +-48 laengs, +-40 quer; Katapult -96 bis 31, im Mittel 4 Felder zu weit; Mangonel 7 Steine als Kette. 1.977 Schussenden ohne Fehler nachgebaut, 83.840 Direktaufrufe gleich.
+- **gemessen (04.11.):** Streuung entziffert (Selfaware-AI `data/research/auge_plan/streuung_20261104/Ergebnis_Streuung.md`): Der Zufall ist eine feste Tabelle aus 20.000 Zahlen. Schuss auf Einheit zielt auf die Feldmitte plus Vorhalt und streut nur nach oben (Hoehenunterschied / 300, ab 75 Hoehe 1,5-fach). Getroffen wird der Erste auf dem Weg unter Boden + 42, kein festes Opfer. Bodenschuss je Waffe: Bogen +-48 laengs, +-40 quer; Katapult -96 bis 31, im Mittel 4 Felder zu weit; Mangonel 7 Steine als Kette. 1.977 Schussenden ohne Fehler nachgebaut, 83.840 Direktaufrufe gleich.
 - **gemessen (04.11.):** Feuer: Versatz aus 64 Eintraegen um den Landepunkt, Stufe 2 zuendet 4 Nachbarn, jede Einheit auf dem Feuerfeld verliert jeden Takt 37 (Flamme) oder 75 (Gebaeude). Pfeil an Mauer: Tempo durch 8, trifft danach nichts mehr. Huette brennt rund 1.000 Takte. Berichtigt: 75 und 112 sind der erste Takt eines Feuers, nicht mehrere Flammen.
 - **gemessen (04.11.):** Pfeil an Mauer: gespiegelt, Tempo durch 8, 68 Fluege nachgebaut. Katapult und Trebuchet treffen eigene Leute, ausser Schild, Turm, Ramme; Mangonel nur beim Menschen. Grosse Geraete werden vom diagonalen Nachbarfeld getroffen. Schuss nach oben: ein Drittel Schaden und Streuung. Mauer zaehlt als Gelaende, Turm als Gebaeude. Brandpfeil gleicher Schaden, Pech zuendet nur mit Korb, im Gefecht. Grosser Baum zuendet die Felder rundum an.
 - **gemessen (04.11.):** Feuerkorb mit Befehl 69 bleibt auf jedem Feld von Bergfried, 5 Turmarten und kleinem Torhaus, auch fremdem Bergfried, auf Mauer, Treppe und Zinne an der Mauer, nicht auf Huette, Boden und ausserhalb der Karte (241 Felder, keine Abweichung vom Code). Das Menue fragt vorher `getHeightAtTileIncludingOwnersBuildings`: Bergfried und Turm nur innere Felder, kleines Torhaus alle, nur der eigene Spieler. Zinne: Felder mit Bit 0x400000 nein, ohne ja (8 KI-Burgen 230 nein, 88 ja), das Menue ist nicht geklickt, Daniel sagt keine Zinnen. Siege That 5 Gold aus startResources, auf verbotenem Feld am Ende 0, im Gefecht 0.
